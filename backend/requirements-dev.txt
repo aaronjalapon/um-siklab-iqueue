@@ -1,5 +1,6 @@
 # =============================================================================
 # IQueue — Development Dependencies
+# Pinned to latest stable versions as of May 2026
 # =============================================================================
 # Install with: pip install -r requirements-dev.txt
 # These extend requirements.txt for local development.
@@ -7,14 +8,17 @@
 -r requirements.txt
 
 # Linting & Formatting
-ruff>=0.4.0
-black>=24.0.0
+ruff>=0.15.0
+black>=26.0.0
 
 # Testing
-pytest>=8.2.0
-pytest-asyncio>=0.23.0
-pytest-cov>=5.0.0
-httpx>=0.27.0
+pytest>=9.0.0
+pytest-asyncio>=1.4.0
+pytest-cov>=7.0.0
+httpx>=0.28.0
+
+# Test database (in-memory SQLite for fast unit tests)
+aiosqlite>=0.22.0
 
 # Load Testing
 locust>=2.27.0

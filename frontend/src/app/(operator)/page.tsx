@@ -113,10 +113,10 @@ export default function OperatorDashboard() {
               <XAxis dataKey="date" fontSize={12} />
               <YAxis fontSize={12} />
               <Tooltip
-                formatter={(value: number, name: string) => [
+                formatter={(value, name) => [
                   name === "volume"
                     ? `${value} passengers`
-                    : `${(value * 100).toFixed(0)}%`,
+                    : `${(Number(value) * 100).toFixed(0)}%`,
                   name === "volume" ? "Predicted Volume" : "Surge Probability",
                 ]}
               />

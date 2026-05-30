@@ -59,7 +59,7 @@ iqueue/
 │   ├── requirements.txt
 │   ├── requirements-dev.txt
 │   └── Dockerfile
-├── frontend/                       # Next.js 14 (App Router)
+├── frontend/                       # Next.js 16 (App Router)
 │   ├── src/
 │   │   ├── app/
 │   │   │   ├── (passenger)/        # Passenger booking flow
@@ -97,13 +97,13 @@ iqueue/
 
 | Layer | Technology | Notes |
 |---|---|---|
-| Backend API | FastAPI 0.111+ (Python 3.11+) | Async, all routes under `/api/v1/` |
-| Database | PostgreSQL 15 | Multi-tenant schema isolation |
+| Backend API | FastAPI 0.136+ (Python 3.14+) | Async, all routes under `/api/v1/` |
+| Database | PostgreSQL 18 | Multi-tenant schema isolation |
 | ORM | SQLAlchemy 2.0 (async) | Alembic for migrations |
 | Forecasting | Facebook Prophet + PyTorch LSTM | 7-day ahead surge prediction |
 | Chatbot | Hugging Face Transformers (mBERT / Flan-T5-small) | 4 ASEAN languages |
 | QR Signing | Python `hmac` + `hashlib` + `qrcode` | Offline-compatible |
-| Frontend | Next.js 14 (App Router) + Tailwind CSS | Passenger UI + Operator dashboard |
+| Frontend | Next.js 16 (App Router) + Tailwind CSS 4 | Passenger UI + Operator dashboard |
 | Data Version Control | DVC | Never commit raw data to Git |
 | Containerization | Docker + Docker Compose | Dev and prod configs separate |
 | Python Linting | Ruff + Black | Enforced on every save |

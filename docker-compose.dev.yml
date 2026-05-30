@@ -13,8 +13,9 @@
 version: "3.9"
 
 services:
-  # --- PostgreSQL (dev: exposed port, no changes needed) ---
+  # --- PostgreSQL (dev: exposed port) ---
   postgres:
+    # Inherits postgres:18-alpine from base compose file
     ports:
       - "5432:5432"
 

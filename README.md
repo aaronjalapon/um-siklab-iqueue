@@ -1,9 +1,11 @@
 # IQueue — AI-Powered Smart Boarding Platform
 
 [![AI for Good](https://img.shields.io/badge/AI%20for%20Good-Smart%20City%20Track-blue)](https://aiforgood.itu.int/)
-[![Python 3.11+](https://img.shields.io/badge/Python-3.11+-green.svg)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.111+-teal.svg)](https://fastapi.tiangolo.com/)
-[![Next.js 14](https://img.shields.io/badge/Next.js-14-black.svg)](https://nextjs.org/)
+[![Python 3.14+](https://img.shields.io/badge/Python-3.14+-green.svg)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.136+-teal.svg)](https://fastapi.tiangolo.com/)
+[![Next.js 16](https://img.shields.io/badge/Next.js-16-black.svg)](https://nextjs.org/)
+[![PostgreSQL 18](https://img.shields.io/badge/PostgreSQL-18-blue.svg)](https://www.postgresql.org/)
+[![Node 24](https://img.shields.io/badge/Node-24_LTS-green.svg)](https://nodejs.org/)
 
 **IQueue** is an AI-powered smart boarding platform for inter-provincial bus terminals across ASEAN. It solves congestion, seat hoarding, and boarding disputes through four integrated subsystems:
 

@@ -3,6 +3,11 @@
 :root {
   --background: #FCFCFD; /* gray-25 */
   --foreground: #111827;
+  
+  /* Glassmorphism Tokens - Light */
+  --glass-bg: rgba(255, 255, 255, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.4);
+  --glass-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
 }
 
 @theme inline {
@@ -24,6 +29,10 @@
   --color-ref-400: #98A2B3;
   --color-ref-500: #667085;
   --color-ref-600: #475467;
+
+  /* Map Glass Tokens */
+  --color-glass-bg: var(--glass-bg);
+  --color-glass-border: var(--glass-border);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -31,6 +40,11 @@
     /* Optimized Dark Mode: Slate/Zinc tones */
     --background: #0f172a; 
     --foreground: #f8fafc;
+    
+    /* Glassmorphism Tokens - Dark */
+    --glass-bg: rgba(15, 23, 42, 0.6);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
   }
 }
 
@@ -44,4 +58,32 @@ body {
 ::-webkit-scrollbar {
   width: 0px;
   background: transparent;
+}
+
+/* 
+  ========================================
+  MODERN WEB UTILITIES 
+  ========================================
+*/
+
+/* 1. Precise Text Alignment (Modern Web Guidance) */
+.trim-cap-alpha {
+  /* Trims the top to the cap-height and the bottom to the alphabetic baseline. */
+  text-box: trim-both cap alphabetic;
+}
+
+/* 2. Performance: Content Visibility */
+.content-deferred {
+  /* Reduce rendering times by deferring rendering for offscreen content. */
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 500px; /* Provide a placeholder size */
+}
+
+/* 3. Global Reduced Motion override for view transitions */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
 }

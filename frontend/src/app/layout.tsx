@@ -22,8 +22,15 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="min-h-full bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-50 flex flex-col font-sans">
-        {children}
+      <body className="min-h-full bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 text-foreground flex flex-col font-sans relative overflow-x-hidden">
+        {/* Decorative background blobs for glassmorphism pop */}
+        <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-brand-blue/20 dark:bg-brand-blue/10 rounded-full blur-3xl pointer-events-none -z-10" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-brand-orange/20 dark:bg-brand-orange/10 rounded-full blur-3xl pointer-events-none -z-10" />
+        
+        {/* Main Content */}
+        <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-0">
+          {children}
+        </main>
       </body>
     </html>
   );

@@ -1,0 +1,5 @@
+outs:
+- md5: 1578aa5299f91c554fa0d623ba3bf367
+  size: 16372963
+  hash: md5
+  path: ridership_cleaned.csv

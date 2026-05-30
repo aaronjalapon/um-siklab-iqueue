@@ -1,0 +1,80 @@
+# =============================================================================
+# IQueue — Production-like Full Stack
+# =============================================================================
+# Usage:
+#   docker compose up -d              # Start all services
+#   docker compose down               # Stop all services
+#   docker compose logs -f backend    # Tail backend logs
+# =============================================================================
+
+version: "3.9"
+
+services:
+  # --- PostgreSQL 15 ---
+  postgres:
+    image: postgres:15-alpine
+    container_name: iqueue-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-iqueue}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-iqueue}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - iqueue-net
+
+  # --- FastAPI Backend ---
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: iqueue-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-iqueue}
+    ports:
+      - "${PORT:-8000}:8000"
+    volumes:
+      - ./backend/app/services/forecasting/artifacts:/app/app/services/forecasting/artifacts
+    networks:
+      - iqueue-net
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000"
+
+  # --- Next.js Frontend ---
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: iqueue-web
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:8000/api/v1
+    ports:
+      - "3000:3000"
+    networks:
+      - iqueue-net
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  iqueue-net:
+    driver: bridge

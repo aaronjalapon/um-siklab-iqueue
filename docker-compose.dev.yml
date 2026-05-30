@@ -1,0 +1,50 @@
+# =============================================================================
+# IQueue — Development Overrides
+# =============================================================================
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+#
+# This file overrides the production config for local development:
+#   - Hot reload for backend (volume-mounted code)
+#   - Exposed PostgreSQL port
+#   - Debug mode enabled
+# =============================================================================
+
+version: "3.9"
+
+services:
+  # --- PostgreSQL (dev: exposed port, no changes needed) ---
+  postgres:
+    ports:
+      - "5432:5432"
+
+  # --- FastAPI Backend (dev: hot reload, volume mounts) ---
+  backend:
+    build:
+      target: runtime  # skip builder stage, use local venv
+    volumes:
+      - ./backend:/app
+      - ./data:/app/data
+      - ./ml:/app/ml
+    environment:
+      - DEBUG=true
+      - HOST=0.0.0.0
+      - PORT=8000
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    ports:
+      - "8000:8000"
+
+  # --- Next.js Frontend (dev: hot reload, volume mounts) ---
+  frontend:
+    command: npm run dev
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules  # anonymous volume to preserve node_modules
+      - /app/.next          # anonymous volume for build cache
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+      - WATCHPACK_POLLING=true  # for macOS file watching inside Docker
+    ports:
+      - "3000:3000"

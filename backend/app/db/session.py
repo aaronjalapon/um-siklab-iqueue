@@ -1,14 +1,10 @@
 """Async SQLAlchemy engine and session management."""
 
-import os
 from collections.abc import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-DATABASE_URL = os.getenv(
-    "DATABASE_URL", "postgresql+asyncpg://postgres:postgres@localhost:5432/iqueue"
-)
-DEBUG = os.getenv("DEBUG", "true").lower() == "true"
+from app.core.config import get_settings
 
 # Lazy-initialized engine and session factory
 _engine = None
@@ -19,9 +15,10 @@ def _create_engine():
     """Create or return the async SQLAlchemy engine."""
     global _engine
     if _engine is None:
+        settings = get_settings()
         _engine = create_async_engine(
-            DATABASE_URL,
-            echo=DEBUG,
+            settings.DATABASE_URL,
+            echo=settings.DEBUG,
             pool_size=20,
             max_overflow=10,
             pool_pre_ping=True,

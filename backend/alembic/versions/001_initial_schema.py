@@ -188,11 +188,7 @@ def upgrade() -> None:
 
     # --- Booking Status Enum ---
     booking_status_enum = sa.Enum(
-        "pending",
-        "confirmed",
-        "boarded",
-        "missed",
-        "cancelled",
+        "pending", "confirmed", "boarded", "missed", "cancelled",
         name="booking_status",
     )
     booking_status_enum.create(op.get_bind(), checkfirst=True)
@@ -239,7 +235,10 @@ def upgrade() -> None:
         ),
         sa.Column(
             "status",
-            booking_status_enum,
+            sa.Enum(
+                "pending", "confirmed", "boarded", "missed", "cancelled",
+                name="booking_status", create_type=False,
+            ),
             nullable=False,
             server_default="confirmed",
         ),

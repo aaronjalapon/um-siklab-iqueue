@@ -7,8 +7,6 @@
 #   docker compose logs -f backend    # Tail backend logs
 # =============================================================================
 
-version: "3.9"
-
 services:
   # --- PostgreSQL 15 ---
   postgres:
@@ -22,7 +20,7 @@ services:
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-iqueue}"]
       interval: 10s

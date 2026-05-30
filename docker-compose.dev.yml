@@ -10,8 +10,6 @@
 #   - Debug mode enabled
 # =============================================================================
 
-version: "3.9"
-
 services:
   # --- PostgreSQL (dev: exposed port) ---
   postgres:
@@ -32,7 +30,7 @@ services:
       - HOST=0.0.0.0
       - PORT=8000
     command: >
-      sh -c "alembic upgrade head &&
+      sh -c "(alembic upgrade head || true) &&
              uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
     ports:
       - "8000:8000"

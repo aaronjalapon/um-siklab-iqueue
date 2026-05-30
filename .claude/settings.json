@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python*)",
+      "Bash(pip*)",
+      "Bash(uv*)",
+      "Bash(uvicorn*)",
+      "Bash(alembic*)",
+      "Bash(pytest*)",
+      "Bash(ruff*)",
+      "Bash(black*)",
+      "Bash(npm*)",
+      "Bash(npx*)",
+      "Bash(node*)",
+      "Bash(docker*)",
+      "Bash(docker-compose*)",
+      "Bash(dvc*)",
+      "Bash(git*)",
+      "Bash(pg_isready*)",
+      "Bash(psql*)",
+      "Bash(cat*)",
+      "Bash(cp*)",
+      "Bash(mv*)",
+      "Bash(mkdir*)",
+      "Bash(ls*)",
+      "Bash(find*)",
+      "Bash(grep*)",
+      "Bash(echo*)",
+      "Bash(touch*)",
+      "Bash(chmod*)"
+    ],
+    "deny": [
+      "Bash(rm -rf /)",
+      "Bash(sudo rm*)",
+      "Bash(curl * | bash*)",
+      "Bash(wget * | bash*)"
+    ]
+  }
+}

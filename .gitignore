@@ -1,0 +1,54 @@
+# Environment
+.env
+.env.local
+.env.production
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+*.egg
+.venv/
+venv/
+
+# ML Model Artifacts
+*.pkl
+*.pt
+*.pth
+*.h5
+*.onnx
+
+# Node.js
+node_modules/
+.next/
+out/
+
+# DVC
+.dvc/cache
+.dvc/tmp
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+.docker/
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Logs
+*.log
+logs/

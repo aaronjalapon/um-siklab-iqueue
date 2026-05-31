@@ -156,8 +156,8 @@ export default function OperatorDashboard() {
             const pct = (bus.booked / bus.capacity) * 100;
             return (
               <div key={bus.plate} className="flex items-center gap-3">
-                <span className="text-sm font-mono w-20">{bus.plate}</span>
-                <div className="flex-1 bg-gray-200 rounded-full h-4 overflow-hidden">
+                <span className="text-sm font-mono w-20 shrink-0">{bus.plate}</span>
+                <div className="flex-1 bg-gray-200 rounded-full h-4 overflow-hidden min-w-[50px]">
                   <div
                     className={`h-full rounded-full transition-all ${
                       pct > 90

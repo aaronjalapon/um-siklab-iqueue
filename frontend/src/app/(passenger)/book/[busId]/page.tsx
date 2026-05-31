@@ -63,9 +63,10 @@ export default function BookPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border p-6">
           <div className="text-center mb-6"><div className="inline-block bg-gray-700 text-white text-xs px-6 py-1 rounded-full">🚌 Driver</div></div>
-          <div className="space-y-2 max-w-xs mx-auto">
-            {rows.map((row, ri) => (
-              <div key={ri} className="flex justify-center gap-2">
+          <div className="overflow-x-auto pb-4">
+            <div className="space-y-2 w-max mx-auto px-2">
+              {rows.map((row, ri) => (
+                <div key={ri} className="flex justify-center gap-2">
                 <div className="flex gap-1">
                   {row.slice(0, 2).map((seat) => (
                     <button key={seat.seat_number} disabled={!seat.is_available} onClick={() => setSelectedSeat(seat.seat_number)}
@@ -87,6 +88,7 @@ export default function BookPage() {
                 </div>
               </div>
             ))}
+            </div>
           </div>
           <div className="flex justify-center gap-4 mt-6 text-xs text-gray-500">
             <span className="flex items-center gap-1"><span className="w-4 h-4 bg-blue-100 rounded" /> Available</span>

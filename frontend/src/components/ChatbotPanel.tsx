@@ -83,7 +83,7 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
 
       {/* Chat Panel */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 w-96 h-[500px] bg-white rounded-xl shadow-2xl border flex flex-col z-50">
+        <div className="fixed bottom-24 right-0 left-0 mx-4 sm:mx-auto sm:right-6 sm:left-auto w-auto sm:w-96 h-[70vh] max-h-[500px] bg-white rounded-xl shadow-2xl border flex flex-col z-50">
           {/* Header */}
           <div className="bg-blue-700 text-white p-4 rounded-t-xl flex items-center justify-between">
             <div>

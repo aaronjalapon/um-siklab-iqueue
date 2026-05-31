@@ -10,39 +10,39 @@ export default function HomePage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
-    <div className="p-6 md:p-10 space-y-8 animate-in fade-in duration-500 max-w-4xl mx-auto">
+    <div className="p-6 md:p-10 space-y-8 animate-in fade-in duration-500 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex justify-between items-start pt-4">
         <div>
           <p className="text-slate-500 dark:text-slate-400 text-sm md:text-base">Good Morning,</p>
           <h1 className="text-xl md:text-3xl font-bold text-slate-900 dark:text-white">Olivia Rhye</h1>
         </div>
-        <button className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 relative">
+        <button className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/70 dark:bg-slate-800/60 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/20 dark:border-white/10 flex items-center justify-center text-slate-600 dark:text-slate-300 relative hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all">
           <Bell className="w-5 h-5 md:w-6 md:h-6" />
           <span className="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full"></span>
         </button>
       </div>
 
       {/* Desktop Top Section Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left Column on Desktop */}
-        <div className="space-y-8">
+        <div className="space-y-8 lg:col-span-8">
           {/* Search Input Fake Button */}
           <div 
             onClick={() => router.push("/buy")}
-            className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 md:p-5 flex items-center gap-3 shadow-sm cursor-pointer hover:shadow-md hover:border-brand-blue/50 active:scale-[0.98] transition-all"
+            className="w-full bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-xl p-4 md:p-5 flex items-center gap-3 shadow-[0_8px_30px_rgb(0,0,0,0.04)] cursor-pointer hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:border-brand-blue/50 active:scale-[0.98] transition-all"
           >
             <Search className="w-5 h-5 md:w-6 md:h-6 text-slate-400" />
             <span className="text-slate-400 font-medium md:text-lg">Where are you going today?</span>
           </div>
 
           {/* Shortcuts */}
-          <div className="flex md:grid md:grid-cols-2 gap-4 overflow-x-auto pb-2 scrollbar-hide -mx-6 px-6 md:mx-0 md:px-0">
+          <div className="flex md:grid md:grid-cols-2 gap-4 overflow-x-auto pb-2 -mx-6 px-6 md:mx-0 md:px-0">
             {[
               { label: "Manila Terminal", icon: MapPin },
               { label: "Davao City", icon: MapPin },
             ].map((shortcut, i) => (
-              <button key={i} className="flex-shrink-0 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 md:p-4 flex flex-col gap-2 min-w-[140px] md:min-w-0 text-left active:scale-95 hover:border-brand-blue/30 transition-all">
+              <button key={i} className="flex-shrink-0 bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-xl p-3 md:p-4 flex flex-col gap-2 min-w-[140px] md:min-w-0 text-left active:scale-95 hover:border-brand-blue/30 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all">
                 <p className="text-[10px] md:text-xs text-slate-400 font-semibold uppercase tracking-wider">Buy ticket to</p>
                 <div className="flex items-center gap-2">
                   <shortcut.icon className="w-4 h-4 text-slate-900 dark:text-white" />
@@ -54,9 +54,9 @@ export default function HomePage() {
         </div>
 
         {/* Right Column on Desktop: Active Ticket */}
-        <div className="space-y-4">
+        <div className="space-y-4 lg:col-span-4 transition-all duration-700 ease-in-out hover:-translate-y-1">
           <h2 className="font-bold text-lg md:text-xl text-slate-900 dark:text-white">Your Active Ticket</h2>
-          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 md:p-6 shadow-sm hover:shadow-md transition-shadow">
+          <div className="bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-2xl p-5 md:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.1)] transition-shadow">
             <p className="font-bold text-slate-900 dark:text-white mb-4">Mon, 19 February 2026</p>
             
             <div className="flex gap-2 mb-6">

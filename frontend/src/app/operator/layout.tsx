@@ -51,7 +51,27 @@ export default function OperatorLayout({
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 bg-gray-50 min-h-screen p-6">{children}</main>
+      <main className="flex-1 bg-gray-50 min-h-screen p-6 pb-20 md:pb-6">{children}</main>
+
+      {/* Mobile Bottom Nav */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex items-center justify-around pb-safe z-40">
+        {NAV_ITEMS.map((item) => {
+          const Icon = item.icon;
+          const active = pathname === item.href;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`flex flex-col items-center gap-1 py-3 px-2 flex-1 text-center transition ${
+                active ? "text-blue-700" : "text-gray-500 hover:text-gray-900"
+              }`}
+            >
+              <Icon className="w-5 h-5" />
+              <span className="text-[10px] font-medium">{item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
     </div>
   );
 }

@@ -87,6 +87,7 @@ export default function BookPage() {
                 </div>
               </div>
             ))}
+            </div>
           </div>
           <div className="flex justify-center gap-4 mt-6 text-xs text-gray-500">
             <span className="flex items-center gap-1"><span className="w-4 h-4 bg-blue-100 shadow-inner rounded" /> Available</span>

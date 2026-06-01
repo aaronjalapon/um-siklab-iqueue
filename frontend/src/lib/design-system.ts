@@ -21,4 +21,32 @@ export const glassStyles = {
 
   // Input field (frosted inner inset)
   input: 'bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border border-glass-border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-blue/50 transition-all text-foreground',
+
+  // Operator dashboard stat card
+  statCard:
+    'bg-glass-bg backdrop-blur-xl border border-glass-border shadow-[var(--glass-shadow)] rounded-2xl p-5 flex items-center gap-4 transition-shadow hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.25)]',
+
+  sectionTitle: 'text-lg font-semibold text-foreground trim-cap-alpha',
+
+  badge:
+    'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
+
+  skeleton: 'animate-pulse rounded-xl bg-slate-200/80 dark:bg-slate-700/50 motion-reduce:animate-none',
+
+  segmentedControl:
+    'bg-white/50 dark:bg-slate-900/50 backdrop-blur-md rounded-lg p-1 border border-glass-border text-xs flex gap-1',
+
+  segmentedActive:
+    'px-3 py-1.5 rounded-md bg-white dark:bg-slate-800 shadow-sm font-medium text-slate-800 dark:text-slate-100',
+
+  segmentedInactive:
+    'px-3 py-1.5 rounded-md text-slate-500 hover:bg-white/50 dark:hover:bg-slate-800/50 transition opacity-70',
+
+  navItem:
+    'flex items-center gap-4 px-4 py-3 rounded-xl transition-colors font-semibold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 dark:text-slate-400 dark:hover:text-white',
+
+  navItemActive:
+    'flex items-center gap-4 px-4 py-3 rounded-xl transition-colors font-semibold bg-brand-blue text-white shadow-md shadow-brand-blue/20',
+
+  pageContainer: 'max-w-7xl mx-auto w-full space-y-6 p-6 pb-24 md:pb-6',
 };

@@ -79,11 +79,21 @@ body {
   contain-intrinsic-size: 1px 500px; /* Provide a placeholder size */
 }
 
+/* Safe area for mobile bottom navigation */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
 /* 3. Global Reduced Motion override for view transitions */
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-group(*),
   ::view-transition-old(*),
   ::view-transition-new(*) {
     animation: none !important;
+  }
+
+  .motion-safe-animate {
+    animation: none !important;
+    transition: none !important;
   }
 }

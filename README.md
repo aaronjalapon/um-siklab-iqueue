@@ -20,7 +20,7 @@
 
 ## 🏆 Hackathon
 
-- **Event:** AI for Good — Smart City Track
+- **Event:** ASEAN AI Hackathon 2026 — Smart City Track
 - **Team:** UM Siklab — University of Mindanao, Philippines
 - **Demo Deadline:** June 25, 2026
 

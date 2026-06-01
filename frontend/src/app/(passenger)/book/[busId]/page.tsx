@@ -51,10 +51,23 @@ export default function BookPage() {
   const rows: SeatInfo[][] = [];
   for (let i = 0; i < seats.length; i += 4) rows.push(seats.slice(i, i + 4));
 
+  function getSeatClass(seat: SeatInfo): string {
+    const base = "w-10 h-10 rounded text-xs font-medium transition-all duration-300 ";
+    if (selectedSeat === seat.seat_number) {
+      return base + "bg-green-600 text-white ring-2 ring-green-300 seat-selected transform scale-105";
+    }
+    if (seat.is_available) {
+      return base + "bg-blue-100 hover:bg-blue-200 text-blue-800 shadow-inner";
+    }
+    return base + "bg-gray-200/50 text-gray-400 cursor-not-allowed";
+  }
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      <Link href={`/results?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(dest)}&date=${date}`}
-        className="text-sm text-blue-600 hover:underline inline-flex items-center gap-1 mb-2">
+      <Link
+        href={`/results?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(dest)}&date=${date}`}
+        className="text-sm text-blue-600 hover:underline inline-flex items-center gap-1 mb-2"
+      >
         <ArrowLeft className="w-3 h-3" /> Back to results
       </Link>
       <h1 className="text-2xl font-bold">Select Your Seat</h1>
@@ -62,37 +75,53 @@ export default function BookPage() {
       {error && <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4">{error}</div>}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 relative items-start">
         <div className="lg:col-span-2 bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/20 p-6">
-          <div className="text-center mb-6"><div className="inline-block bg-gray-700 text-white text-xs px-6 py-1 rounded-full">🚌 Driver</div></div>
+          <div className="text-center mb-6">
+            <div className="inline-block bg-gray-700 text-white text-xs px-6 py-1 rounded-full">🚌 Driver</div>
+          </div>
           <div className="space-y-2 max-w-xs mx-auto">
-            {rows.map((row, ri) => (
-              <div key={ri} className="flex justify-center gap-2 animate-in fade-in slide-in-from-top-4" style={{ animationDelay: `${ri * 50}ms` }}>
-                <div className="flex gap-1">
-                  {row.slice(0, 2).map((seat) => (
-                    <button key={seat.seat_number} disabled={!seat.is_available} onClick={() => setSelectedSeat(seat.seat_number)}
-                      className={`w-10 h-10 rounded text-xs font-medium transition-all duration-300 ${
-                        selectedSeat === seat.seat_number ? "bg-green-600 text-white ring-2 ring-green-300 shadow-[0_0_15px_rgba(34,197,94,0.4)] transform scale-105"
-                        : seat.is_available ? "bg-blue-100 hover:bg-blue-200 text-blue-800 shadow-inner" : "bg-gray-200/50 text-gray-400 cursor-not-allowed"}`}
-                      title={`Seat ${seat.seat_number}`}>{seat.seat_number}</button>
-                  ))}
+            {rows.map((row, ri) => {
+              const rowStyle: React.CSSProperties = { animationDelay: ri * 50 + "ms" };
+              return (
+                <div
+                  key={ri}
+                  className="flex justify-center gap-2 animate-in fade-in slide-in-from-top-4"
+                  style={rowStyle}
+                >
+                  <div className="flex gap-1">
+                    {row.slice(0, 2).map((seat) => (
+                      <button
+                        key={seat.seat_number}
+                        disabled={!seat.is_available}
+                        onClick={() => setSelectedSeat(seat.seat_number)}
+                        className={getSeatClass(seat)}
+                        title={"Seat " + seat.seat_number}
+                      >
+                        {seat.seat_number}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="w-4" />
+                  <div className="flex gap-1">
+                    {row.slice(2, 4).map((seat) => (
+                      <button
+                        key={seat.seat_number}
+                        disabled={!seat.is_available}
+                        onClick={() => setSelectedSeat(seat.seat_number)}
+                        className={getSeatClass(seat)}
+                        title={"Seat " + seat.seat_number}
+                      >
+                        {seat.seat_number}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="w-4" />
-                <div className="flex gap-1">
-                  {row.slice(2, 4).map((seat) => (
-                    <button key={seat.seat_number} disabled={!seat.is_available} onClick={() => setSelectedSeat(seat.seat_number)}
-                      className={`w-10 h-10 rounded text-xs font-medium transition-all duration-300 ${
-                        selectedSeat === seat.seat_number ? "bg-green-600 text-white ring-2 ring-green-300 shadow-[0_0_15px_rgba(34,197,94,0.4)] transform scale-105"
-                        : seat.is_available ? "bg-blue-100 hover:bg-blue-200 text-blue-800 shadow-inner" : "bg-gray-200/50 text-gray-400 cursor-not-allowed"}`}
-                      title={`Seat ${seat.seat_number}`}>{seat.seat_number}</button>
-                  ))}
-                </div>
-              </div>
-            ))}
-            </div>
+              );
+            })}
           </div>
           <div className="flex justify-center gap-4 mt-6 text-xs text-gray-500">
             <span className="flex items-center gap-1"><span className="w-4 h-4 bg-blue-100 shadow-inner rounded" /> Available</span>
             <span className="flex items-center gap-1"><span className="w-4 h-4 bg-gray-200/50 rounded" /> Occupied</span>
-            <span className="flex items-center gap-1"><span className="w-4 h-4 bg-green-600 shadow-[0_0_10px_rgba(34,197,94,0.4)] rounded" /> Selected</span>
+            <span className="flex items-center gap-1"><span className="w-4 h-4 bg-green-600 rounded" /> Selected</span>
           </div>
         </div>
         <div className="bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/20 p-6 lg:sticky lg:top-24">

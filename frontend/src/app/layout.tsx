@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { config } from "@fortawesome/fontawesome-svg-core";
+import "@fortawesome/fontawesome-svg-core/styles.css";
 import "./globals.css";
+
+config.autoAddCss = false;
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,9 +32,9 @@ export default function RootLayout({
         <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-brand-orange/20 dark:bg-brand-orange/10 rounded-full blur-3xl pointer-events-none -z-10" />
         
         {/* Main Content */}
-        <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-0">
+        <div className="flex-1 w-full relative z-0">
           {children}
-        </main>
+        </div>
       </body>
     </html>
   );

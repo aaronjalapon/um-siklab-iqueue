@@ -37,12 +37,17 @@ services:
 
   # --- Next.js Frontend (dev: hot reload, volume mounts) ---
   frontend:
-    command: npm run dev
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    command: npm run dev:docker
     volumes:
       - ./frontend:/app
       - /app/node_modules  # anonymous volume to preserve node_modules
-      - /app/.next          # anonymous volume for build cache
+      # Do NOT mount /app/.next — it caused read-only FS errors with Turbopack.
+      # distDir is redirected to /tmp/iqueue-next when DOCKER=1 (see next.config.ts).
     environment:
+      - DOCKER=1
       - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
       - WATCHPACK_POLLING=true  # for macOS file watching inside Docker
     ports:

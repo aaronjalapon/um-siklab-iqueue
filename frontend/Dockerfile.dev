@@ -1,0 +1,15 @@
+# =============================================================================
+# IQueue — Frontend Development Image
+# Lightweight Node image for hot reload (not the production runner).
+# =============================================================================
+
+FROM node:24-alpine
+WORKDIR /app
+
+COPY package.json package-lock.json* ./
+RUN npm install --legacy-peer-deps
+
+EXPOSE 3000
+
+# Bind-mount source at runtime; node_modules preserved via compose volume.
+CMD ["npm", "run", "dev:docker"]

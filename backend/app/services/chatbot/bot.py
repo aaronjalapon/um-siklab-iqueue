@@ -1,8 +1,8 @@
 """Multilingual chatbot service for IQueue passenger support.
 
 Supports Filipino, Bahasa Indonesia, Vietnamese, and English.
-Uses keyword-based intent classification with Hugging Face API
-as an optional enhancement for response generation.
+Uses a fine-tuned XLM-RoBERTa model for intent classification with
+keyword-based fallback when the model is unavailable.
 
 Intent targets:
   - check_booking    — "Where is my booking?"
@@ -14,9 +14,11 @@ Intent targets:
 
 from __future__ import annotations
 
+import asyncio
+import json
 import logging
 import os
-import re
+from pathlib import Path
 from uuid import UUID
 
 from langdetect import detect as detect_language
@@ -31,7 +33,7 @@ from app.schemas.chatbot import ChatbotResponse
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Intent keyword dictionaries per language
+# Intent keyword dictionaries per language (fallback when model unavailable)
 # ---------------------------------------------------------------------------
 
 INTENT_KEYWORDS: dict[str, dict[str, list[str]]] = {
@@ -110,7 +112,7 @@ INTENT_KEYWORDS: dict[str, dict[str, list[str]]] = {
 }
 
 # ---------------------------------------------------------------------------
-# Fallback responses per language
+# Fallback + intent responses per language
 # ---------------------------------------------------------------------------
 
 FALLBACK_RESPONSES: dict[str, str] = {
@@ -148,18 +150,161 @@ INTENT_RESPONSES: dict[str, dict[str, str]] = {
 }
 
 
-class ChatbotService:
-    """Multilingual chatbot with keyword-based intent classification.
+# ============================================================================
+# Module-level singleton
+# ============================================================================
 
-    Uses keyword matching in 4 ASEAN languages for fast intent detection.
-    Optionally calls Hugging Face Inference API for generative responses
-    when HUGGINGFACE_API_TOKEN is set.
+_chatbot_service: "ChatbotService | None" = None
+_singleton_load_attempted: bool = False
+
+
+def get_chatbot_service() -> "ChatbotService | None":
+    """Return the module-level chatbot service singleton.
+
+    Loads the XLM-RoBERTa model on first call.  Returns None if the model
+    could not be loaded — callers should use the keyword-based fallback path.
+    """
+    global _chatbot_service, _singleton_load_attempted
+
+    if not _singleton_load_attempted:
+        _singleton_load_attempted = True
+        try:
+            _chatbot_service = ChatbotService()
+            if _chatbot_service._model_available:
+                logger.info("ChatbotService singleton initialised with XLM-RoBERTa model")
+            else:
+                logger.info("ChatbotService singleton initialised (keyword fallback only)")
+        except Exception as exc:
+            logger.error("Failed to create ChatbotService: %s", exc)
+            _chatbot_service = None
+
+    return _chatbot_service
+
+
+# ============================================================================
+# ChatbotService
+# ============================================================================
+
+
+class ChatbotService:
+    """Multilingual chatbot with XLM-RoBERTa intent classification.
+
+    Uses a fine-tuned XLM-RoBERTa pipeline for intent detection across
+    4 ASEAN languages.  Falls back to keyword matching when the model
+    is not available (e.g. before training completes).
     """
 
     SUPPORTED_LANGUAGES = {"en", "fil", "id", "vi"}
 
-    def __init__(self):
-        self._hf_token = os.getenv("HUGGINGFACE_API_TOKEN")
+    def __init__(self) -> None:
+        self._model_available = False
+        self._classifier = None
+        self._id_to_label: dict[int, str] = {}
+
+        from app.core.config import get_settings
+
+        settings = get_settings()
+        model_path = Path(settings.CHATBOT_MODEL_PATH)
+
+        if model_path.exists() and (model_path / "config.json").exists():
+            try:
+                from transformers import pipeline
+
+                self._classifier = pipeline(
+                    "text-classification",
+                    model=str(model_path),
+                    tokenizer=str(model_path),
+                    top_k=None,  # return all scores
+                    device=-1,   # CPU
+                )
+
+                label_map_path = model_path.parent / "label_map.json"
+                if label_map_path.exists():
+                    with open(label_map_path) as f:
+                        label_map_str = json.load(f)
+                    # Keys are strings in JSON; convert to int
+                    self._id_to_label = {
+                        int(k): v for k, v in label_map_str.items()
+                    }
+                else:
+                    # Fallback hard-coded label map
+                    self._id_to_label = {
+                        0: "check_booking",
+                        1: "request_requeue",
+                        2: "get_departure_info",
+                        3: "surge_info",
+                        4: "fallback",
+                    }
+
+                self._model_available = True
+                logger.info("Loaded XLM-RoBERTa intent classifier from %s", model_path)
+
+            except Exception as exc:
+                logger.warning("Failed to load model pipeline: %s — using keyword fallback", exc)
+                self._model_available = False
+        else:
+            logger.info(
+                "Model not found at %s — using keyword fallback. "
+                "Run ml/chatbot/train.py to train the classifier.",
+                model_path,
+            )
+
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
+
+    def classify(self, text: str, language: str) -> dict:
+        """Classify the intent of a user query.
+
+        Uses the XLM-RoBERTa pipeline when available, otherwise falls back
+        to keyword matching.
+
+        Returns:
+            dict with keys: intent, confidence, detected_language, all_scores
+        """
+        if self._model_available:
+            try:
+                results = self._classifier(text)[0]
+                # results is list of {label, score} dicts
+                best = max(results, key=lambda x: x["score"])
+
+                # Parse label — handle both "LABEL_0" and "0" formats
+                label_str = best["label"]
+                if label_str.startswith("LABEL_"):
+                    label_idx = int(label_str.split("_")[1])
+                else:
+                    label_idx = int(label_str)
+
+                intent = self._id_to_label.get(label_idx, "fallback")
+                confidence = round(best["score"], 4)
+
+                all_scores = {}
+                for r in results:
+                    rl = r["label"]
+                    if rl.startswith("LABEL_"):
+                        ri = int(rl.split("_")[1])
+                    else:
+                        ri = int(rl)
+                    r_intent = self._id_to_label.get(ri, "fallback")
+                    all_scores[r_intent] = round(r["score"], 4)
+
+                return {
+                    "intent": intent,
+                    "confidence": confidence,
+                    "detected_language": language,
+                    "all_scores": all_scores,
+                }
+            except Exception as exc:
+                logger.warning("Model inference error: %s — falling back to keyword", exc)
+
+        # Keyword fallback
+        intent, confidence = self._classify_intent_fallback(text, language)
+        return {
+            "intent": intent,
+            "confidence": confidence,
+            "detected_language": language,
+            "all_scores": {},
+        }
 
     async def respond(
         self,
@@ -171,13 +316,14 @@ class ChatbotService:
         """Process a user query and return a chatbot response.
 
         Args:
-            query: The user's question text
-            language: ISO 639-1 language code (auto-detected if None)
-            booking_id: Optional booking context for personalized responses
-            db: Optional database session for booking lookups
+            query: The user's question text.
+            language: ISO 639-1 language code (auto-detected if None).
+            booking_id: Optional booking context for personalised responses.
+            db: Optional database session for booking lookups.
 
         Returns:
-            ChatbotResponse with response text, detected language, intent, and suggestions
+            ChatbotResponse with response text, detected language, intent,
+            suggested actions, and confidence.
         """
         # Step 1: Detect language
         if language and language in self.SUPPORTED_LANGUAGES:
@@ -185,10 +331,18 @@ class ChatbotService:
         else:
             detected_lang = self._detect_language(query)
 
-        # Step 2: Classify intent
-        intent, confidence = self._classify_intent(query, detected_lang)
+        # Step 2: Classify intent (async-safe via thread pool when using model)
+        if self._model_available:
+            classification = await asyncio.to_thread(
+                self.classify, query, detected_lang
+            )
+        else:
+            classification = self.classify(query, detected_lang)
 
-        # Step 3: If booking_id provided and intent is check_booking, look up booking
+        intent = classification["intent"]
+        confidence = classification["confidence"]
+
+        # Step 3: Booking lookup for check_booking with provided ID
         if intent == "check_booking" and booking_id and db:
             try:
                 response_text = await self._lookup_booking(
@@ -202,21 +356,10 @@ class ChatbotService:
                     confidence=confidence,
                 )
             except Exception:
+                # Fall through to template response on lookup failure
                 pass
 
-        # Step 4: Try Hugging Face API for generative response
-        if self._hf_token and intent != "fallback":
-            hf_response = await self._try_huggingface(query, detected_lang)
-            if hf_response:
-                return ChatbotResponse(
-                    response_text=hf_response,
-                    detected_language=detected_lang,
-                    intent=intent,
-                    suggested_actions=self._get_suggestions(intent, detected_lang),
-                    confidence=confidence,
-                )
-
-        # Step 5: Use template responses
+        # Step 4: Build response from templates
         if intent == "fallback":
             response_text = FALLBACK_RESPONSES.get(
                 detected_lang, FALLBACK_RESPONSES["en"]
@@ -236,7 +379,7 @@ class ChatbotService:
         )
 
     # ------------------------------------------------------------------
-    # Internal methods
+    # Internal — language detection
     # ------------------------------------------------------------------
 
     @staticmethod
@@ -247,7 +390,6 @@ class ChatbotService:
         """
         try:
             lang = detect_language(query)
-            # Map to our supported languages
             lang_map = {
                 "tl": "fil",  # Tagalog → Filipino
                 "id": "id",
@@ -259,9 +401,13 @@ class ChatbotService:
         except Exception:
             return "en"
 
+    # ------------------------------------------------------------------
+    # Internal — keyword fallback classifier
+    # ------------------------------------------------------------------
+
     @staticmethod
-    def _classify_intent(query: str, language: str) -> tuple[str, float]:
-        """Classify the intent of a query using keyword matching.
+    def _classify_intent_fallback(query: str, language: str) -> tuple[str, float]:
+        """Classify intent via keyword matching (fallback when model unavailable).
 
         Returns (intent, confidence) tuple.
         """
@@ -272,10 +418,7 @@ class ChatbotService:
         best_score = 0.0
 
         for intent, words in keywords.items():
-            score = 0
-            for word in words:
-                if word in query_lower:
-                    score += 1
+            score = sum(1 for w in words if w in query_lower)
             normalized = score / max(len(words), 1)
             if normalized > best_score:
                 best_score = normalized
@@ -283,6 +426,10 @@ class ChatbotService:
 
         confidence = min(0.9, best_score * 3.0)
         return best_intent, round(confidence, 2)
+
+    # ------------------------------------------------------------------
+    # Internal — booking lookup
+    # ------------------------------------------------------------------
 
     async def _lookup_booking(
         self, booking_id: UUID, language: str, db: AsyncSession
@@ -302,61 +449,24 @@ class ChatbotService:
             }
             return templates.get(language, templates["en"])
 
-        status_map = {
-            "en": {
-                BookingStatus.CONFIRMED: "confirmed",
-                BookingStatus.PENDING: "pending",
-                BookingStatus.BOARDED: "boarded",
-                BookingStatus.CANCELLED: "cancelled",
-                BookingStatus.MISSED: "missed",
-            },
+        status_map_en = {
+            BookingStatus.CONFIRMED: "confirmed",
+            BookingStatus.PENDING: "pending",
+            BookingStatus.BOARDED: "boarded",
+            BookingStatus.CANCELLED: "cancelled",
+            BookingStatus.MISSED: "missed",
         }
 
-        status_text = status_map.get("en", {}).get(booking.status, "unknown")
+        status_text = status_map_en.get(booking.status, "unknown")
         templates = {
             "en": f"Your booking is {status_text}. Seat: {booking.seat_number}. Boarding window: {booking.boarding_window_start.strftime('%H:%M')} → {booking.boarding_window_end.strftime('%H:%M')}.",
             "fil": f"Ang iyong booking ay {status_text}. Upuan: {booking.seat_number}. Oras ng pagsakay: {booking.boarding_window_start.strftime('%H:%M')} → {booking.boarding_window_end.strftime('%H:%M')}.",
         }
         return templates.get(language, templates["en"])
 
-    async def _try_huggingface(
-        self, query: str, language: str
-    ) -> str | None:
-        """Try to get a response from Hugging Face Inference API."""
-        if not self._hf_token:
-            return None
-
-        try:
-            import httpx
-
-            lang_prompt = {
-                "en": "Answer this bus terminal passenger question helpfully in English: ",
-                "fil": "Sagutin ang tanong na ito ng pasahero sa Filipino: ",
-                "id": "Jawab pertanyaan penumpang terminal bus ini dalam Bahasa Indonesia: ",
-                "vi": "Trả lời câu hỏi của hành khách bằng tiếng Việt: ",
-            }
-
-            prompt = lang_prompt.get(language, lang_prompt["en"]) + query
-
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                response = await client.post(
-                    "https://api-inference.huggingface.co/models/google/flan-t5-small",
-                    headers={
-                        "Authorization": f"Bearer {self._hf_token}",
-                        "Content-Type": "application/json",
-                    },
-                    json={"inputs": prompt, "parameters": {"max_length": 150}},
-                )
-
-                if response.status_code == 200:
-                    data = response.json()
-                    if isinstance(data, list) and len(data) > 0:
-                        return data[0].get("generated_text", "")
-
-        except Exception as e:
-            logger.debug(f"Hugging Face API error: {e}")
-
-        return None
+    # ------------------------------------------------------------------
+    # Internal — suggestions
+    # ------------------------------------------------------------------
 
     @staticmethod
     def _get_suggestions(intent: str, language: str) -> list[str]:
@@ -365,22 +475,32 @@ class ChatbotService:
             "check_booking": {
                 "en": ["View QR code", "Check boarding time", "Cancel booking"],
                 "fil": ["Tingnan QR code", "Oras ng pagsakay", "Kanselahin"],
+                "id": ["Lihat QR code", "Cek waktu naik", "Batalkan"],
+                "vi": ["Xem mã QR", "Kiểm tra giờ lên xe", "Hủy vé"],
             },
             "request_requeue": {
                 "en": ["Find next bus", "Change route", "Contact support"],
                 "fil": ["Hanapin susunod na bus", "Palit ng ruta"],
+                "id": ["Cari bus berikutnya", "Ganti rute", "Hubungi"],
+                "vi": ["Tìm chuyến sau", "Đổi tuyến", "Liên hệ"],
             },
             "get_departure_info": {
                 "en": ["View schedule", "Check gate", "Set reminder"],
                 "fil": ["Tingnan iskedyul", "Oras ng alis"],
+                "id": ["Lihat jadwal", "Cek gerbang", "Pengingat"],
+                "vi": ["Xem lịch trình", "Kiểm tra cổng", "Nhắc nhở"],
             },
             "surge_info": {
                 "en": ["View forecast", "Choose different date", "Book early"],
                 "fil": ["Tingnan forecast", "Pumili ng ibang petsa"],
+                "id": ["Lihat prediksi", "Pilih tanggal lain", "Pesan awal"],
+                "vi": ["Xem dự báo", "Chọn ngày khác", "Đặt sớm"],
             },
             "fallback": {
                 "en": ["Search routes", "Check bookings", "Ask about schedules"],
                 "fil": ["Maghanap ng ruta", "Tingnan booking", "Oras ng alis"],
+                "id": ["Cari rute", "Cek pemesanan", "Tanya jadwal"],
+                "vi": ["Tìm tuyến", "Kiểm tra vé", "Hỏi lịch trình"],
             },
         }
 

@@ -1,0 +1,107 @@
+text,label,language,source
+saan ako makakabili ng saksakan,fallback,fil,massive
+may nakaiskedyul ba ako para sa ala una n. h. sa susunod na lunes,check_booking,fil,massive
+pesankan tiket kereta ke jakarta buat tanggal tiga aku tidak peduli mau jam berapa,request_requeue,id,massive
+ada apa di tanggal itu,check_booking,id,massive
+lễ hội chính thức bắt đầu lúc mấy giờ,check_booking,vi,massive
+how old is morgan freeman,fallback,en,massive
+maaari kang mag-book ng tiket sa tren para sa aking nanay,request_requeue,fil,massive
+which day is march twenty,get_departure_info,en,massive
+search earliest trains to brooklyn ny weekends and holidays,get_departure_info,en,massive
+tôi có thể chảy bao nhiêu máu trước khi chết,fallback,vi,massive
+pwede mo bang ibigay ang petsa ngayong araw,get_departure_info,fil,massive
+anong oras na sa central standard time,get_departure_info,fil,massive
+apakah saya senggang di hari jumat siang,check_booking,id,massive
+Magkano na ba ang dagdag presyo dahil sa surge?,surge_info,fil,synthetic
+ngày mai tôi được nghỉ,fallback,vi,massive
+tunjukkan saya pengingat pengingat,check_booking,id,massive
+mangyaring bumili ng tiket sa amtrak mula sa las vegas nevada hanggang lakeland florida na aalis sa unang bahagi ng abril,request_requeue,fil,massive
+mất bao lâu để đến đó,get_departure_info,vi,massive
+what is the composition of our nails,fallback,en,massive
+what time is my meeting on friday,check_booking,en,massive
+what events are on my calendar,check_booking,en,massive
+anong oras magsisimula ang mataas na pagpupulong sa biyernes,check_booking,fil,massive
+mag book ng tiket sa tren mula sa washington d. c. hanggang savannah georgia,request_requeue,fil,massive
+pesankan saya tiket kereta dengan kursi menghadap ke depan tujuan malang untuk pekan depan,request_requeue,id,massive
+ê bạn khỏe không,fallback,vi,massive
+berapa waktu terlama pergi ke sebuah lokasi,get_departure_info,id,massive
+hanapan mo ako ng murang tiket sa tren para sa miamy,request_requeue,fil,massive
+tại sao người nào hay đọc thì chưa chắc đã lịch sự và danh giá,fallback,vi,massive
+tôi có bao nhiêu lời nhắc đang chờ xử lý,check_booking,vi,massive
+please arrange a train ticket for me,request_requeue,en,massive
+sekarang jam berapa di depok,get_departure_info,id,massive
+tôi cần một chỉ dẫn khác,get_departure_info,vi,massive
+tôi muốn nó giúp gỡ lỗi mã hóa,fallback,vi,massive
+kapan kereta selanjutnya dari sini yang melewati kota,get_departure_info,id,massive
+hoy mangyaring magbigay ng impormasyon tungkol sa mga kaganapan sa pagtatapos ng araw,check_booking,fil,massive
+jam berapa di depok,get_departure_info,id,massive
+berapa pelanggan yang dimiliki joko anwar,fallback,id,massive
+tell me about the meeting this week,check_booking,en,massive
+Tuyến xe buýt số 12 có bị ùn tắc không?,surge_info,vi,synthetic
+tôi cần một vé tàu hỏa đến,request_requeue,vi,massive
+saya butuh tiket kereta ke jakarta pesankan tiket,request_requeue,id,massive
+how long is the nile river,fallback,en,massive
+book a train ticket to canada this evening,request_requeue,en,massive
+kasih tahu aku hari ini tanggal berapa,get_departure_info,id,massive
+talaan,fallback,fil,massive
+hari ini adalah hari yang sulit,fallback,id,massive
+if you put a velociraptor and a hippo together what would happen,fallback,en,massive
+tungkol sa realidad sa mundo,fallback,fil,massive
+tìm kiếm các kỳ nghỉ đặc biệt ở việt nam,check_booking,vi,massive
+what is the current eastern time,get_departure_info,en,massive
+what's the average price of a house in michigan,fallback,en,massive
+please tell me how to do my daughters eighth grade math,fallback,en,massive
+maaari mong suriin ang iskedyul ng tren papuntang berkeley,request_requeue,fil,massive
+lên lịch trình đến las vegas bằng tàu hỏa,request_requeue,vi,massive
+sabihin sa akin kung dapat kong gamitin ang tren o bus para makarating sa buong bayan ngayon,get_departure_info,fil,massive
+cari pameran buku yang akan diselenggarakan di minggu depan di d. k. i. jakarta,check_booking,id,massive
+Tình hình tắc đường tại bến xe buýt trung chuyển thế nào?,surge_info,vi,synthetic
+kasih tahu aku trivia acak,fallback,id,massive
+sabihin sa akin ang tungkol sa pinakabagong mga uso sa media,fallback,fil,massive
+bagaimana cara membantu rapat ini,fallback,id,massive
+Tình trạng kẹt xe trên tuyến từ bến xe về trung tâm hiện tại ra sao?,surge_info,vi,synthetic
+anong mga pangyayari ang nakaiskedyul sa akin ngayon,check_booking,fil,massive
+pesankan saya tiket kereta termurah ke jakarta,request_requeue,id,massive
+buy a train ticket for one week from now from new york to las vegas nevada,request_requeue,en,massive
+jam berapa sekarang di australia,get_departure_info,id,massive
+tôi có thể đặt một vé tàu hỏa đến,request_requeue,vi,massive
+huy ang ganda ng pakiramdam ko,fallback,fil,massive
+chuyến tàu bốn giờ ba mươi chiều chạy muộn có phải không,get_departure_info,vi,massive
+lịch trình của tôi có gì từ chín đến mười một giờ sáng ngày mai,check_booking,vi,massive
+surge info dong buat terminal,surge_info,id,synthetic
+book me the cheapest train ticket to new york,request_requeue,en,massive
+Are there peak surcharges for this bus line?,surge_info,en,synthetic
+olly find me the cheapest train ticket to spain,request_requeue,en,massive
+apa ada hari ulang tahun di tanggal delapan belas mei,check_booking,id,massive
+mayroon bang karnabal na nagaganap sa aming lugar,check_booking,fil,massive
+tampilkan tiket kereta,request_requeue,id,massive
+giáng sinh là ngày mấy,get_departure_info,vi,massive
+có sự kiện nào trong lịch của tôi hôm nay không,check_booking,vi,massive
+apa yang terjadi pada irvan hakim,fallback,id,massive
+pertandingan sepak bola apa yang dijadwalkan minggu ini di gelora bung karno,check_booking,id,massive
+Magkano ang surge fee sa biyaheng Bicol?,surge_info,fil,synthetic
+reserve a train ticket for me today to des moines,request_requeue,en,massive
+bigyan mo ako ng oras sa maynila ngayon din,get_departure_info,fil,massive
+đồng hồ chỉ mấy giờ rồi,get_departure_info,vi,massive
+đọc harry potter và hòn đá phù thủy,request_requeue,vi,massive
+này hôm nay là ngày gì,get_departure_info,vi,massive
+hanapin ang mapa,fallback,fil,massive
+trò chơi cuộc đua kỳ thú tiếp theo khi nào,fallback,vi,massive
+how long until we get to chicago,get_departure_info,en,massive
+đặt vé đi hà nội bằng tàu hỏa,request_requeue,vi,massive
+cái gì vào ngày đó,check_booking,vi,massive
+what's my next events,check_booking,en,massive
+tanggal dan jam,request_requeue,id,massive
+find ny train time,get_departure_info,en,massive
+vé tới hồ chí minh,request_requeue,vi,massive
+What are the surge rates for this terminal?,surge_info,en,synthetic
+"gimana situasi terminal, lagi rame?",surge_info,id,synthetic
+kailan ang pinakamagandang oras para maglakbay papuntang canada kung anong paliparan ang gagamitin,get_departure_info,fil,massive
+mag-book ng tiket sa tren papuntang new york,request_requeue,fil,massive
+olly oras ng new york,get_departure_info,fil,massive
+Ano ang latest na surge info?,surge_info,fil,synthetic
+what is planned today,check_booking,en,massive
+show me upcoming events in this area,check_booking,en,massive
+apakah suzzana masih hidup,fallback,id,massive
+ano ang mga paalala na itinakda ko para bukas,check_booking,fil,massive
+find train time to ny,get_departure_info,en,massive

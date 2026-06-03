@@ -20,6 +20,8 @@ venv/
 *.pth
 *.h5
 *.onnx
+*.safetensors
+*.bin
 
 # Node.js
 node_modules/

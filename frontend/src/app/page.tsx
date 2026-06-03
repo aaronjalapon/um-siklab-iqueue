@@ -4,8 +4,8 @@ import HeroSection from "@/components/landing/HeroSection";
 import FeaturesSection from "@/components/landing/FeaturesSection";
 import HowItWorksSection from "@/components/landing/HowItWorksSection";
 import CoveredCitiesSection from "@/components/landing/CoveredCitiesSection";
-import ChatbotTeaser from "@/components/landing/ChatbotTeaser";
 import LandingFooter from "@/components/landing/LandingFooter";
+import ChatbotPanel from "@/components/ChatbotPanel";
 
 export const metadata: Metadata = {
   title: "IQueue — Board Smarter Across ASEAN",
@@ -28,8 +28,8 @@ export default function LandingPage() {
       <HowItWorksSection />
       <CoveredCitiesSection />
       <LandingFooter />
-      {/* Chatbot teaser is fixed-position, rendered outside flow */}
-      <ChatbotTeaser />
+      {/* Chatbot — fixed-position floating panel */}
+      <ChatbotPanel />
     </div>
   );
 }

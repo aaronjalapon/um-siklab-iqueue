@@ -1,0 +1,2 @@
+# Ignore Hugging Face training checkpoints (use DVC for these)
+checkpoint-*/

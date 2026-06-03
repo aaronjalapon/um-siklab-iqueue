@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Ticket, ShoppingCart, Tag, User } from "lucide-react";
+import ChatbotPanel from "@/components/ChatbotPanel";
 
 export default function PassengerLayout({
   children,
@@ -93,6 +94,9 @@ export default function PassengerLayout({
           );
         })}
       </nav>
+
+      {/* Floating chatbot — available on all passenger pages */}
+      <ChatbotPanel />
     </div>
   );
 }

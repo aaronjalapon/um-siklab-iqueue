@@ -1,0 +1,107 @@
+text,label,language,source
+gusto kong mag-book ng rajdhani tiket sa tren mula mumbai hanggang ahmadabad,request_requeue,fil,massive
+are there team meetups on the schedule this month,check_booking,en,massive
+bức tranh,fallback,vi,massive
+anong oras na ngayon sa eastern time zone,get_departure_info,fil,massive
+tôi muốn biết giờ của tàu hỏa số bốn,get_departure_info,vi,massive
+bisakah saya tahu jam berapa sekarang,get_departure_info,id,massive
+chính tả,fallback,vi,massive
+đặt một vé tàu hỏa đi hà nội ngày mai,request_requeue,vi,massive
+ano ang dapat kong gawin sa san juan,check_booking,fil,massive
+jam berapa di cirebon,get_departure_info,id,massive
+ano ang nasa iskedyul ko sa susunod na linggo,check_booking,fil,massive
+hanapan ako ng pinakamaagang tiket ng tren na aalis ng biyernes ng umaga papuntang pasig,request_requeue,fil,massive
+pukul berapa di jam,get_departure_info,id,massive
+mất bao lâu để đi từ hà nội đến vinh bằng tàu hỏa,get_departure_info,vi,massive
+magkano ang tawag kada minuto sa mindanao,fallback,fil,massive
+ekonomi,fallback,id,massive
+seberapa besar batu di cincin ini,fallback,id,massive
+bacakan acara saya yang akan datang,check_booking,id,massive
+olly mayroon bang mga kaganapan sa aking kalendaryo para sa linggong ito,check_booking,fil,massive
+what time is it in that city,get_departure_info,en,massive
+apa yang saya jadwalkan hari ini,check_booking,id,massive
+periksa acara kalender,check_booking,id,massive
+aku mau tiket kereta dari makassar ke jakarta,request_requeue,id,massive
+where am i supposed to be wednesday from two to eleven,check_booking,en,massive
+info surge penumpang di terminal,surge_info,id,synthetic
+gusto kong mag-book ng tiket sa tren,request_requeue,fil,massive
+buy a train ticket,request_requeue,en,massive
+ipakita sa akin kung ano ang kaya kong gawin sa kalakasan ng katawan,fallback,fil,massive
+ada lonjakan penumpang di terminal ini?,surge_info,id,synthetic
+please go to amtrak dot com to purchase tickets,request_requeue,en,massive
+maaari kang mag-book ng tiket ng tren mula mumbai hanggang sangli para bukas ng umaga,request_requeue,fil,massive
+di hari tenggat projek saya apakah anak perempuan saya ada pertunjukan,check_booking,id,massive
+get me a train ticket to go to,request_requeue,en,massive
+paano ako makakapunta sa lumang kalye,get_departure_info,fil,massive
+đặt vé tàu hỏa của ngày mai đi hội an trên bất kỳ tàu hỏa nào,request_requeue,vi,massive
+check recent news on someone,fallback,en,massive
+ano ang kalendaryo ko ngayon,check_booking,fil,massive
+gaano katagal mula dalls hanggang san antonio sakay ng tren,get_departure_info,fil,massive
+buy a train ticket to,request_requeue,en,massive
+let dog out,fallback,en,massive
+search for a train ticket to newcastle,request_requeue,en,massive
+aku harus pergi ke bogor naik kereta jam lima sore,request_requeue,id,massive
+tolong belikan saya tiket kereta ke serang,request_requeue,id,massive
+what are my notifications,check_booking,en,massive
+đặt một vé tàu hỏa với ghế giường nằm tới nha trang vào tuần tới,request_requeue,vi,massive
+tôi cần đặt một vé tàu hỏa đi hà nội,request_requeue,vi,massive
+tìm cho tôi chủ đề của mỗi cuốn sách hồ xuân hương là gì,fallback,vi,massive
+hari ini hari apa,get_departure_info,id,massive
+thời gian ở london là gì,get_departure_info,vi,massive
+May surge alert ba sa app?,surge_info,fil,synthetic
+saya jatuh di tempat kerja hari ini,fallback,id,massive
+anong oras na sa florida,get_departure_info,fil,massive
+saan nakatira si phil younghusband ngayon,fallback,fil,massive
+siapa pencetak skor tertinggi sepak bola sepanjang masa,fallback,id,massive
+why do we continue to have daylight savings time,fallback,en,massive
+apakah ada sesuatu yang terjadi di kota akhir pekan ini,check_booking,id,massive
+read upcoming event's,check_booking,en,massive
+Can you tell me if there’s a dynamic price increase?,surge_info,en,synthetic
+những sự kiện tuần này,check_booking,vi,massive
+kasiyahan din,fallback,fil,massive
+tôi cần một chiếc vé máy bay,request_requeue,vi,massive
+mag-book ng tiket sa tren na may upuan sa puwesto papuntang sa lucknow para sa susunod na linggo,request_requeue,fil,massive
+what are the train times,get_departure_info,en,massive
+What’s the surge pricing for this trip?,surge_info,en,synthetic
+anong oras na sa siyudad na ito,get_departure_info,fil,massive
+what time does the train from new york come in,get_departure_info,en,massive
+có bao nhiêu sinh nhật trong ngày hai mươi ba,get_departure_info,vi,massive
+tôi có cuộc họp nào được sắp xếp vào cuối tuần kế tiếp tuần sau không,check_booking,vi,massive
+kalikan seribu dengan dua belas,fallback,id,massive
+what is going on in milwaukee,check_booking,en,massive
+meryl streep nổi tiếng về cái gì,fallback,vi,massive
+bisa tolong pesan tiket kereta ke surabaya buat besok di kereta apa saja,request_requeue,id,massive
+bạn cảm thấy giống một cái máy hay một con người hơn,fallback,vi,massive
+Bakit nagtaas ang presyo ng ticket?,surge_info,fil,synthetic
+how late am i,get_departure_info,en,massive
+maaari kang mag-book ng tiket sa tren para sa aking tatay,request_requeue,fil,massive
+tulungan mo akong makatulog,fallback,fil,massive
+tell me about the meetings over a period of time,check_booking,en,massive
+hôm nay tôi có nhiệm vụ gì không,check_booking,vi,massive
+Why is the price higher than usual?,surge_info,en,synthetic
+beri tahu saya waktu di cirebon,get_departure_info,id,massive
+đâu là nhà hàng mê xi cô gần nhất,get_departure_info,vi,massive
+tampilkan peta,get_departure_info,id,massive
+just a joke here or there,fallback,en,massive
+bạn có thể mua giúp tôi một vá tàu hỏa được không,request_requeue,vi,massive
+Kiểm tra tình hình kẹt xe tại bến xe Yên Nghĩa hộ mình.,surge_info,vi,synthetic
+pesankan kereta buat tanggal dua dua maret di jam dua belas siang,request_requeue,id,massive
+what is the remainder when five hundred and twenty one is divided by three,fallback,en,massive
+terminal mana yang lagi ramai?,surge_info,id,synthetic
+what is today's exact date,get_departure_info,en,massive
+hey olly what time is it in london now,get_departure_info,en,massive
+penghargaan apa yang rizky febian terima semalam,fallback,id,massive
+where was keith urban born,fallback,en,massive
+từ bốn giờ đến sáu giờ khi nào tôi có thời gian nghỉ ngơi rảnh rỗi,check_booking,vi,massive
+pesankan tiket kereta untuk ke tujuan,request_requeue,id,massive
+susunod na tren sa patungo sa maynila,get_departure_info,fil,massive
+get me a train ticket from mumbai to goa,request_requeue,en,massive
+Tắc nghẽn giao thông ở bến xe Giáp Bát thế nào rồi?,surge_info,vi,synthetic
+gaano kataas si benjie paras,fallback,fil,massive
+tanggal berapa hari jadi saya,check_booking,id,massive
+hôm nay là ngày bao nhiêu,get_departure_info,vi,massive
+sabihin sa akin kung ano ang aking mga susunod na kaganapan,check_booking,fil,massive
+anumang paparating na kaganapan,check_booking,fil,massive
+alexa triển lãm nghệ thuật ở đà nẵng,check_booking,vi,massive
+bạn có nghĩ hôm nay sẽ tốt đẹp không,fallback,vi,massive
+mở các nhắc nhở của tôi,check_booking,vi,massive

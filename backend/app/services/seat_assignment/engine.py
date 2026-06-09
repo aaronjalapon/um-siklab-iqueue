@@ -125,8 +125,13 @@ class SeatAllocator:
         """
         bus_id = UUID(str(bus_id))
 
-        # Validate bus exists
-        bus = await self.session.get(Bus, bus_id)
+        # Validate bus exists (with eager-loaded layout)
+        bus_result = await self.session.execute(
+            select(Bus)
+            .options(selectinload(Bus.layout))
+            .where(Bus.id == bus_id)
+        )
+        bus = bus_result.scalars().first()
         if bus is None:
             raise BusNotFoundError(f"Bus {bus_id} not found")
 

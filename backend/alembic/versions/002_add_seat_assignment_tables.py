@@ -25,13 +25,17 @@ def upgrade() -> None:
     """Create seat assignment tables and add layout_id to buses."""
 
     # --- Enum types ---
-    seat_type_enum = sa.Enum("WINDOW", "AISLE", "MIDDLE", name="seat_type")
-    seat_type_enum.create(op.get_bind(), checkfirst=True)
+    # Drop any existing enum types (from a prior partial migration) so they
+    # can be recreated cleanly by the table definitions below.
+    op.execute("DROP TYPE IF EXISTS seat_status CASCADE")
+    op.execute("DROP TYPE IF EXISTS seat_type CASCADE")
 
-    seat_status_enum = sa.Enum(
-        "AVAILABLE", "OCCUPIED", "RESERVED", "BLOCKED", name="seat_status"
+    seat_type_enum = sa.Enum(
+        "WINDOW", "AISLE", "MIDDLE", name="seat_type",
     )
-    seat_status_enum.create(op.get_bind(), checkfirst=True)
+    seat_status_enum = sa.Enum(
+        "AVAILABLE", "OCCUPIED", "RESERVED", "BLOCKED", name="seat_status",
+    )
 
     # --- Bus Layouts ---
     op.create_table(

@@ -28,7 +28,6 @@ api_router.include_router(
 )
 api_router.include_router(
     seats.router,
-    prefix="/seats",
     tags=["seats"],
 )
 

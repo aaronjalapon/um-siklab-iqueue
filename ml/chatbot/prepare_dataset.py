@@ -78,8 +78,8 @@ REMAP: dict[str, str] = {
     "transport_ticket": "request_requeue",
 }
 
-TARGET_PER_INTENT_PER_LANG = 60
-SYNTHETIC_COUNT = 25
+TARGET_PER_INTENT_PER_LANG = 127
+SYNTHETIC_COUNT = 70
 
 SEED = 42
 

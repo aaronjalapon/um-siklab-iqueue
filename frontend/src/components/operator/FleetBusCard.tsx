@@ -1,4 +1,5 @@
 import { Bus } from "lucide-react";
+import Link from "next/link";
 import { glassStyles } from "@/lib/design-system";
 import type { Bus as BusType } from "@/lib/types";
 import { surgeColorClass, surgeLabel } from "@/lib/utils";
@@ -69,14 +70,12 @@ export function FleetBusCard({ bus }: FleetBusCardProps) {
           />
         </div>
       </div>
-      <button
-        type="button"
-        disabled
-        className={`${glassStyles.button} w-full text-sm opacity-50 cursor-not-allowed`}
-        title="Coming soon"
+      <Link
+        href={`/operator/buses/${bus.id}/seats`}
+        className={`${glassStyles.button} w-full text-sm text-center`}
       >
-        View seats — coming soon
-      </button>
+        View seats &amp; passengers
+      </Link>
     </article>
   );
 }

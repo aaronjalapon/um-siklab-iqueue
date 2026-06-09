@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter
 
-from app.api.v1 import bookings, buses, chatbot, forecasts, health
+from app.api.v1 import bookings, buses, chatbot, forecasts, passengers, seats
 
 api_router = APIRouter()
 
@@ -27,7 +27,21 @@ api_router.include_router(
     tags=["chatbot"],
 )
 api_router.include_router(
-    health.router,
-    prefix="/health",
-    tags=["health"],
+    seats.router,
+    tags=["seats"],
 )
+api_router.include_router(
+    passengers.router,
+    prefix="/passengers",
+    tags=["passengers"],
+)
+
+# Health check endpoint at the v1 level
+@api_router.get("/health")
+async def health_check():
+    """Health check endpoint — returns API status."""
+    return {
+        "status": "ok",
+        "version": "1.0.0",
+        "service": "iqueue-api",
+    }

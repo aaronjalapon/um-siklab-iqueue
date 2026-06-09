@@ -1,0 +1,5 @@
+outs:
+- md5: 36c710ae929b12dc348493ea1607dde0
+  size: 728614277
+  hash: md5
+  path: kaggle-bus-ridership.CSV

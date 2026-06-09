@@ -7,25 +7,69 @@ import { DataStatusBanner } from "@/components/operator/DataStatusBanner";
 import { StatCard } from "@/components/operator/StatCard";
 import { SurgeForecastChart } from "@/components/operator/SurgeForecastChart";
 import { useForecast } from "@/hooks/useForecast";
+import { useOperatorFleet, todayIsoDate } from "@/hooks/useOperatorFleet";
 import { glassStyles } from "@/lib/design-system";
 import {
   DEMO_ROUTES,
   MOCK_BUS_CAPACITY,
   OPERATOR_STATS,
 } from "@/lib/operator-mock";
+import type { BusCapacityEntry } from "@/lib/operator-mock";
 
 export default function OperatorDashboard() {
   const [routeId, setRouteId] = useState(DEMO_ROUTES[0].id);
   const selectedRoute =
     DEMO_ROUTES.find((r) => r.id === routeId) ?? DEMO_ROUTES[0];
 
-  const { predictions, routeOrigin, routeDestination, loadState, refetch } =
+  const { predictions, routeOrigin, routeDestination, loadState, refetch, loadDemo } =
     useForecast(routeId);
+
+  // Fetch real fleet data for the selected route
+  const {
+    buses: fleetBuses,
+    loadState: fleetLoadState,
+  } = useOperatorFleet({
+    origin: selectedRoute.origin,
+    destination: selectedRoute.destination,
+    travelDate: todayIsoDate(),
+  });
 
   const routeLabel =
     routeOrigin && routeDestination
       ? `${routeOrigin} → ${routeDestination}`
       : selectedRoute.label;
+
+  // Compute stats from real fleet data (fall back to mock in demo mode)
+  const stats = useMemo(() => {
+    if (fleetLoadState === "success" && fleetBuses.length > 0) {
+      const totalBooked = fleetBuses.reduce(
+        (sum, b) => sum + (b.capacity - b.available_seats), 0
+      );
+      return {
+        activeBuses: fleetBuses.length,
+        todaysBookings: totalBooked,
+      };
+    }
+    // Fall back to mock stats in demo/error/empty states
+    return {
+      activeBuses: OPERATOR_STATS.activeBuses,
+      todaysBookings: OPERATOR_STATS.todaysBookings,
+    };
+  }, [fleetBuses, fleetLoadState]);
+
+  // Build bus capacity entries from real fleet data
+  const capacityEntries: BusCapacityEntry[] = useMemo(() => {
+    if (fleetLoadState === "success" && fleetBuses.length > 0) {
+      return fleetBuses.map((b) => ({
+        plate: b.plate_number,
+        capacity: b.capacity,
+        booked: b.capacity - b.available_seats,
+        route: `${b.origin} → ${b.destination}`,
+      }));
+    }
+    // Fall back to mock in demo/error states
+    return MOCK_BUS_CAPACITY;
+  }, [fleetBuses, fleetLoadState]);
 
   const avgSurge = useMemo(() => {
     if (predictions.length === 0) return "0%";
@@ -35,7 +79,11 @@ export default function OperatorDashboard() {
     return `${(avg * 100).toFixed(0)}%`;
   }, [predictions]);
 
-  const isLoading = loadState === "loading";
+  const isForecastLoading = loadState === "loading";
+  const isFleetLoading = fleetLoadState === "loading";
+  const showDemoBanner =
+    loadState === "demo" || loadState === "error" ||
+    fleetLoadState === "demo" || fleetLoadState === "error";
 
   return (
     <div className={glassStyles.pageContainer}>
@@ -46,7 +94,15 @@ export default function OperatorDashboard() {
         </p>
       </header>
 
-      {loadState === "demo" && <DataStatusBanner />}
+      {showDemoBanner && (
+        <DataStatusBanner
+          message={
+            loadState === "error" || fleetLoadState === "error"
+              ? "Could not reach the backend. Showing cached data where available."
+              : "Showing demo data — connect the backend to see live metrics."
+          }
+        />
+      )}
 
       <div className="flex flex-col sm:flex-row sm:items-center gap-2">
         <label htmlFor="route-select" className="text-sm font-medium text-slate-600 dark:text-slate-300">
@@ -66,7 +122,7 @@ export default function OperatorDashboard() {
         </select>
       </div>
 
-      {isLoading ? (
+      {isForecastLoading || isFleetLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => (
             <div key={i} className={`${glassStyles.statCard} animate-pulse motion-reduce:animate-none`}>
@@ -83,13 +139,13 @@ export default function OperatorDashboard() {
           <StatCard
             icon={Bus}
             label="Active Buses"
-            value={String(OPERATOR_STATS.activeBuses)}
+            value={String(stats.activeBuses)}
             iconClassName="text-brand-blue"
           />
           <StatCard
             icon={Users}
             label="Today's Bookings"
-            value={OPERATOR_STATS.todaysBookings.toLocaleString()}
+            value={stats.todaysBookings.toLocaleString()}
             iconClassName="text-green-600"
           />
           <StatCard
@@ -104,10 +160,10 @@ export default function OperatorDashboard() {
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
         <SurgeForecastChart
           predictions={predictions}
-          loading={isLoading}
+          loading={isForecastLoading}
           onRetry={refetch}
         />
-        <BusCapacityList buses={MOCK_BUS_CAPACITY} />
+        <BusCapacityList buses={capacityEntries} />
       </div>
     </div>
   );

@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     QR_HMAC_SECRET: str = "dev-secret-change-in-production"
 
     # --- ML Model Paths ---
+    # Legacy single-model paths (kept for backward compatibility)
     PROPHET_MODEL_PATH: str = str(
         Path(__file__).resolve().parents[2]
         / "app/services/forecasting/artifacts/prophet_model.pkl"
@@ -38,6 +39,11 @@ class Settings(BaseSettings):
     LSTM_MODEL_PATH: str = str(
         Path(__file__).resolve().parents[2]
         / "app/services/forecasting/artifacts/lstm_model.pt"
+    )
+    # Per-route forecasting artifacts directory
+    FORECASTING_ARTIFACTS_DIR: str = str(
+        Path(__file__).resolve().parents[3]
+        / "ml/forecasting/artifacts/iqueue_artifacts/artifacts"
     )
 
     # --- Chatbot ---

@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
   Bar,
   BarChart,
@@ -34,8 +33,6 @@ export function SurgeForecastChart({
   loading,
   onRetry,
 }: SurgeForecastChartProps) {
-  const [range, setRange] = useState<"7d" | "30d">("7d");
-
   if (loading) {
     return <LoadingSkeleton variant="chart" />;
   }
@@ -51,20 +48,7 @@ export function SurgeForecastChart({
     );
   }
 
-  const displayPredictions =
-    range === "30d"
-      ? [...predictions, ...predictions.map((p, i) => ({
-          ...p,
-          forecast_date: (() => {
-            const d = new Date(p.forecast_date);
-            d.setDate(d.getDate() + 7 + i);
-            return d.toISOString().split("T")[0];
-          })(),
-          predicted_volume: Math.floor(p.predicted_volume * (0.9 + i * 0.02)),
-        }))].slice(0, 14)
-      : predictions;
-
-  const chartData = displayPredictions.map((p) => ({
+  const chartData = predictions.map((p) => ({
     date: new Date(p.forecast_date).toLocaleDateString("en-US", {
       weekday: "short",
       month: "short",
@@ -79,41 +63,8 @@ export function SurgeForecastChart({
 
   return (
     <div className={`${glassStyles.panel} p-6 xl:col-span-3`}>
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
-        <h2 className={glassStyles.sectionTitle}>
-          {range === "7d" ? "7-Day" : "Extended"} Surge Forecast
-        </h2>
-        <div
-          className={glassStyles.segmentedControl}
-          role="group"
-          aria-label="Forecast range"
-        >
-          <button
-            type="button"
-            className={
-              range === "7d"
-                ? glassStyles.segmentedActive
-                : glassStyles.segmentedInactive
-            }
-            onClick={() => setRange("7d")}
-            aria-pressed={range === "7d"}
-          >
-            7 Days
-          </button>
-          <button
-            type="button"
-            className={
-              range === "30d"
-                ? glassStyles.segmentedActive
-                : glassStyles.segmentedInactive
-            }
-            onClick={() => setRange("30d")}
-            aria-pressed={range === "30d"}
-            title="Demo: extended view from 7-day data"
-          >
-            30 Days
-          </button>
-        </div>
+      <div className="mb-4">
+        <h2 className={glassStyles.sectionTitle}>7-Day Surge Forecast</h2>
       </div>
       <div className="h-80">
         <ResponsiveContainer width="100%" height="100%">

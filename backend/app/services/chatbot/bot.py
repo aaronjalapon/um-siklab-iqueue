@@ -218,7 +218,7 @@ class ChatbotService:
                     device=-1,   # CPU
                 )
 
-                label_map_path = model_path.parent / "label_map.json"
+                label_map_path = model_path / "label_map.json"
                 if label_map_path.exists():
                     with open(label_map_path) as f:
                         label_map_str = json.load(f)
@@ -277,6 +277,13 @@ class ChatbotService:
 
                 intent = self._id_to_label.get(label_idx, "fallback")
                 confidence = round(best["score"], 4)
+
+                # Confidence gate: low-confidence predictions fall back to
+                # avoid confidently returning a wrong intent, especially for
+                # under-represented language/intent combinations.
+                MIN_CONFIDENCE = 0.40
+                if confidence < MIN_CONFIDENCE:
+                    intent = "fallback"
 
                 all_scores = {}
                 for r in results:
@@ -384,10 +391,45 @@ class ChatbotService:
 
     @staticmethod
     def _detect_language(query: str) -> str:
-        """Detect the language of a query using langdetect.
+        """Detect the language of a query using char-set heuristics first,
+        then falling back to langdetect for ambiguous inputs.
 
-        Falls back to English if detection fails or language is unsupported.
+        Falls back to English only when all detection methods fail.
         """
+        q = query.lower().strip()
+
+        # --- Heuristic layer: character-set + stopword matching ---
+        # Vietnamese: unique diacritics + common words
+        vi_chars = set("ơưăêôđộểẩẫạảờừữốổỗệếềụị")
+        vi_words = {
+            "không", "có", "tôi", "bạn", "là", "này", "kia", "ấy",
+            "đi", "đâu", "bao", "nhiêu", "mấy", "giờ", "chuyến", "xe",
+            "vé", "đặt", "hủy", "giúp", "vui", "lòng", "cảm", "ơn",
+        }
+        if any(ch in q for ch in vi_chars) or sum(1 for w in vi_words if w in q.split()) >= 2:
+            return "vi"
+
+        # Filipino/Tagalog: common function words + particles
+        fil_words = {
+            "ang", "ng", "mga", "sa", "ko", "mo", "namin", "natin",
+            "kayo", "sila", "ito", "iyan", "po", "ho", "opo", "oo",
+            "hindi", "wala", "meron", "may", "ba", "na", "pa", "lang",
+            "dito", "diyan", "doon", "kung", "para", "dahil",
+        }
+        if sum(1 for w in fil_words if w in q.split()) >= 2:
+            return "fil"
+
+        # Indonesian/Bahasa: common function words
+        id_words = {
+            "yang", "dan", "di", "ke", "dari", "ini", "itu", "saya",
+            "anda", "kami", "kita", "mereka", "tidak", "bisa", "boleh",
+            "dengan", "untuk", "pada", "ada", "apa", "bagaimana", "kapan",
+            "bus", "bis", "tiket", "pesan", "jadwal", "rute",
+        }
+        if sum(1 for w in id_words if w in q.split()) >= 2:
+            return "id"
+
+        # --- Fallback layer: langdetect ---
         try:
             lang = detect_language(query)
             lang_map = {

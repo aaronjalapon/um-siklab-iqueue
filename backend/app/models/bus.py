@@ -12,7 +12,7 @@ from app.db.base import Base
 class Bus(Base):
     """A bus vehicle assigned to a route and tenant.
 
-    Each bus has a fixed capacity (seats) and is identified by its plate number.
+    Each bus references a BusLayout that defines its physical seat grid.
     Bookings are made against specific buses for specific departure dates.
     """
 
@@ -30,6 +30,12 @@ class Bus(Base):
         nullable=False,
         index=True,
     )
+    layout_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("bus_layouts.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
 
     capacity: Mapped[int] = mapped_column(Integer, nullable=False, default=50)
     plate_number: Mapped[str] = mapped_column(String(20), nullable=False, unique=True)
@@ -37,8 +43,14 @@ class Bus(Base):
     # Relationships
     tenant: Mapped["Tenant"] = relationship("Tenant", back_populates="buses")
     route: Mapped["BusRoute"] = relationship("BusRoute", back_populates="buses")
+    layout: Mapped["BusLayout | None"] = relationship(
+        "BusLayout", back_populates="buses"
+    )
     bookings: Mapped[list["Booking"]] = relationship(
         "Booking", back_populates="bus", cascade="all, delete-orphan"
+    )
+    seats: Mapped[list["Seat"]] = relationship(
+        "Seat", back_populates="bus", cascade="all, delete-orphan"
     )
 
     def __repr__(self) -> str:

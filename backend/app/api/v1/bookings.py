@@ -33,10 +33,12 @@ async def create_booking(
     """Create a new seat booking on a bus.
 
     - Validates the passenger and bus exist
-    - Assigns a seat via the Seat Allocator (if available)
-    - Generates a QR boarding pass token (if QR service available)
+    - Uses the Seat Allocator to assign the best seat by affinity scoring
+    - Generates a QR boarding pass token
     - Persists the booking and returns it with the QR token
     """
+    from datetime import timezone, timedelta
+
     # Validate passenger exists
     passenger = await db.get(Passenger, payload.passenger_id)
     if not passenger:
@@ -45,8 +47,13 @@ async def create_booking(
             detail=f"Passenger {payload.passenger_id} not found",
         )
 
-    # Validate bus exists
-    bus = await db.get(Bus, payload.bus_id)
+    # Validate bus exists (eager load route for QR generation)
+    bus_result = await db.execute(
+        select(Bus)
+        .options(selectinload(Bus.route))
+        .where(Bus.id == payload.bus_id)
+    )
+    bus = bus_result.scalars().first()
     if not bus:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -54,8 +61,7 @@ async def create_booking(
         )
 
     # Count existing bookings for this bus on this date
-    from datetime import timezone, timedelta
-    existing_count = (
+    existing_bookings = (
         await db.execute(
             select(Booking).where(
                 Booking.bus_id == payload.bus_id,
@@ -66,52 +72,127 @@ async def create_booking(
         )
     ).scalars().all()
 
-    if len(existing_count) >= bus.capacity:
+    if len(existing_bookings) >= bus.capacity:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Bus is fully booked for this departure",
         )
 
-    # Simple seat assignment (will be replaced by SeatAllocator in Phase 2.4)
-    taken_seats = {b.seat_number for b in existing_count}
-    assigned_seat = None
-    for seat_num in range(1, bus.capacity + 1):
-        if str(seat_num) not in taken_seats:
-            assigned_seat = str(seat_num)
-            break
+    # Try the new SeatAllocator first; fall back to simple assignment
+    assigned_seat_label: str | None = None
+    assigned_affinity_score: float = 0.0
+    boarding_window_start = payload.departure_date
+    boarding_window_end = payload.departure_date + timedelta(minutes=15)
 
-    if assigned_seat is None:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="No available seats",
+    try:
+        from app.services.seat_assignment.engine import SeatAllocator
+        from app.services.seat_assignment.scorer import PassengerContext
+
+        allocator = SeatAllocator(db)
+        pax_name = payload.passenger_name or passenger.name
+        pax_ctx = PassengerContext(
+            booking_id="temp",  # Will be replaced after Booking is created
+            passenger_name=pax_name,
+            group_id=payload.group_id,
+            language_preference=payload.language_preference or passenger.language_pref,
+            travel_habit=payload.travel_habit or passenger.travel_habits,
+            lifestyle_interest=payload.lifestyle_interest or passenger.lifestyle_interests,
+            needs_accessibility=payload.needs_accessibility or passenger.accessibility_needs,
+            preferred_seat_type=payload.seat_preference,
+            preferred_side=payload.preferred_side,
         )
 
-    # Calculate boarding window (15-minute slot, front seats first)
-    row = (int(assigned_seat) - 1) // 4 + 1
-    window_start = payload.departure_date + timedelta(minutes=row * 3)
-    window_end = window_start + timedelta(minutes=15)
+        result = await allocator.assign(str(payload.bus_id), pax_ctx)
+        assigned_seat_label = result["seat_label"]
+        assigned_affinity_score = result["affinity_score"]
+
+        # Parse boarding window from HH:MM–HH:MM format
+        bw = result.get("boarding_window", "")
+        if "–" in bw:
+            from datetime import date
+            parts = bw.split("–")
+            today = payload.departure_date.date()
+            t1_parts = parts[0].split(":")
+            t2_parts = parts[1].split(":")
+            boarding_window_start = datetime(
+                today.year, today.month, today.day,
+                int(t1_parts[0]), int(t1_parts[1]),
+                tzinfo=timezone.utc,
+            )
+            boarding_window_end = datetime(
+                today.year, today.month, today.day,
+                int(t2_parts[0]), int(t2_parts[1]),
+                tzinfo=timezone.utc,
+            )
+    except Exception:
+        # Fallback: simple seat assignment
+        taken_seats = {b.seat_number for b in existing_bookings}
+        assigned_seat_label = None
+        for seat_num in range(1, bus.capacity + 1):
+            if str(seat_num) not in taken_seats:
+                assigned_seat_label = str(seat_num)
+                break
+
+        if assigned_seat_label is None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="No available seats",
+            )
+
+        row = (int(assigned_seat_label) - 1) // 4 + 1
+        boarding_window_start = payload.departure_date + timedelta(minutes=row * 3)
+        boarding_window_end = boarding_window_start + timedelta(minutes=15)
 
     # Create the booking
     booking = Booking(
         passenger_id=payload.passenger_id,
         bus_id=payload.bus_id,
-        seat_number=assigned_seat,
-        boarding_window_start=window_start,
-        boarding_window_end=window_end,
+        seat_number=assigned_seat_label,
+        boarding_window_start=boarding_window_start,
+        boarding_window_end=boarding_window_end,
         status=BookingStatus.CONFIRMED,
         departure_date=payload.departure_date,
     )
 
-    # Try to generate QR token (will work once QR service is in place)
-    try:
-        from app.services.qr_service.qr import QRService
-        qr_service = QRService()
-        booking.qr_token = qr_service.generate_token(booking)
-    except (ImportError, Exception):
-        booking.qr_token = None
-
     db.add(booking)
     await db.flush()
+
+    # Link the pending SeatReservation (created during seat assignment) to this booking
+    try:
+        from app.models.seat import Seat, SeatReservation
+
+        # Find the reservation for this passenger on this bus with no booking linked yet
+        res_result = await db.execute(
+            select(SeatReservation)
+            .join(Seat, SeatReservation.seat_id == Seat.id)
+            .where(
+                Seat.bus_id == payload.bus_id,
+                SeatReservation.passenger_name == (payload.passenger_name or passenger.name),
+            )
+            .order_by(SeatReservation.created_at.desc())
+            .limit(1)
+        )
+        pending_res = res_result.scalars().first()
+        if pending_res:
+            pending_res.booking_id = booking.id
+            await db.flush()
+    except Exception:
+        pass  # Non-critical — booking succeeded even if link fails
+
+    # Generate QR token with route context
+    try:
+        from app.services.qr_service.qr import QRService
+
+        qr_service = QRService()
+        booking.qr_token = qr_service.generate_token(
+            booking,
+            route=bus.route if bus else None,
+            bus=bus,
+        )
+        await db.flush()  # Persist the QR token before refresh
+    except Exception:
+        booking.qr_token = None
+
     await db.refresh(booking)
 
     return booking
@@ -125,16 +206,39 @@ async def create_booking(
 async def get_booking(
     booking_id: UUID,
     db: AsyncSession = Depends(get_db),
-) -> Booking:
+) -> dict:
     """Retrieve a booking by ID with passenger and route details."""
-    booking = await db.get(Booking, booking_id, options=[selectinload(Booking.passenger), selectinload(Booking.bus)])
+    result = await db.execute(
+        select(Booking)
+        .options(
+            selectinload(Booking.passenger),
+            selectinload(Booking.bus).selectinload(Bus.route),
+        )
+        .where(Booking.id == booking_id)
+    )
+    booking = result.scalars().first()
     if not booking:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Booking {booking_id} not found",
         )
 
-    return booking
+    return {
+        "id": booking.id,
+        "passenger_id": booking.passenger_id,
+        "bus_id": booking.bus_id,
+        "seat_number": booking.seat_number,
+        "boarding_window_start": booking.boarding_window_start,
+        "boarding_window_end": booking.boarding_window_end,
+        "status": booking.status.value,
+        "qr_token": booking.qr_token,
+        "departure_date": booking.departure_date,
+        "created_at": booking.created_at,
+        "updated_at": booking.updated_at,
+        "passenger_name": booking.passenger.name if booking.passenger else None,
+        "route_origin": booking.bus.route.origin if booking.bus and booking.bus.route else None,
+        "route_destination": booking.bus.route.destination if booking.bus and booking.bus.route else None,
+    }
 
 
 @router.get(

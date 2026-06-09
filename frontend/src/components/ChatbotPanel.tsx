@@ -27,6 +27,54 @@ const GREETINGS: Record<LanguageCode, string> = {
 };
 
 // ---------------------------------------------------------------------------
+// UI chrome strings (localised per language)
+// ---------------------------------------------------------------------------
+
+const UI_STRINGS: Record<LanguageCode, { title: string; subtitle: string; placeholder: string; thinking: string; error: string }> = {
+  en: {
+    title: "IQueue Assistant",
+    subtitle: "AI-powered chatbot · 4 languages",
+    placeholder: "Type your question...",
+    thinking: "Thinking...",
+    error: "Sorry, I'm having trouble connecting. Please try again later.",
+  },
+  fil: {
+    title: "IQueue Assistant",
+    subtitle: "AI-powered chatbot · 4 na wika",
+    placeholder: "I-type ang iyong tanong...",
+    thinking: "Nag-iisip...",
+    error: "Paumanhin, may problema sa koneksyon. Pakisubukan muli.",
+  },
+  id: {
+    title: "Asisten IQueue",
+    subtitle: "Chatbot AI · 4 bahasa",
+    placeholder: "Ketik pertanyaan Anda...",
+    thinking: "Berpikir...",
+    error: "Maaf, saya mengalami masalah koneksi. Silakan coba lagi nanti.",
+  },
+  vi: {
+    title: "Trợ lý IQueue",
+    subtitle: "Chatbot AI · 4 ngôn ngữ",
+    placeholder: "Nhập câu hỏi của bạn...",
+    thinking: "Đang suy nghĩ...",
+    error: "Xin lỗi, tôi đang gặp sự cố kết nối. Vui lòng thử lại sau.",
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Browser language detection
+// ---------------------------------------------------------------------------
+
+function detectBrowserLanguage(): LanguageCode {
+  if (typeof window === "undefined") return "en";
+  const browserLang = navigator.language || "";
+  if (browserLang.startsWith("tl") || browserLang.startsWith("fil")) return "fil";
+  if (browserLang.startsWith("id")) return "id";
+  if (browserLang.startsWith("vi")) return "vi";
+  return "en";
+}
+
+// ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
@@ -47,12 +95,13 @@ interface ChatbotPanelProps {
 // ---------------------------------------------------------------------------
 
 export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
+  const initialLang = detectBrowserLanguage();
   const [isOpen, setIsOpen] = useState(false);
-  const [lang, setLang] = useState<LanguageCode>("en");
+  const [lang, setLang] = useState<LanguageCode>(initialLang);
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "bot",
-      text: GREETINGS.en,
+      text: GREETINGS[initialLang],
       intent: "greeting",
     },
   ]);
@@ -91,7 +140,7 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
         ...prev,
         {
           role: "bot",
-          text: "Sorry, I'm having trouble connecting. Please try again later.",
+          text: UI_STRINGS[lang].error,
           intent: "error",
         },
       ]);
@@ -129,7 +178,7 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
         ...prev,
         {
           role: "bot",
-          text: "Sorry, I'm having trouble connecting. Please try again later.",
+          text: UI_STRINGS[lang].error,
           intent: "error",
         },
       ]);
@@ -184,9 +233,9 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
           {/* Header */}
           <div className="bg-blue-700 text-white p-4 rounded-t-xl flex items-center justify-between shrink-0">
             <div>
-              <h3 className="font-semibold">IQueue Assistant</h3>
+              <h3 className="font-semibold">{UI_STRINGS[lang].title}</h3>
               <p className="text-xs text-blue-200">
-                AI-powered chatbot · 4 languages
+                {UI_STRINGS[lang].subtitle}
               </p>
             </div>
             <button onClick={() => setIsOpen(false)}>
@@ -270,7 +319,7 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
             ))}
             {loading && (
               <div className="text-center text-gray-400 dark:text-slate-500 text-sm">
-                Thinking...
+                {UI_STRINGS[lang].thinking}
               </div>
             )}
           </div>
@@ -282,7 +331,7 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
-              placeholder="Type your question..."
+              placeholder={UI_STRINGS[lang].placeholder}
               className="flex-1 border border-gray-300 dark:border-slate-700
                          rounded-lg px-3 py-2 text-sm
                          dark:bg-slate-800 dark:text-slate-200 dark:placeholder-slate-500

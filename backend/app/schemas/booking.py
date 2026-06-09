@@ -29,6 +29,28 @@ class BookingCreate(BaseModel):
         default_factory=list,
         description="List of passenger IDs traveling together for group seating",
     )
+    # Passenger preferences for seat affinity scoring
+    passenger_name: str | None = Field(
+        None, description="Passenger name override (uses profile name if not set)"
+    )
+    group_id: str | None = Field(
+        None, description="UUID of the travel group for affinity grouping"
+    )
+    language_preference: str | None = Field(
+        None, description="ISO 639-1: 'fil', 'en', 'id', 'vi'"
+    )
+    travel_habit: str | None = Field(
+        None, description="business | leisure | student | family"
+    )
+    lifestyle_interest: str | None = Field(
+        None, description="Comma-separated interests for affinity matching"
+    )
+    needs_accessibility: bool = Field(
+        False, description="Whether passenger requires accessible seating"
+    )
+    preferred_side: str | None = Field(
+        None, description="'left' | 'right' | None"
+    )
 
 
 class SeatAssignment(BaseModel):

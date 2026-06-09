@@ -5,7 +5,7 @@ import { getForecast } from "@/lib/api";
 import { generateMockForecast } from "@/lib/operator-mock";
 import type { ForecastResponse, SurgePrediction } from "@/lib/types";
 
-export type ForecastLoadState = "loading" | "success" | "demo";
+export type ForecastLoadState = "loading" | "success" | "empty" | "error" | "demo";
 
 export interface UseForecastResult {
   predictions: SurgePrediction[];
@@ -13,6 +13,7 @@ export interface UseForecastResult {
   routeDestination: string | null;
   loadState: ForecastLoadState;
   refetch: () => void;
+  loadDemo: () => void;
 }
 
 export function useForecast(routeId: string): UseForecastResult {
@@ -26,6 +27,13 @@ export function useForecast(routeId: string): UseForecastResult {
     setFetchKey((k) => k + 1);
   }, []);
 
+  const loadDemo = useCallback(() => {
+    setPredictions(generateMockForecast(routeId));
+    setRouteOrigin(null);
+    setRouteDestination(null);
+    setLoadState("demo");
+  }, [routeId]);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -33,16 +41,19 @@ export function useForecast(routeId: string): UseForecastResult {
       try {
         const data: ForecastResponse = await getForecast(routeId);
         if (cancelled) return;
-        setPredictions(data.predictions);
-        setRouteOrigin(data.route_origin);
-        setRouteDestination(data.route_destination);
-        setLoadState("success");
+        if (data.predictions.length > 0) {
+          setPredictions(data.predictions);
+          setRouteOrigin(data.route_origin);
+          setRouteDestination(data.route_destination);
+          setLoadState("success");
+        } else {
+          setPredictions([]);
+          setLoadState("empty");
+        }
       } catch {
         if (cancelled) return;
-        setPredictions(generateMockForecast(routeId));
-        setRouteOrigin(null);
-        setRouteDestination(null);
-        setLoadState("demo");
+        setPredictions([]);
+        setLoadState("error");
       }
     }
 
@@ -63,5 +74,6 @@ export function useForecast(routeId: string): UseForecastResult {
     routeDestination,
     loadState,
     refetch,
+    loadDemo,
   };
 }

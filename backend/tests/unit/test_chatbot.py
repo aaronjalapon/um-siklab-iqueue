@@ -157,7 +157,11 @@ class TestChatbotServiceInit:
         import tempfile
         from pathlib import Path
 
+        from app.core.config import get_settings
         from app.services.chatbot.bot import ChatbotService
+
+        # Clear lru_cache so setenv takes effect
+        get_settings.cache_clear()
 
         with monkeypatch.context() as m:
             # Point CHATBOT_MODEL_PATH to a non-existent directory

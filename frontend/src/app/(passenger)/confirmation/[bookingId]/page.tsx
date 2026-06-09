@@ -37,21 +37,36 @@ export default function ConfirmationPage() {
         <ArrowLeft className="w-3 h-3" /> Back to search
       </Link>
       <div className="flex items-center gap-2"><CheckCircle className="w-6 h-6 text-green-600" /><h1 className="text-2xl font-bold">Booking Confirmed!</h1></div>
-      <div className="bg-white rounded-xl shadow-sm border p-6 space-y-4">
+      <div className="bg-white dark:bg-slate-100 rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="font-semibold text-lg">Boarding Pass</h2>
+          <h2 className="font-semibold text-lg text-slate-900">Boarding Pass</h2>
           <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColorClass(booking.status)}`}>{booking.status.toUpperCase()}</span>
         </div>
         <div className="grid grid-cols-2 gap-3 text-sm">
-          <div><span className="text-gray-500">Route</span><p className="font-medium">{booking.route_origin || "—"} → {booking.route_destination || "—"}</p></div>
-          <div><span className="text-gray-500">Departure</span><p className="font-medium">{formatDate(booking.departure_date)}</p></div>
-          <div><span className="text-gray-500">Seat</span><p className="font-medium text-lg">{booking.seat_number}</p></div>
-          <div><span className="text-gray-500">Boarding Window</span><p className="font-medium">{formatBoardingWindow(booking.boarding_window_start, booking.boarding_window_end)}</p></div>
-          <div><span className="text-gray-500">Booking ID</span><p className="font-medium text-xs font-mono">{booking.id.slice(0, 8)}...</p></div>
+          <div>
+            <span className="text-slate-500 text-xs uppercase tracking-wide">Route</span>
+            <p className="font-semibold text-slate-900">{booking.route_origin || "—"} → {booking.route_destination || "—"}</p>
+          </div>
+          <div>
+            <span className="text-slate-500 text-xs uppercase tracking-wide">Departure</span>
+            <p className="font-semibold text-slate-900">{formatDate(booking.departure_date)}</p>
+          </div>
+          <div>
+            <span className="text-slate-500 text-xs uppercase tracking-wide">Seat</span>
+            <p className="font-bold text-2xl text-slate-900">{booking.seat_number}</p>
+          </div>
+          <div>
+            <span className="text-slate-500 text-xs uppercase tracking-wide">Boarding Window</span>
+            <p className="font-semibold text-slate-900">{formatBoardingWindow(booking.boarding_window_start, booking.boarding_window_end)}</p>
+          </div>
+          <div className="col-span-2">
+            <span className="text-slate-500 text-xs uppercase tracking-wide">Booking ID</span>
+            <p className="font-medium text-xs font-mono text-slate-700">{booking.id.slice(0, 8)}...</p>
+          </div>
         </div>
-        <div className="flex flex-col items-center py-4 border-t">
-          <p className="text-sm text-gray-500 mb-3">Scan this QR code at the gate</p>
-          <div className="qr-code bg-white p-3 rounded-lg border">
+        <div className="flex flex-col items-center py-4 border-t border-slate-200">
+          <p className="text-sm text-slate-600 mb-3 font-medium">Scan this QR code at the gate</p>
+          <div className="qr-code bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
             <QRCodeSVG value={booking.qr_token || JSON.stringify(booking)} size={200} level="M" />
           </div>
         </div>

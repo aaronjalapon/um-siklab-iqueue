@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -14,6 +15,7 @@ from app.models.bus import Bus
 from app.models.bus_route import BusRoute
 from app.schemas.bus import BusResponse, BusListResponse, SeatInfo, SeatMapResponse
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -86,8 +88,57 @@ async def list_buses(
             "origin": route.origin,
             "destination": route.destination,
             "available_seats": max(0, bus.capacity - bookings_count),
-            "surge_probability": None,  # Will be populated from forecast service
+            "surge_probability": None,  # Populated below from forecast service
         })
+
+    # Populate surge probabilities from the forecasting service
+    if bus_responses and route:
+        try:
+            from app.services.forecasting.predictor import ForecastingService
+            service = ForecastingService()
+            predictions = service.predict(route.id, horizon_days=7)
+            if predictions:
+                # Use tomorrow's surge (index 0 = tomorrow) as the badge value
+                # — more actionable than a 7-day average
+                tomorrow_surge = predictions[0].surge_probability
+                # Also compute 3-day peak for operator awareness
+                near_term = [p.surge_probability for p in predictions[:3]]
+                peak_3day = max(near_term)
+
+                for br in bus_responses:
+                    br["surge_probability"] = round(tomorrow_surge, 4)
+                    # Attach per-day values for the first 3 days
+                    br["surge_3day"] = [
+                        {"date": str(p.forecast_date), "surge": p.surge_probability}
+                        for p in predictions[:3]
+                    ]
+        except Exception as e:
+            logger.warning("Surge forecast unavailable for route %s: %s", route.id, e)
+            # Try heuristic fallback
+            try:
+                from app.api.v1.forecasts import _heuristic_forecast
+                cap_result = await db.execute(
+                    select(func.sum(Bus.capacity)).where(Bus.route_id == route.id)
+                )
+                route_cap = cap_result.scalar() or 50
+                # Count total bookings on this route for baseline
+                route_booking_count = (
+                    await db.scalar(
+                        select(func.count(Booking.id)).where(
+                            Booking.bus_id.in_(
+                                select(Bus.id).where(Bus.route_id == route.id)
+                            ),
+                            Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.BOARDED]),
+                        )
+                    )
+                ) or 0
+                avg_daily = route_booking_count / max(90, 1)
+                preds = _heuristic_forecast(route, avg_daily, route_cap)
+                if preds:
+                    for br in bus_responses:
+                        br["surge_probability"] = preds[0].surge_probability
+            except Exception as e2:
+                logger.warning("Heuristic forecast also failed for route %s: %s", route.id, e2)
 
     return {
         "buses": bus_responses,

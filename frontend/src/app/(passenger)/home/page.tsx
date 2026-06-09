@@ -39,10 +39,14 @@ export default function HomePage() {
           {/* Shortcuts */}
           <div className="flex md:grid md:grid-cols-2 gap-4 overflow-x-auto pb-2 -mx-6 px-6 md:mx-0 md:px-0">
             {[
-              { label: "Manila Terminal", icon: MapPin },
-              { label: "Davao City", icon: MapPin },
+              { label: "Cagayan de Oro", icon: MapPin },
+              { label: "General Santos", icon: MapPin },
             ].map((shortcut, i) => (
-              <button key={i} className="flex-shrink-0 bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-xl p-3 md:p-4 flex flex-col gap-2 min-w-[140px] md:min-w-0 text-left active:scale-95 hover:border-brand-blue/30 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all">
+              <button
+                key={i}
+                onClick={() => router.push(`/buy?origin=${encodeURIComponent("Davao City")}&destination=${encodeURIComponent(shortcut.label)}`)}
+                className="flex-shrink-0 bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-xl p-3 md:p-4 flex flex-col gap-2 min-w-[140px] md:min-w-0 text-left active:scale-95 hover:border-brand-blue/30 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all"
+              >
                 <p className="text-[10px] md:text-xs text-slate-400 font-semibold uppercase tracking-wider">Buy ticket to</p>
                 <div className="flex items-center gap-2">
                   <shortcut.icon className="w-4 h-4 text-slate-900 dark:text-white" />
@@ -57,7 +61,7 @@ export default function HomePage() {
         <div className="space-y-4 lg:col-span-4 transition-all duration-700 ease-in-out hover:-translate-y-1">
           <h2 className="font-bold text-lg md:text-xl text-slate-900 dark:text-white">Your Active Ticket</h2>
           <div className="bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-2xl p-5 md:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.1)] transition-shadow">
-            <p className="font-bold text-slate-900 dark:text-white mb-4">Mon, 19 February 2026</p>
+            <p className="font-bold text-slate-900 dark:text-white mb-4">Davao City → Cagayan de Oro</p>
             
             <div className="flex gap-2 mb-6">
               <span className="px-3 py-1 bg-brand-orange text-white text-xs md:text-sm font-bold rounded-md">Fastest</span>
@@ -72,24 +76,24 @@ export default function HomePage() {
                 <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-green-100 flex items-center justify-center border border-green-200">
                   <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-green-500"></div>
                 </div>
-                <span className="text-xs md:text-sm font-medium text-slate-500">Manila</span>
+                <span className="text-xs md:text-sm font-medium text-slate-500">Davao</span>
               </div>
 
               <div className="z-10 bg-white dark:bg-slate-800 px-2 text-[10px] md:text-xs font-medium text-slate-400">
-                Est. 12h 30m
+                Est. 5h 30m
               </div>
 
               <div className="flex flex-col items-center gap-1 z-10 bg-white dark:bg-slate-800 px-2 md:px-4">
                 <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-orange-100 flex items-center justify-center border border-orange-200">
                   <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-brand-orange"></div>
                 </div>
-                <span className="text-xs md:text-sm font-medium text-slate-500">Davao</span>
+                <span className="text-xs md:text-sm font-medium text-slate-500">CDO</span>
               </div>
             </div>
 
             <div className="flex justify-between items-center text-sm md:text-base font-medium text-slate-600 dark:text-slate-300 mb-6">
-              <span className="flex items-center gap-1"><MapPin className="w-4 h-4 md:w-5 md:h-5"/> Bus 01</span>
-              <span>Arrival in <strong className="text-slate-900 dark:text-white">15:30</strong></span>
+              <span className="flex items-center gap-1"><MapPin className="w-4 h-4 md:w-5 md:h-5"/> Bus DAV-001</span>
+              <span>Arrival in <strong className="text-slate-900 dark:text-white">18:30</strong></span>
             </div>
 
             <button 

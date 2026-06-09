@@ -218,7 +218,7 @@ class ChatbotService:
                     device=-1,   # CPU
                 )
 
-                label_map_path = model_path.parent / "label_map.json"
+                label_map_path = model_path / "label_map.json"
                 if label_map_path.exists():
                     with open(label_map_path) as f:
                         label_map_str = json.load(f)

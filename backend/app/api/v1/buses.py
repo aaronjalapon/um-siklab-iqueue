@@ -86,8 +86,24 @@ async def list_buses(
             "origin": route.origin,
             "destination": route.destination,
             "available_seats": max(0, bus.capacity - bookings_count),
-            "surge_probability": None,  # Will be populated from forecast service
+            "surge_probability": None,  # Populated below from forecast service
         })
+
+    # Populate surge probabilities from the forecasting service
+    if bus_responses and route:
+        try:
+            from app.services.forecasting.predictor import ForecastingService
+            service = ForecastingService()
+            predictions = service.predict(route.id, horizon_days=7)
+            if predictions:
+                # Use today's surge or 7-day max as the badge value
+                avg_surge = round(
+                    sum(p.surge_probability for p in predictions) / len(predictions), 4
+                )
+                for br in bus_responses:
+                    br["surge_probability"] = avg_surge
+        except Exception:
+            pass  # Leave as None if forecasting is unavailable
 
     return {
         "buses": bus_responses,

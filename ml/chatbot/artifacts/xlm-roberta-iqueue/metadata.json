@@ -1,0 +1,11 @@
+{
+  "labels": [
+    "check_booking",
+    "request_requeue",
+    "get_departure_info",
+    "surge_info",
+    "fallback"
+  ],
+  "model": "FacebookAI/xlm-roberta-base",
+  "max_length": 128
+}

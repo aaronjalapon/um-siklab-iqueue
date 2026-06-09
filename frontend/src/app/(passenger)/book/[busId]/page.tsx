@@ -15,6 +15,15 @@ export default function BookPage() {
   const dest = params.get("dest") || "";
   const router = useRouter();
 
+  // Redirect to preferences page (new onboarding flow)
+  useEffect(() => {
+    if (!busId) return;
+    const searchStr = params.toString();
+    router.replace(
+      `/book/${busId}/preferences${searchStr ? `?${searchStr}` : ""}`
+    );
+  }, [busId]);
+
   const [seats, setSeats] = useState<SeatInfo[]>([]);
   const [selectedSeat, setSelectedSeat] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);

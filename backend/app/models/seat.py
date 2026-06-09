@@ -98,9 +98,9 @@ class SeatReservation(Base):
     )
     booking_id: Mapped[str] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("bookings.id", ondelete="CASCADE"),
-        nullable=False,
+        nullable=True,
         index=True,
+        comment="FK to bookings.id — nullable because seat may be assigned before booking is created"
     )
     passenger_name: Mapped[str] = mapped_column(String(255), nullable=False)
     group_id: Mapped[str | None] = mapped_column(
@@ -129,9 +129,9 @@ class SeatReservation(Base):
 
     # Relationships
     seat: Mapped["Seat"] = relationship("Seat", back_populates="reservation")
-    booking: Mapped["Booking"] = relationship(
-        "Booking", back_populates="seat_reservation", uselist=False
-    )
+    # Note: booking relationship is maintained at the application level (booking_id
+    # column is indexed but not a DB-enforced FK, since the seat is assigned before
+    # the booking record is persisted).
 
     def __repr__(self) -> str:
         return (

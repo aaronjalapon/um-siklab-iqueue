@@ -110,3 +110,26 @@ export interface PassengerFormData {
   preferred_seat_type: string; // "window" | "aisle" | ""
   preferred_side: string; // "left" | "right" | ""
 }
+
+/** Request body for creating/finding a passenger. */
+export interface PassengerCreate {
+  tenant_id: string;
+  name: string;
+  phone: string;
+  language_pref: string;
+  travel_habits?: string;
+  lifestyle_interests?: string;
+  accessibility_needs: boolean;
+}
+
+/** Response from the passenger API. */
+export interface PassengerResponse {
+  id: string;
+  tenant_id: string;
+  name: string;
+  phone: string;
+  language_pref: string;
+  travel_habits: string | null;
+  lifestyle_interests: string | null;
+  accessibility_needs: boolean;
+}

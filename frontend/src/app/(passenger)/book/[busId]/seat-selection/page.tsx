@@ -1,10 +1,10 @@
 "use client";
 
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import { ArrowLeft, Check, Star, RefreshCw } from "lucide-react";
-import { createBooking } from "@/lib/api";
+import { createBooking, createPassenger } from "@/lib/api";
 import { BusSeatGrid } from "@/components/seats/BusSeatGrid";
 import { SeatLegend } from "@/components/seats/SeatLegend";
 import { useSeatMap } from "@/hooks/useSeatMap";
@@ -55,9 +55,13 @@ export default function SeatSelectionPage() {
       | undefined,
   };
 
-  // Auto-assign on mount
+  // Auto-assign on mount — fires once when seats first load
+  const hasAutoAssigned = useRef(false);
+
   useEffect(() => {
-    if (!busId || seats.length === 0) return;
+    if (!busId || seats.length === 0 || hasAutoAssigned.current) return;
+    hasAutoAssigned.current = true;
+
     let cancelled = false;
 
     async function autoAssign() {
@@ -78,9 +82,7 @@ export default function SeatSelectionPage() {
 
     autoAssign();
     return () => { cancelled = true; };
-    // Only run on mount when seats first load
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [busId, seats.length > 0]);
+  }, [busId, seats.length, assignSeat, passengerContext]);
 
   const handleManualSelect = useCallback(
     async (seat: SeatMapEntry) => {
@@ -106,8 +108,20 @@ export default function SeatSelectionPage() {
     setSubmitting(true);
     setSubmitError(null);
     try {
+      // Step 1: Create or find passenger in the backend
+      const passenger = await createPassenger({
+        tenant_id: "00000000-0000-0000-0000-000000000001",
+        name,
+        phone,
+        language_pref: languagePref,
+        travel_habits: travelHabits || undefined,
+        lifestyle_interests: lifestyleInterests || undefined,
+        accessibility_needs: accessibilityNeeds,
+      });
+
+      // Step 2: Create booking with the real passenger ID
       const booking = await createBooking({
-        passenger_id: "00000000-0000-0000-0000-000000000001",
+        passenger_id: passenger.id,
         bus_id: busId,
         departure_date: new Date(date).toISOString(),
         seat_preference: autoAssigned?.seat_label,
@@ -250,17 +264,19 @@ export default function SeatSelectionPage() {
           )}
 
           {manualMode && selectedSeatId && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm">
-              <span className="font-medium">Manually selected seat</span>
+            <div className="bg-amber-50 border border-amber-300 rounded-lg p-3 text-sm space-y-2">
+              <p className="font-semibold text-amber-800">
+                Manually selected seat
+              </p>
               <button
                 type="button"
                 onClick={() => {
                   setManualMode(false);
                   if (autoAssigned) setSelectedSeatId(autoAssigned.seat_id);
                 }}
-                className="ml-2 text-blue-600 hover:underline inline-flex items-center gap-1"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-amber-300 text-amber-700 rounded-md text-xs font-medium hover:bg-amber-100 hover:border-amber-400 transition"
               >
-                <RefreshCw className="w-3 h-3" /> Reset to AI pick
+                <RefreshCw className="w-3.5 h-3.5" /> Reset to AI pick
               </button>
             </div>
           )}

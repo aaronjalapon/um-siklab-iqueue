@@ -47,8 +47,13 @@ async def create_booking(
             detail=f"Passenger {payload.passenger_id} not found",
         )
 
-    # Validate bus exists
-    bus = await db.get(Bus, payload.bus_id)
+    # Validate bus exists (eager load route for QR generation)
+    bus_result = await db.execute(
+        select(Bus)
+        .options(selectinload(Bus.route))
+        .where(Bus.id == payload.bus_id)
+    )
+    bus = bus_result.scalars().first()
     if not bus:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -149,16 +154,45 @@ async def create_booking(
         departure_date=payload.departure_date,
     )
 
-    # Try to generate QR token
-    try:
-        from app.services.qr_service.qr import QRService
-        qr_service = QRService()
-        booking.qr_token = qr_service.generate_token(booking)
-    except (ImportError, Exception):
-        booking.qr_token = None
-
     db.add(booking)
     await db.flush()
+
+    # Link the pending SeatReservation (created during seat assignment) to this booking
+    try:
+        from app.models.seat import Seat, SeatReservation
+
+        # Find the reservation for this passenger on this bus with no booking linked yet
+        res_result = await db.execute(
+            select(SeatReservation)
+            .join(Seat, SeatReservation.seat_id == Seat.id)
+            .where(
+                Seat.bus_id == payload.bus_id,
+                SeatReservation.passenger_name == (payload.passenger_name or passenger.name),
+            )
+            .order_by(SeatReservation.created_at.desc())
+            .limit(1)
+        )
+        pending_res = res_result.scalars().first()
+        if pending_res:
+            pending_res.booking_id = booking.id
+            await db.flush()
+    except Exception:
+        pass  # Non-critical — booking succeeded even if link fails
+
+    # Generate QR token with route context
+    try:
+        from app.services.qr_service.qr import QRService
+
+        qr_service = QRService()
+        booking.qr_token = qr_service.generate_token(
+            booking,
+            route=bus.route if bus else None,
+            bus=bus,
+        )
+        await db.flush()  # Persist the QR token before refresh
+    except Exception:
+        booking.qr_token = None
+
     await db.refresh(booking)
 
     return booking
@@ -172,16 +206,39 @@ async def create_booking(
 async def get_booking(
     booking_id: UUID,
     db: AsyncSession = Depends(get_db),
-) -> Booking:
+) -> dict:
     """Retrieve a booking by ID with passenger and route details."""
-    booking = await db.get(Booking, booking_id, options=[selectinload(Booking.passenger), selectinload(Booking.bus)])
+    result = await db.execute(
+        select(Booking)
+        .options(
+            selectinload(Booking.passenger),
+            selectinload(Booking.bus).selectinload(Bus.route),
+        )
+        .where(Booking.id == booking_id)
+    )
+    booking = result.scalars().first()
     if not booking:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Booking {booking_id} not found",
         )
 
-    return booking
+    return {
+        "id": booking.id,
+        "passenger_id": booking.passenger_id,
+        "bus_id": booking.bus_id,
+        "seat_number": booking.seat_number,
+        "boarding_window_start": booking.boarding_window_start,
+        "boarding_window_end": booking.boarding_window_end,
+        "status": booking.status.value,
+        "qr_token": booking.qr_token,
+        "departure_date": booking.departure_date,
+        "created_at": booking.created_at,
+        "updated_at": booking.updated_at,
+        "passenger_name": booking.passenger.name if booking.passenger else None,
+        "route_origin": booking.bus.route.origin if booking.bus and booking.bus.route else None,
+        "route_destination": booking.bus.route.destination if booking.bus and booking.bus.route else None,
+    }
 
 
 @router.get(

@@ -18,7 +18,7 @@ export default function OperatorBusesPage() {
 
   const route = DEMO_ROUTES[routeIndex];
 
-  const { buses, loadState, refetch } = useOperatorFleet({
+  const { buses, loadState, refetch, loadDemo } = useOperatorFleet({
     origin: route.origin,
     destination: route.destination,
     travelDate,
@@ -41,7 +41,12 @@ export default function OperatorBusesPage() {
         </p>
       </header>
 
-      {loadState === "demo" && <DataStatusBanner />}
+      {loadState === "demo" && (
+        <DataStatusBanner message="Showing demo data. Real API data is unavailable — connect the backend to see live metrics." />
+      )}
+      {loadState === "error" && (
+        <DataStatusBanner message="Could not reach the backend. Check that the API server is running." />
+      )}
 
       <div className="flex flex-col sm:flex-row flex-wrap gap-4">
         <div className="flex flex-col gap-1">
@@ -85,11 +90,35 @@ export default function OperatorBusesPage() {
 
       {loadState !== "loading" && sortedBuses.length === 0 && (
         <EmptyState
-          title="No buses found"
-          description="No fleet data for this route and date."
+          title={
+            loadState === "error"
+              ? "Connection Error"
+              : loadState === "empty"
+                ? "No Buses Found"
+                : "No Data Available"
+          }
+          description={
+            loadState === "error"
+              ? "Could not reach the backend API. Check that the server is running."
+              : loadState === "empty"
+                ? "No fleet data for this route and date."
+                : "No data is currently available."
+          }
           actionLabel="Retry"
           onAction={refetch}
         />
+      )}
+
+      {(loadState === "empty" || loadState === "error") && (
+        <div className="text-center mt-4">
+          <button
+            type="button"
+            onClick={loadDemo}
+            className="text-sm text-slate-400 hover:text-slate-600 underline"
+          >
+            Or load demo data instead
+          </button>
+        </div>
       )}
 
       {loadState !== "loading" && sortedBuses.length > 0 && (

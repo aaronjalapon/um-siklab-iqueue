@@ -92,6 +92,20 @@ export async function sendChatMessage(
   return data;
 }
 
+// --- Passengers ---
+
+import type {
+  PassengerCreate,
+  PassengerResponse,
+} from "./types";
+
+export async function createPassenger(
+  payload: PassengerCreate
+): Promise<PassengerResponse> {
+  const { data } = await api.post<PassengerResponse>("/passengers", payload);
+  return data;
+}
+
 // --- Seats ---
 
 import type {

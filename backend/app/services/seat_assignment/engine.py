@@ -13,6 +13,7 @@ IMPORTANT — Group booking ordering:
 from __future__ import annotations
 
 import logging
+import uuid
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
@@ -204,13 +205,24 @@ class SeatAllocator:
             )
 
             # Create reservation
+            # booking_id may be a placeholder — generate a real UUID if invalid
+            try:
+                b_id = UUID(passenger.booking_id)
+            except (ValueError, AttributeError):
+                b_id = uuid.uuid4()
+
+            g_id = None
+            if passenger.group_id:
+                try:
+                    g_id = UUID(passenger.group_id)
+                except (ValueError, AttributeError):
+                    g_id = None
+
             reservation = SeatReservation(
                 seat_id=winner.seat.id,
-                booking_id=UUID(passenger.booking_id),
+                booking_id=b_id,
                 passenger_name=passenger.passenger_name,
-                group_id=(
-                    UUID(passenger.group_id) if passenger.group_id else None
-                ),
+                group_id=g_id,
                 language_preference=passenger.language_preference,
                 travel_habit=passenger.travel_habit,
                 lifestyle_interest=passenger.lifestyle_interest,

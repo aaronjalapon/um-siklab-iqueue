@@ -5,7 +5,7 @@ import { searchBuses } from "@/lib/api";
 import { DEMO_ROUTES, mockFleetFromCapacity } from "@/lib/operator-mock";
 import type { Bus } from "@/lib/types";
 
-export type FleetLoadState = "loading" | "success" | "demo";
+export type FleetLoadState = "loading" | "success" | "empty" | "error" | "demo";
 
 export interface UseOperatorFleetOptions {
   origin: string;
@@ -17,6 +17,7 @@ export interface UseOperatorFleetResult {
   buses: Bus[];
   loadState: FleetLoadState;
   refetch: () => void;
+  loadDemo: () => void;
 }
 
 export function useOperatorFleet({
@@ -32,6 +33,11 @@ export function useOperatorFleet({
     setFetchKey((k) => k + 1);
   }, []);
 
+  const loadDemo = useCallback(() => {
+    setBuses(mockFleetFromCapacity() as Bus[]);
+    setLoadState("demo");
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -43,13 +49,13 @@ export function useOperatorFleet({
           setBuses(data.buses);
           setLoadState("success");
         } else {
-          setBuses(mockFleetFromCapacity() as Bus[]);
-          setLoadState("demo");
+          setBuses([]);
+          setLoadState("empty");
         }
       } catch {
         if (cancelled) return;
-        setBuses(mockFleetFromCapacity() as Bus[]);
-        setLoadState("demo");
+        setBuses([]);
+        setLoadState("error");
       }
     }
 
@@ -63,7 +69,7 @@ export function useOperatorFleet({
     };
   }, [origin, destination, travelDate, fetchKey]);
 
-  return { buses, loadState, refetch };
+  return { buses, loadState, refetch, loadDemo };
 }
 
 export function todayIsoDate(): string {

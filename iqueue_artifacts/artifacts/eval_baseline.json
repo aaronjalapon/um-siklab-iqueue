@@ -1,0 +1,80 @@
+{
+  "davao-cagayan": {
+    "mae": 108.86972045898438,
+    "rmse": 231.2176328699868,
+    "mape": 16.952096939086914,
+    "surge_precision": 0.0,
+    "surge_recall": 0.0,
+    "surge_f1": 0.0,
+    "threshold": 772.2,
+    "tp": 0,
+    "fp": 0,
+    "fn": 12,
+    "route_id": "davao-cagayan"
+  },
+  "davao-cotabato": {
+    "mae": 76.73764038085938,
+    "rmse": 145.99589971768043,
+    "mape": 18.437711715698242,
+    "surge_precision": 0.0,
+    "surge_recall": 0.0,
+    "surge_f1": 0.0,
+    "threshold": 510.3,
+    "tp": 0,
+    "fp": 0,
+    "fn": 13,
+    "route_id": "davao-cotabato"
+  },
+  "davao-general-santos": {
+    "mae": 91.84850311279297,
+    "rmse": 175.14584324570765,
+    "mape": 17.665468215942383,
+    "surge_precision": 0.0,
+    "surge_recall": 0.0,
+    "surge_f1": 0.0,
+    "threshold": 644.4,
+    "tp": 0,
+    "fp": 0,
+    "fn": 11,
+    "route_id": "davao-general-santos"
+  },
+  "cagayan-iligan": {
+    "mae": 47.95895767211914,
+    "rmse": 90.09953263613525,
+    "mape": 17.394723892211914,
+    "surge_precision": 0.0,
+    "surge_recall": 0.0,
+    "surge_f1": 0.0,
+    "threshold": 349.2,
+    "tp": 0,
+    "fp": 0,
+    "fn": 12,
+    "route_id": "cagayan-iligan"
+  },
+  "davao-butuan": {
+    "mae": 81.59122467041016,
+    "rmse": 149.45071956375787,
+    "mape": 18.031417846679688,
+    "surge_precision": 0.0,
+    "surge_recall": 0.0,
+    "surge_f1": 0.0,
+    "threshold": 567.0,
+    "tp": 0,
+    "fp": 0,
+    "fn": 12,
+    "route_id": "davao-butuan"
+  },
+  "cotabato-zambo": {
+    "mae": 41.07810592651367,
+    "rmse": 79.26722814020464,
+    "mape": 17.12833595275879,
+    "surge_precision": 0.0,
+    "surge_recall": 0.0,
+    "surge_f1": 0.0,
+    "threshold": 295.2,
+    "tp": 0,
+    "fp": 0,
+    "fn": 13,
+    "route_id": "cotabato-zambo"
+  }
+}

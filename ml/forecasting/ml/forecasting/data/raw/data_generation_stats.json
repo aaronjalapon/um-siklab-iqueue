@@ -1,0 +1,124 @@
+{
+  "generated_at": "2026-06-08T22:25:32.455042",
+  "script": "ml/forecasting/generate_training_data.py",
+  "random_seed": 42,
+  "reference_stats": {
+    "source": "kaggle-bus-ridership.CSV (Adelaide Metro 2013)",
+    "total_rows_analyzed": 0,
+    "num_routes": 0,
+    "median_weekly_cv": 0.254,
+    "median_max_mean_ratio": 1.454,
+    "median_lag1_acf": 0.55,
+    "volume_p50": 324.0,
+    "volume_p90": 5350.0,
+    "cv_percentiles": {
+      "p10": 0.15,
+      "p50": 0.25,
+      "p90": 0.5
+    },
+    "acf_percentiles": {
+      "p10": 0.2,
+      "p50": 0.55,
+      "p90": 0.75
+    }
+  },
+  "validation": {
+    "row_count": 6576,
+    "expected_rows": 6576,
+    "row_count_ok": true,
+    "columns": [
+      "date",
+      "route_id",
+      "route_label",
+      "passenger_count",
+      "is_holiday",
+      "holiday_name",
+      "day_of_week",
+      "is_weekend",
+      "is_terminal_closure"
+    ],
+    "expected_columns": [
+      "date",
+      "route_id",
+      "route_label",
+      "passenger_count",
+      "is_holiday",
+      "holiday_name",
+      "day_of_week",
+      "is_weekend",
+      "is_terminal_closure"
+    ],
+    "columns_ok": true,
+    "date_range": {
+      "start": "2022-01-01",
+      "end": "2024-12-31"
+    },
+    "overall": {
+      "mean_cv": 0.4916,
+      "target_cv": 0.254,
+      "cv_in_range": false
+    }
+  },
+  "parameters": {
+    "date_range": "2022-01-01 to 2024-12-31",
+    "num_routes": 6,
+    "route_ids": [
+      "davao-cagayan",
+      "davao-cotabato",
+      "davao-general-santos",
+      "cagayan-iligan",
+      "davao-butuan",
+      "cotabato-zambo"
+    ],
+    "surge_events": [
+      {
+        "name": "Holy Week",
+        "mult_mean": 3.2,
+        "mult_std": 0.3
+      },
+      {
+        "name": "Christmas",
+        "mult_mean": 3.5,
+        "mult_std": 0.25
+      },
+      {
+        "name": "New Year",
+        "mult_mean": 2.8,
+        "mult_std": 0.25
+      },
+      {
+        "name": "All Saints Day",
+        "mult_mean": 3.0,
+        "mult_std": 0.25
+      },
+      {
+        "name": "Independence Day",
+        "mult_mean": 1.8,
+        "mult_std": 0.15
+      },
+      {
+        "name": "Eid al-Fitr",
+        "mult_mean": 2.5,
+        "mult_std": 0.3
+      },
+      {
+        "name": "Hariraya",
+        "mult_mean": 2.5,
+        "mult_std": 0.3
+      }
+    ],
+    "dow_multipliers": {
+      "0": 0.92,
+      "1": 0.88,
+      "2": 0.9,
+      "3": 0.95,
+      "4": 1.25,
+      "5": 0.98,
+      "6": 1.12
+    },
+    "ar1_phi_target": 0.55,
+    "cv_target": 0.254,
+    "annual_growth_rate": 0.015,
+    "monthly_seasonality_amplitude": 0.06
+  }
+}

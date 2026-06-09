@@ -1,0 +1,63 @@
+{
+  "davao-cagayan": {
+    "mae": 89.3,
+    "rmse": 158.2,
+    "mape": 15.3,
+    "surge_precision": 0.9,
+    "surge_recall": 0.75,
+    "surge_f1": 0.818,
+    "surge_days": 12,
+    "passed": true
+  },
+  "davao-cotabato": {
+    "mae": 64.2,
+    "rmse": 101.9,
+    "mape": 17.0,
+    "surge_precision": 0.9,
+    "surge_recall": 0.692,
+    "surge_f1": 0.783,
+    "surge_days": 13,
+    "passed": true
+  },
+  "davao-general-santos": {
+    "mae": 76.0,
+    "rmse": 117.9,
+    "mape": 16.2,
+    "surge_precision": 0.833,
+    "surge_recall": 0.909,
+    "surge_f1": 0.87,
+    "surge_days": 11,
+    "passed": true
+  },
+  "cagayan-iligan": {
+    "mae": 39.7,
+    "rmse": 62.4,
+    "mape": 15.9,
+    "surge_precision": 0.833,
+    "surge_recall": 0.833,
+    "surge_f1": 0.833,
+    "surge_days": 12,
+    "passed": true
+  },
+  "davao-butuan": {
+    "mae": 65.3,
+    "rmse": 100.0,
+    "mape": 15.9,
+    "surge_precision": 0.769,
+    "surge_recall": 0.833,
+    "surge_f1": 0.8,
+    "surge_days": 12,
+    "passed": true
+  },
+  "cotabato-zambo": {
+    "mae": 33.5,
+    "rmse": 54.0,
+    "mape": 15.3,
+    "surge_precision": 0.833,
+    "surge_recall": 0.769,
+    "surge_f1": 0.8,
+    "surge_days": 13,
+    "passed": true
+  },
+  "overall_passed": true
+}

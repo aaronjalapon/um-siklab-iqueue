@@ -1,0 +1,50 @@
+{
+  "davao-cagayan": {
+    "precision": 0.562,
+    "recall": 0.9,
+    "f1": 0.692,
+    "n_val_surge": 10,
+    "n_val_total": 209,
+    "n_triggered": 16
+  },
+  "davao-cotabato": {
+    "precision": 0.647,
+    "recall": 0.846,
+    "f1": 0.733,
+    "n_val_surge": 13,
+    "n_val_total": 211,
+    "n_triggered": 17
+  },
+  "davao-general-santos": {
+    "precision": 0.611,
+    "recall": 1.0,
+    "f1": 0.759,
+    "n_val_surge": 11,
+    "n_val_total": 210,
+    "n_triggered": 18
+  },
+  "cagayan-iligan": {
+    "precision": 0.688,
+    "recall": 0.917,
+    "f1": 0.786,
+    "n_val_surge": 12,
+    "n_val_total": 209,
+    "n_triggered": 16
+  },
+  "davao-butuan": {
+    "precision": 0.579,
+    "recall": 0.917,
+    "f1": 0.71,
+    "n_val_surge": 12,
+    "n_val_total": 211,
+    "n_triggered": 19
+  },
+  "cotabato-zambo": {
+    "precision": 0.667,
+    "recall": 0.769,
+    "f1": 0.714,
+    "n_val_surge": 13,
+    "n_val_total": 211,
+    "n_triggered": 15
+  }
+}

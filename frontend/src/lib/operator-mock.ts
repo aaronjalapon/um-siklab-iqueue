@@ -11,22 +11,40 @@ export interface DemoRoute {
 
 export const DEMO_ROUTES: DemoRoute[] = [
   {
-    id: "00000000-0000-0000-0000-000000000001",
-    origin: "Davao",
-    destination: "Manila",
-    label: "Davao → Manila",
+    id: "26fd7e27-4920-510b-ae57-9424533347da",  // davao-cagayan (UUID v5)
+    origin: "Davao City",
+    destination: "Cagayan de Oro",
+    label: "Davao → Cagayan de Oro",
   },
   {
-    id: "00000000-0000-0000-0000-000000000002",
-    origin: "Cebu",
-    destination: "Manila",
-    label: "Cebu → Manila",
+    id: "eea70a1a-7420-5c5a-85f5-8f619fb68fa2",  // davao-cotabato
+    origin: "Davao City",
+    destination: "Cotabato City",
+    label: "Davao → Cotabato",
   },
   {
-    id: "00000000-0000-0000-0000-000000000003",
-    origin: "Jakarta",
-    destination: "Surabaya",
-    label: "Jakarta → Surabaya",
+    id: "f55422ef-6b76-56bb-99a1-47bf020e2112",  // davao-general-santos
+    origin: "Davao City",
+    destination: "General Santos",
+    label: "Davao → General Santos",
+  },
+  {
+    id: "16dc0d63-62dc-56ca-933b-d5bf6a344c12",  // cagayan-iligan
+    origin: "Cagayan de Oro",
+    destination: "Iligan City",
+    label: "Cagayan de Oro → Iligan",
+  },
+  {
+    id: "bcb30dde-1726-5ebe-b10f-6e00d93627ac",  // davao-butuan
+    origin: "Davao City",
+    destination: "Butuan City",
+    label: "Davao → Butuan",
+  },
+  {
+    id: "51f3fda4-ea0f-5d02-8151-8b277dc29165",  // cotabato-zambo
+    origin: "Cotabato City",
+    destination: "Zamboanga City",
+    label: "Cotabato → Zamboanga",
   },
 ];
 
@@ -43,11 +61,13 @@ export interface BusCapacityEntry {
 }
 
 export const MOCK_BUS_CAPACITY: BusCapacityEntry[] = [
-  { plate: "PH-0001", capacity: 50, booked: 34, route: "Davao → Manila" },
-  { plate: "PH-0002", capacity: 45, booked: 41, route: "Davao → Manila" },
-  { plate: "PH-0003", capacity: 55, booked: 28, route: "Cebu → Manila" },
-  { plate: "PH-0004", capacity: 50, booked: 50, route: "Davao → Manila" },
-  { plate: "ID-0005", capacity: 60, booked: 45, route: "Jakarta → Surabaya" },
+  { plate: "DAV-001", capacity: 50, booked: 34, route: "Davao City → Cagayan de Oro" },
+  { plate: "DAV-002", capacity: 45, booked: 41, route: "Davao City → Cagayan de Oro" },
+  { plate: "DAV-003", capacity: 50, booked: 28, route: "Davao City → Cotabato City" },
+  { plate: "DAV-004", capacity: 40, booked: 40, route: "Davao City → Cotabato City" },
+  { plate: "GEN-001", capacity: 50, booked: 45, route: "Davao City → General Santos" },
+  { plate: "BUT-001", capacity: 50, booked: 22, route: "Davao City → Butuan City" },
+  { plate: "ZAM-001", capacity: 40, booked: 15, route: "Cotabato City → Zamboanga City" },
 ];
 
 export interface MockFleetBus {
@@ -131,24 +151,24 @@ export function generateMockBoardingQueue(): BoardingQueueEntry[] {
   ];
 
   const passengers: Omit<BoardingQueueEntry, "boardingWindowStart" | "boardingWindowEnd" | "status">[] = [
-    { bookingId: "b1", passengerName: "Maria Santos", seatNumber: "12A", busPlate: "PH-0001", route: "Davao → Manila" },
-    { bookingId: "b2", passengerName: "Juan Dela Cruz", seatNumber: "8B", busPlate: "PH-0001", route: "Davao → Manila" },
-    { bookingId: "b3", passengerName: "Anh Nguyen", seatNumber: "3C", busPlate: "PH-0002", route: "Davao → Manila" },
-    { bookingId: "b4", passengerName: "Budi Santoso", seatNumber: "15D", busPlate: "PH-0002", route: "Davao → Manila" },
-    { bookingId: "b5", passengerName: "Siti Rahayu", seatNumber: "7A", busPlate: "PH-0003", route: "Cebu → Manila" },
-    { bookingId: "b6", passengerName: "Raj Kumar", seatNumber: "22F", busPlate: "PH-0003", route: "Cebu → Manila" },
-    { bookingId: "b7", passengerName: "Lin Wei", seatNumber: "5B", busPlate: "PH-0004", route: "Davao → Manila" },
-    { bookingId: "b8", passengerName: "Fatimah Hassan", seatNumber: "11C", busPlate: "PH-0004", route: "Davao → Manila" },
-    { bookingId: "b9", passengerName: "Carlos Mendoza", seatNumber: "18A", busPlate: "ID-0005", route: "Jakarta → Surabaya" },
-    { bookingId: "b10", passengerName: "Priya Sharma", seatNumber: "9D", busPlate: "ID-0005", route: "Jakarta → Surabaya" },
-    { bookingId: "b11", passengerName: "Tran Minh", seatNumber: "14B", busPlate: "PH-0001", route: "Davao → Manila" },
-    { bookingId: "b12", passengerName: "Grace Tan", seatNumber: "6C", busPlate: "PH-0002", route: "Davao → Manila" },
-    { bookingId: "b13", passengerName: "Ahmad Ibrahim", seatNumber: "20A", busPlate: "PH-0003", route: "Cebu → Manila" },
-    { bookingId: "b14", passengerName: "Elena Reyes", seatNumber: "2F", busPlate: "PH-0004", route: "Davao → Manila" },
-    { bookingId: "b15", passengerName: "Somchai P.", seatNumber: "16B", busPlate: "ID-0005", route: "Jakarta → Surabaya" },
-    { bookingId: "b16", passengerName: "Lisa Wong", seatNumber: "4A", busPlate: "PH-0001", route: "Davao → Manila" },
-    { bookingId: "b17", passengerName: "Hassan Ali", seatNumber: "10D", busPlate: "PH-0002", route: "Davao → Manila" },
-    { bookingId: "b18", passengerName: "Yuki Tanaka", seatNumber: "13C", busPlate: "PH-0003", route: "Cebu → Manila" },
+    { bookingId: "b1", passengerName: "Maria Santos", seatNumber: "12A", busPlate: "DAV-001", route: "Davao City → Cagayan de Oro" },
+    { bookingId: "b2", passengerName: "Juan Dela Cruz", seatNumber: "8B", busPlate: "DAV-001", route: "Davao City → Cagayan de Oro" },
+    { bookingId: "b3", passengerName: "Anh Nguyen", seatNumber: "3C", busPlate: "DAV-002", route: "Davao City → Cagayan de Oro" },
+    { bookingId: "b4", passengerName: "Budi Santoso", seatNumber: "15D", busPlate: "DAV-002", route: "Davao City → Cagayan de Oro" },
+    { bookingId: "b5", passengerName: "Siti Rahayu", seatNumber: "7A", busPlate: "DAV-003", route: "Davao City → Cotabato City" },
+    { bookingId: "b6", passengerName: "Raj Kumar", seatNumber: "22F", busPlate: "DAV-003", route: "Davao City → Cotabato City" },
+    { bookingId: "b7", passengerName: "Lin Wei", seatNumber: "5B", busPlate: "DAV-004", route: "Davao City → Cotabato City" },
+    { bookingId: "b8", passengerName: "Fatimah Hassan", seatNumber: "11C", busPlate: "GEN-001", route: "Davao City → General Santos" },
+    { bookingId: "b9", passengerName: "Carlos Mendoza", seatNumber: "18A", busPlate: "GEN-001", route: "Davao City → General Santos" },
+    { bookingId: "b10", passengerName: "Priya Sharma", seatNumber: "9D", busPlate: "GEN-002", route: "Davao City → General Santos" },
+    { bookingId: "b11", passengerName: "Tran Minh", seatNumber: "14B", busPlate: "BUT-001", route: "Davao City → Butuan City" },
+    { bookingId: "b12", passengerName: "Grace Tan", seatNumber: "6C", busPlate: "BUT-001", route: "Davao City → Butuan City" },
+    { bookingId: "b13", passengerName: "Ahmad Ibrahim", seatNumber: "20A", busPlate: "ZAM-001", route: "Cotabato City → Zamboanga City" },
+    { bookingId: "b14", passengerName: "Elena Reyes", seatNumber: "2F", busPlate: "CDO-001", route: "Cagayan de Oro → Iligan City" },
+    { bookingId: "b15", passengerName: "Somchai P.", seatNumber: "16B", busPlate: "CDO-002", route: "Cagayan de Oro → Iligan City" },
+    { bookingId: "b16", passengerName: "Lisa Wong", seatNumber: "4A", busPlate: "DAV-001", route: "Davao City → Cagayan de Oro" },
+    { bookingId: "b17", passengerName: "Hassan Ali", seatNumber: "10D", busPlate: "DAV-003", route: "Davao City → Cotabato City" },
+    { bookingId: "b18", passengerName: "Yuki Tanaka", seatNumber: "13C", busPlate: "BUT-002", route: "Davao City → Butuan City" },
   ];
 
   const statuses: BoardingQueueStatus[] = [

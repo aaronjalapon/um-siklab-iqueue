@@ -39,6 +39,13 @@ export interface BookingCreate {
   departure_date: string;
   seat_preference?: string;
   travel_group?: string[];
+  passenger_name?: string;
+  group_id?: string;
+  language_preference?: string;
+  travel_habit?: string;
+  lifestyle_interest?: string;
+  needs_accessibility?: boolean;
+  preferred_side?: string;
 }
 
 export interface BookingResponse {
@@ -98,5 +105,8 @@ export interface PassengerFormData {
   phone: string;
   language_pref: string;
   travel_habits: string;
+  lifestyle_interests: string;
   accessibility_needs: boolean;
+  preferred_seat_type: string; // "window" | "aisle" | ""
+  preferred_side: string; // "left" | "right" | ""
 }

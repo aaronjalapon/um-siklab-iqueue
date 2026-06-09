@@ -92,6 +92,49 @@ export async function sendChatMessage(
   return data;
 }
 
+// --- Seats ---
+
+import type {
+  SeatMapEntry,
+  SeatMapSummaryResponse,
+  SeatAssignmentResult,
+  SeatAssignRequest,
+  SeatSwapRequest,
+  SeatSwapResponse,
+} from "@/types/seat";
+
+export async function getBusSeatMap(
+  busId: string
+): Promise<SeatMapEntry[]> {
+  const { data } = await api.get<SeatMapEntry[]>(`/seats/bus/${busId}`);
+  return data;
+}
+
+export async function getBusSeatMapSummary(
+  busId: string
+): Promise<SeatMapSummaryResponse> {
+  const { data } = await api.get<SeatMapSummaryResponse>(`/seats/bus/${busId}/summary`);
+  return data;
+}
+
+export async function assignSeat(
+  payload: SeatAssignRequest
+): Promise<SeatAssignmentResult> {
+  const { data } = await api.post<SeatAssignmentResult>("/seats/assign", payload);
+  return data;
+}
+
+export async function releaseSeat(bookingId: string): Promise<void> {
+  await api.delete(`/seats/release/${bookingId}`);
+}
+
+export async function swapSeats(
+  payload: SeatSwapRequest
+): Promise<SeatSwapResponse> {
+  const { data } = await api.put<SeatSwapResponse>("/seats/swap", payload);
+  return data;
+}
+
 // --- Health ---
 
 export async function healthCheck(): Promise<{ status: string }> {

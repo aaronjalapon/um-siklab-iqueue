@@ -43,12 +43,14 @@ services:
       - .env
     environment:
       - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-iqueue}
-      - CHATBOT_MODEL_PATH=/app/ml/chatbot/artifacts/xlm-roberta-iqueue
+      - PROPHET_MODEL_PATH=/app/app/services/forecasting/artifacts/prophet_model.pkl
+      - LSTM_MODEL_PATH=/app/app/services/forecasting/artifacts/lstm_model.pt
+      - CHATBOT_MODEL_PATH=/app/app/services/chatbot/artifacts/xlm-roberta-iqueue
     ports:
       - "${PORT:-8000}:8000"
     volumes:
       - ./backend/app/services/forecasting/artifacts:/app/app/services/forecasting/artifacts
-      - ./ml/chatbot/artifacts:/app/ml/chatbot/artifacts
+      - ./deployments/xlm-roberta-iqueue:/app/app/services/chatbot/artifacts/xlm-roberta-iqueue
     networks:
       - iqueue-net
     command: >

@@ -42,8 +42,8 @@ class Settings(BaseSettings):
 
     # --- Chatbot ---
     CHATBOT_MODEL_PATH: str = str(
-        Path(__file__).resolve().parents[3]
-        / "ml/chatbot/artifacts/xlm-roberta-iqueue"
+        Path(__file__).resolve().parents[2]
+        / "app/services/chatbot/artifacts/xlm-roberta-iqueue"
     )
     HUGGINGFACE_API_TOKEN: str | None = None
     DEEPSEEK_API_KEY: str | None = None

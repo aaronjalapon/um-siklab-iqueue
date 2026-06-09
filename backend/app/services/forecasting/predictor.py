@@ -16,6 +16,7 @@ import torch
 
 from app.core.config import get_settings
 from app.schemas.forecast import SurgePrediction
+from .model import SurgeLSTM
 
 
 class ForecastingService:
@@ -33,7 +34,20 @@ class ForecastingService:
         self._prophet = None
         self._lstm = None
         self._lstm_config = None
+        self._prophet_loaded = False
+        self._lstm_loaded = False
         self._loaded = False
+
+    @property
+    def is_ready(self) -> bool:
+        """Return True when both forecasting artifacts have loaded."""
+
+        return self._prophet_loaded and self._lstm_loaded
+
+    def warmup(self) -> None:
+        """Preload forecasting artifacts without running a prediction."""
+
+        self._ensure_loaded()
 
     def _ensure_loaded(self) -> None:
         """Lazy-load models from disk on first use."""
@@ -47,17 +61,11 @@ class ForecastingService:
         if prophet_path.exists():
             with open(prophet_path, "rb") as f:
                 self._prophet = pickle.load(f)
+            self._prophet_loaded = True
 
         # Load LSTM
         lstm_path = Path(settings.LSTM_MODEL_PATH)
         if lstm_path.exists():
-            # Import here to avoid circular imports at module level
-            import sys
-            ml_path = str(Path(__file__).resolve().parents[4] / "ml" / "forecasting")
-            if ml_path not in sys.path:
-                sys.path.insert(0, ml_path)
-            from model import SurgeLSTM
-
             checkpoint = torch.load(lstm_path, map_location="cpu", weights_only=False)
             self._lstm_config = checkpoint
             self._lstm = SurgeLSTM(
@@ -67,6 +75,7 @@ class ForecastingService:
             )
             self._lstm.load_state_dict(checkpoint["model_state_dict"])
             self._lstm.eval()
+            self._lstm_loaded = True
 
         self._loaded = True
 

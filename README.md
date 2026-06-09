@@ -76,6 +76,41 @@ python ml/forecasting/evaluate.py
 - **Operator Dashboard:** http://localhost:3000/operator
 - **API Docs:** http://localhost:8000/docs
 
+### Azure deployment
+
+The current deployment direction is a unified Linux Azure App Service container that runs the backend API plus the chatbot and forecasting models together.
+
+Use `scripts/deploy-chatbot-azure.sh` as the Azure bootstrap script. The filename is legacy; the script now provisions and updates the App Service deployment.
+
+Required Azure variables live in `.env.example`:
+
+- `AZURE_RESOURCE_GROUP`
+- `AZURE_LOCATION`
+- `AZURE_ACR_NAME`
+- `AZURE_APP_SERVICE_PLAN`
+- `AZURE_WEBAPP_NAME`
+- `AZURE_SUBSCRIPTION_ID`
+
+The deployment health endpoints are:
+
+- `/api/v1/health/live`
+- `/api/v1/health/readiness`
+
+### Frontend on Vercel
+
+If you deploy the Next.js frontend to Vercel, configure the browser client to call the deployed backend over HTTPS:
+
+- Set `NEXT_PUBLIC_API_URL` in Vercel to `https://<backend-host>/api/v1`
+- Set backend `ALLOWED_ORIGINS` to include your Vercel production domain and any preview domains you use
+- Keep all browser API calls inside `frontend/src/lib/api.ts` so there is one place to update the backend URL
+
+Example:
+
+```bash
+NEXT_PUBLIC_API_URL=https://iqueue-backend.azurewebsites.net/api/v1
+ALLOWED_ORIGINS=https://iqueue-frontend.vercel.app
+```
+
 ---
 
 ## 📁 Project Structure

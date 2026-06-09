@@ -22,6 +22,11 @@ venv/
 *.onnx
 *.safetensors
 *.bin
+backend/app/services/chatbot/artifacts/
+backend/app/services/forecasting/artifacts/
+ml/chatbot/artifacts/
+ml/forecasting/artifacts/
+deployments/xlm-roberta-iqueue/
 
 # Node.js
 node_modules/
@@ -56,3 +61,5 @@ htmlcov/
 *.log
 logs/
 data/raw/
+
+xlm-roberta-iqueue/

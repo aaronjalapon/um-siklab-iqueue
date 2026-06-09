@@ -9,7 +9,7 @@ Welcome to the UM Siklab IQueue project! This guide covers everything you need t
 ```
 main  ──────────────────────────────────────►  Production-stable (protected)
   └── pre-prod  ──────────────────────────►  Staging / integration gate (protected)
-        ├── feature/your-feature-name
+  ├── feat/your-feature-name
         ├── fix/your-bug-fix
         └── integration/your-integration
 ```
@@ -18,7 +18,7 @@ main  ────────────────────────�
 |---|---|---|
 | `main` | — | Production-ready code. Only receives merges from `pre-prod` after QA sign-off. |
 | `pre-prod` | `main` | Staging environment. All work lands here first before going to production. |
-| `feature/*` | `pre-prod` | New features and enhancements. |
+| `feat/*` | `pre-prod` | New features and enhancements. |
 | `fix/*` | `pre-prod` | Bug fixes and patches. |
 | `integration/*` | `pre-prod` | Third-party or service integrations (e.g., payment gateway, SMS). |
 
@@ -46,6 +46,16 @@ Services will be available at:
 - **Frontend** → http://localhost:3000
 - **Backend API** → http://localhost:8000/docs
 
+### Deploying the frontend to Vercel
+
+When you deploy only the frontend to Vercel, keep the backend on its own public HTTPS URL.
+
+1. Set the Vercel project root directory to `frontend/`.
+2. Add `NEXT_PUBLIC_API_URL=https://<your-backend-host>/api/v1` in Vercel environment variables.
+3. Set backend `ALLOWED_ORIGINS` to include your Vercel domain, for example `https://<your-project>.vercel.app`.
+4. Redeploy the backend after changing `ALLOWED_ORIGINS`, then deploy the frontend.
+5. Test the deployed frontend against `/api/v1/health/live` and `/api/v1/health/readiness`.
+
 ---
 
 ## 🔧 Contribution Workflow
@@ -65,7 +75,7 @@ Use the naming conventions below:
 
 ```bash
 # Feature
-git checkout -b feature/passenger-notification
+git checkout -b feat/passenger-notification
 
 # Bug fix
 git checkout -b fix/booking-overlap-error
@@ -82,7 +92,7 @@ git checkout -b integration/gcash-payment
 ### Step 4 — Push your branch
 
 ```bash
-git push -u origin feature/your-branch-name
+git push -u origin feat/your-branch-name
 ```
 
 ### Step 5 — Open a Pull Request

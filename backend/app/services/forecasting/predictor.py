@@ -23,6 +23,7 @@ import torch
 
 from app.core.config import get_settings
 from app.schemas.forecast import SurgePrediction
+from .model import SurgeLSTM
 
 
 # ---------------------------------------------------------------------------

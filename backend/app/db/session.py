@@ -2,6 +2,7 @@
 
 from collections.abc import AsyncGenerator
 
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.core.config import get_settings
@@ -63,3 +64,15 @@ async def dispose_engine() -> None:
         await _engine.dispose()
         _engine = None
         _async_session_factory = None
+
+
+async def probe_database() -> bool:
+    """Return True when the configured database accepts a simple query."""
+
+    try:
+        engine = _create_engine()
+        async with engine.connect() as connection:
+            await connection.execute(text("SELECT 1"))
+        return True
+    except Exception:
+        return False

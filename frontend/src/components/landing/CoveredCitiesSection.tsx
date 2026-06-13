@@ -2,9 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faFlag } from "@fortawesome/free-solid-svg-icons";
-import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
+import { Flag, type LucideIcon } from "lucide-react";
 import {
   ComposableMap,
   Geographies,
@@ -19,7 +17,7 @@ interface City {
   id: string;
   name: string;
   country: string;
-  icon: IconDefinition;
+  icon: LucideIcon;
   coordinates: [number, number];
   routes: number;
   description: string;
@@ -30,7 +28,7 @@ const CITIES: City[] = [
     id: "manila",
     name: "Manila",
     country: "Philippines",
-    icon: faFlag,
+    icon: Flag,
     coordinates: [120.9842, 14.5995],
     routes: 24,
     description: "LTFRB North & South terminals",
@@ -39,7 +37,7 @@ const CITIES: City[] = [
     id: "cebu",
     name: "Cebu",
     country: "Philippines",
-    icon: faFlag,
+    icon: Flag,
     coordinates: [123.8854, 10.3157],
     routes: 12,
     description: "South Bus Terminal",
@@ -48,7 +46,7 @@ const CITIES: City[] = [
     id: "davao",
     name: "Davao",
     country: "Philippines",
-    icon: faFlag,
+    icon: Flag,
     coordinates: [125.6128, 7.0707],
     routes: 9,
     description: "Ecoland Bus Terminal",
@@ -57,7 +55,7 @@ const CITIES: City[] = [
     id: "kuala-lumpur",
     name: "Kuala Lumpur",
     country: "Malaysia",
-    icon: faFlag,
+    icon: Flag,
     coordinates: [101.6869, 3.1390],
     routes: 18,
     description: "TBS & Puduraya Terminals",
@@ -66,7 +64,7 @@ const CITIES: City[] = [
     id: "ho-chi-minh",
     name: "Ho Chi Minh",
     country: "Vietnam",
-    icon: faFlag,
+    icon: Flag,
     coordinates: [106.6297, 10.8231],
     routes: 15,
     description: "Mien Dong Bus Station",
@@ -75,7 +73,7 @@ const CITIES: City[] = [
     id: "jakarta",
     name: "Jakarta",
     country: "Indonesia",
-    icon: faFlag,
+    icon: Flag,
     coordinates: [106.8456, -6.2088],
     routes: 21,
     description: "Kampung Rambutan Terminal",
@@ -130,7 +128,7 @@ export default function CoveredCitiesSection() {
             <ComposableMap
               projection="geoMercator"
               projectionConfig={ASEAN_PROJECTION_CONFIG}
-              className="w-full h-[380px] md:h-[460px]"
+              className="h-[300px] w-full sm:h-[380px] md:h-[460px]"
             >
               <Geographies geography={GEO_URL}>
                 {({ geographies }: { geographies: unknown[] }) =>
@@ -215,50 +213,54 @@ export default function CoveredCitiesSection() {
 
           {/* City list / detail panel */}
           <div className="flex flex-col gap-3">
-            {CITIES.map((city, i) => (
-              <motion.button
-                key={city.id}
-                initial={{ opacity: 0, x: 30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: i * 0.07 }}
-                onClick={() =>
-                  setActiveCity((prev) =>
-                    prev?.id === city.id ? null : city
-                  )
-                }
-                className={`text-left p-4 rounded-xl border transition-all ${
-                  activeCity?.id === city.id
-                    ? "bg-brand-blue/15 border-brand-blue/40 shadow-lg shadow-brand-blue/10"
-                    : "bg-white/5 border-white/10 hover:bg-white/8 hover:border-white/20"
-                }`}
-              >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-white font-bold text-sm">
-                      <FontAwesomeIcon icon={city.icon} className="text-brand-blue mr-1" /> {city.name}
-                    </p>
-                    <p className="text-slate-400 text-xs mt-0.5">{city.country}</p>
+            {CITIES.map((city, i) => {
+              const Icon = city.icon;
+              return (
+                <motion.button
+                  key={city.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4, delay: i * 0.07 }}
+                  onClick={() =>
+                    setActiveCity((prev) =>
+                      prev?.id === city.id ? null : city
+                    )
+                  }
+                  className={`text-left p-4 rounded-xl border transition-all ${
+                    activeCity?.id === city.id
+                      ? "bg-brand-blue/15 border-brand-blue/40 shadow-lg shadow-brand-blue/10"
+                      : "bg-white/5 border-white/10 hover:bg-white/8 hover:border-white/20"
+                  }`}
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="flex items-center gap-1.5 text-white font-bold text-sm">
+                        <Icon className="h-3.5 w-3.5 text-brand-blue" aria-hidden />
+                        {city.name}
+                      </p>
+                      <p className="text-slate-400 text-xs mt-0.5">{city.country}</p>
+                    </div>
+                    <span className="bg-brand-orange/15 border border-brand-orange/25 text-brand-orange text-[10px] font-bold px-2 py-0.5 rounded-full">
+                      {city.routes} routes
+                    </span>
                   </div>
-                  <span className="bg-brand-orange/15 border border-brand-orange/25 text-brand-orange text-[10px] font-bold px-2 py-0.5 rounded-full">
-                    {city.routes} routes
-                  </span>
-                </div>
 
-                <AnimatePresence>
-                  {activeCity?.id === city.id && (
-                    <motion.p
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="text-slate-400 text-xs mt-2 overflow-hidden"
-                    >
-                      {city.description}
-                    </motion.p>
-                  )}
-                </AnimatePresence>
-              </motion.button>
-            ))}
+                  <AnimatePresence>
+                    {activeCity?.id === city.id && (
+                      <motion.p
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="text-slate-400 text-xs mt-2 overflow-hidden"
+                      >
+                        {city.description}
+                      </motion.p>
+                    )}
+                  </AnimatePresence>
+                </motion.button>
+              );
+            })}
           </div>
         </div>
       </div>

@@ -37,10 +37,10 @@ export const glassStyles = {
     'bg-white/50 dark:bg-slate-900/50 backdrop-blur-md rounded-lg p-1 border border-glass-border text-xs flex gap-1',
 
   segmentedActive:
-    'px-3 py-1.5 rounded-md bg-white dark:bg-slate-800 shadow-sm font-medium text-slate-800 dark:text-slate-100',
+    'shrink-0 px-3 py-1.5 rounded-md bg-white dark:bg-slate-800 shadow-sm font-medium text-slate-800 dark:text-slate-100',
 
   segmentedInactive:
-    'px-3 py-1.5 rounded-md text-slate-500 hover:bg-white/50 dark:hover:bg-slate-800/50 transition opacity-70',
+    'shrink-0 px-3 py-1.5 rounded-md text-slate-500 hover:bg-white/50 dark:hover:bg-slate-800/50 transition opacity-70',
 
   navItem:
     'flex items-center gap-4 px-4 py-3 rounded-xl transition-colors font-semibold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 dark:text-slate-400 dark:hover:text-white',
@@ -48,5 +48,6 @@ export const glassStyles = {
   navItemActive:
     'flex items-center gap-4 px-4 py-3 rounded-xl transition-colors font-semibold bg-brand-blue text-white shadow-md shadow-brand-blue/20',
 
-  pageContainer: 'max-w-7xl mx-auto w-full space-y-6 p-6 pb-24 md:pb-6',
+  pageContainer:
+    'max-w-7xl mx-auto w-full space-y-5 px-4 py-5 pb-28 sm:space-y-6 sm:px-6 sm:py-6 md:pb-6',
 };

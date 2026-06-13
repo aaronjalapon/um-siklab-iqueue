@@ -18,16 +18,18 @@ import asyncio
 import json
 import logging
 import os
+import uuid
 from pathlib import Path
-from uuid import UUID
+from typing import Any
 
-from langdetect import detect as detect_language
-from sqlalchemy import select
+from langdetect import detect as detect_language_raw
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.booking import Booking, BookingStatus
 from app.models.bus import Bus
 from app.models.bus_route import BusRoute
+from app.models.passenger import Passenger
 from app.schemas.chatbot import ChatbotResponse
 
 logger = logging.getLogger(__name__)
@@ -41,74 +43,90 @@ INTENT_KEYWORDS: dict[str, dict[str, list[str]]] = {
         "check_booking": [
             "booking", "my booking", "where is my", "booking status",
             "my ticket", "check booking", "find booking", "reservation",
+            "my reservation", "look up booking", "find my ticket",
         ],
         "request_requeue": [
             "missed", "late", "rebook", "missed my bus", "change booking",
             "another bus", "next bus", "reschedule", "left behind",
+            "i missed", "missed the bus", "can i rebook",
         ],
         "get_departure_info": [
             "departure", "leave", "depart", "what time", "when does",
             "schedule", "departure time", "gate", "platform",
+            "when is", "bus leaves", "leaving at",
         ],
         "surge_info": [
             "crowded", "busy", "full", "surge", "peak", "holiday",
             "many people", "crowd", "packed", "how full",
+            "is it busy", "is it crowded", "how crowded",
         ],
     },
     "fil": {
         "check_booking": [
             "booking", "tiket", "nasaan", "booking ko", "reserbasyon",
-            "tingnan", "status", "kumpirma",
+            "tingnan", "status", "kumpirma", "hanapin", "booking status",
         ],
         "request_requeue": [
             "naiwan", "huli", "na-miss", "missed", "lumipat",
-            "ibang bus", "susunod", "palit", "rebook",
+            "ibang bus", "susunod", "palit", "rebook", "na iwan",
+            "di nakaabot", "hindi umabot",
         ],
         "get_departure_info": [
             "alis", "aalis", "kailan", "oras", "schedule",
             "iskedyul", "departure", "gate", "anong oras",
+            "anong oras alis", "kailan aalis",
         ],
         "surge_info": [
             "marami", "puno", "siksikan", "maraming tao", "crowded",
-            "holiday", "peak", "surge", "dami",
+            "holiday", "peak", "surge", "dami", "matao",
+            "madami tao", "maraming pasahero", "karami", "gaano karami",
+            "karamihan", "puno ba", "sikip",
         ],
     },
     "id": {
         "check_booking": [
             "booking", "tiket", "pesanan", "di mana", "status",
-            "konfirmasi", "cek", "reservasi",
+            "konfirmasi", "cek", "reservasi", "cari tiket",
         ],
         "request_requeue": [
             "ketinggalan", "telat", "terlambat", "ganti", "rebook",
-            "bus lain", "berikutnya", "jadwal ulang",
+            "bus lain", "berikutnya", "jadwal ulang", "ketinggalan bus",
         ],
         "get_departure_info": [
             "berangkat", "keberangkatan", "kapan", "jam", "jadwal",
-            "pintu", "gate", "platform",
+            "pintu", "gate", "platform", "jam berapa",
         ],
         "surge_info": [
             "ramai", "penuh", "padat", "banyak orang", "crowded",
-            "liburan", "puncak", "lonjakan",
+            "liburan", "puncak", "lonjakan", "sepi", "sibuk",
         ],
     },
     "vi": {
         "check_booking": [
             "đặt chỗ", "vé", "booking", "đâu", "trạng thái",
-            "xác nhận", "kiểm tra", "đặt vé",
+            "xác nhận", "kiểm tra", "đặt vé", "tìm vé",
         ],
         "request_requeue": [
             "lỡ", "muộn", "trễ", "đổi", "chuyến sau",
-            "xe khác", "đặt lại", "dời lịch",
+            "xe khác", "đặt lại", "dời lịch", "lỡ xe",
         ],
         "get_departure_info": [
             "khởi hành", "đi", "khi nào", "mấy giờ", "lịch trình",
-            "giờ", "cổng", "bến",
+            "giờ", "cổng", "bến", "mấy giờ đi",
         ],
         "surge_info": [
             "đông", "đầy", "chật", "nhiều người", "cao điểm",
-            "lễ", "tết", "đông đúc",
+            "lễ", "tết", "đông đúc", "vắng", "đông khách",
         ],
     },
+}
+
+# Negation words — reduce intent score when near a keyword match
+NEGATION_WORDS: dict[str, set[str]] = {
+    "en": {"no", "not", "never", "don't", "doesn't", "isn't", "can't", "won't"},
+    "fil": {"hindi", "huwag", "wag", "walang", "wala", "di"},
+    "id": {"tidak", "bukan", "jangan", "nggak", "gak", "tak"},
+    "vi": {"không", "chưa", "chẳng", "đừng"},
 }
 
 # ---------------------------------------------------------------------------
@@ -148,6 +166,29 @@ INTENT_RESPONSES: dict[str, dict[str, str]] = {
         "vi": "Tôi có thể kiểm tra mức độ đông đúc cho tuyến đường của bạn. Vào dịp lễ và cuối tuần, mức độ có thể cao. Bạn đang hỏi về tuyến nào?",
     },
 }
+
+# ---------------------------------------------------------------------------
+# Per-language confidence calibration
+#   Derived from evaluation — adjust threshold per language based on
+#   historical accuracy. Higher threshold = more conservative for that lang.
+# ---------------------------------------------------------------------------
+
+LANGUAGE_CONFIDENCE_OFFSET: dict[str, float] = {
+    "en": 0.00,   # baseline
+    "fil": 0.05,  # slightly conservative (may have less training data)
+    "id": 0.02,
+    "vi": 0.03,
+}
+
+# The base minimum confidence — individual languages add their offset
+BASE_MIN_CONFIDENCE = 0.50
+
+# ---------------------------------------------------------------------------
+# Intents that are "simple" (use templates) vs "complex" (use LLM)
+# ---------------------------------------------------------------------------
+
+SIMPLE_INTENTS = {"surge_info", "get_departure_info"}
+COMPLEX_INTENTS = {"check_booking", "request_requeue", "fallback"}
 
 
 # ============================================================================
@@ -222,12 +263,10 @@ class ChatbotService:
                 if label_map_path.exists():
                     with open(label_map_path) as f:
                         label_map_str = json.load(f)
-                    # Keys are strings in JSON; convert to int
                     self._id_to_label = {
                         int(k): v for k, v in label_map_str.items()
                     }
                 else:
-                    # Fallback hard-coded label map
                     self._id_to_label = {
                         0: "check_booking",
                         1: "request_requeue",
@@ -265,10 +304,8 @@ class ChatbotService:
         if self._model_available:
             try:
                 results = self._classifier(text)[0]
-                # results is list of {label, score} dicts
                 best = max(results, key=lambda x: x["score"])
 
-                # Parse label — handle both "LABEL_0" and "0" formats
                 label_str = best["label"]
                 if label_str.startswith("LABEL_"):
                     label_idx = int(label_str.split("_")[1])
@@ -278,11 +315,10 @@ class ChatbotService:
                 intent = self._id_to_label.get(label_idx, "fallback")
                 confidence = round(best["score"], 4)
 
-                # Confidence gate: low-confidence predictions fall back to
-                # avoid confidently returning a wrong intent, especially for
-                # under-represented language/intent combinations.
-                MIN_CONFIDENCE = 0.40
-                if confidence < MIN_CONFIDENCE:
+                # Per-language confidence threshold
+                offset = LANGUAGE_CONFIDENCE_OFFSET.get(language, 0.0)
+                min_conf = BASE_MIN_CONFIDENCE + offset
+                if confidence < min_conf:
                     intent = "fallback"
 
                 all_scores = {}
@@ -313,88 +349,602 @@ class ChatbotService:
             "all_scores": {},
         }
 
+    def classify_with_context(
+        self, text: str, language: str, session_context: dict[str, Any] | None = None
+    ) -> dict:
+        """Classify intent with session context biasing.
+
+        If the session has accumulated entities (route, date, booking_id),
+        use them to bias the intent classification — e.g. if the user
+        previously asked about a route, prefer surge_info or departure_info.
+
+        Args:
+            text: The user's query.
+            language: Detected language code.
+            session_context: Aggregated session entities (from SessionManager).
+
+        Returns:
+            Same dict format as classify().
+        """
+        # Get base classification
+        result = self.classify(text, language)
+
+        if not session_context or not session_context.get("route_cities"):
+            return result
+
+        # Context biasing: if the user has mentioned a route before and
+        # is now asking a short/ambiguous follow-up, nudge the intent
+        ctx = session_context
+        intent = result["intent"]
+
+        # Short ambiguous queries in context of a route → likely surge or departure
+        word_count = len(text.split())
+        has_route = bool(ctx.get("origin") or ctx.get("route_cities"))
+        has_date = bool(ctx.get("date"))
+
+        if word_count <= 5 and has_route and intent == "fallback":
+            all_scores = result.get("all_scores", {})
+
+            # Check if surge_info or departure_info is close behind
+            surge_score = all_scores.get("surge_info", 0)
+            depart_score = all_scores.get("get_departure_info", 0)
+
+            if surge_score > 0.25:
+                intent = "surge_info"
+                result["confidence"] = min(0.7, surge_score + 0.15)
+            elif depart_score > 0.25:
+                intent = "get_departure_info"
+                result["confidence"] = min(0.7, depart_score + 0.15)
+
+        # If user has route + date context and asks something short,
+        # check_booking might be what they want
+        if word_count <= 4 and has_route and has_date:
+            all_scores = result.get("all_scores", {})
+            booking_score = all_scores.get("check_booking", 0)
+            if booking_score > 0.3:
+                intent = "check_booking"
+                result["confidence"] = min(0.7, booking_score + 0.1)
+
+        result["intent"] = intent
+        return result
+
     async def respond(
         self,
         query: str,
         language: str | None = None,
-        booking_id: UUID | None = None,
+        booking_id: uuid.UUID | None = None,
         db: AsyncSession | None = None,
-    ) -> ChatbotResponse:
+        session_id: uuid.UUID | None = None,
+        phone: str | None = None,
+    ) -> tuple[ChatbotResponse, dict[str, Any], int]:
         """Process a user query and return a chatbot response.
 
         Args:
             query: The user's question text.
             language: ISO 639-1 language code (auto-detected if None).
             booking_id: Optional booking context for personalised responses.
-            db: Optional database session for booking lookups.
+            db: Optional database session for booking/route lookups.
+            session_id: Optional session ID for multi-turn conversation.
+            phone: Optional phone number for booking lookup.
 
         Returns:
-            ChatbotResponse with response text, detected language, intent,
-            suggested actions, and confidence.
+            Tuple of (ChatbotResponse, session_metadata, degradation_level).
+            degradation_level: 0=full, 1=no LLM, 2=no model, 3=no DB, 4=total.
         """
-        # Step 1: Detect language
+        degradation = 0
+        session_metadata: dict[str, Any] = {}
+
+        # --- Degradation-aware DB check ---
+        if db is None:
+            degradation = max(degradation, 3)
+
+        # Step 1: Detect language with confidence
         if language and language in self.SUPPORTED_LANGUAGES:
             detected_lang = language
+            lang_confidence = 0.95  # User explicitly selected
         else:
-            detected_lang = self._detect_language(query)
+            detected_lang, lang_confidence = self._detect_language(query)
 
-        # Step 2: Classify intent (async-safe via thread pool when using model)
+        # Step 2: Load session context if available
+        session_context: dict[str, Any] | None = None
+        if session_id and db:
+            try:
+                from app.services.chatbot.session import SessionManager
+
+                session_ctx = await SessionManager.get_context(db, session_id)
+                if session_ctx:
+                    session_context = session_ctx
+            except Exception:
+                logger.warning("Failed to load session context for %s", session_id)
+
+        # Merge phone from various sources
+        effective_phone = phone
+        if not effective_phone and session_context:
+            effective_phone = session_context.get("phone")
+        # Also try extracting phone from query
+        if not effective_phone:
+            from app.services.chatbot.session import SessionManager
+            entities = SessionManager.extract_entities(query, "")
+            effective_phone = entities.get("phone")
+
+        # Step 3: Classify intent
         if self._model_available:
             classification = await asyncio.to_thread(
-                self.classify, query, detected_lang
+                self.classify_with_context, query, detected_lang, session_context
             )
         else:
-            classification = self.classify(query, detected_lang)
+            degradation = max(degradation, 2)
+            classification = self.classify_with_context(query, detected_lang, session_context)
 
         intent = classification["intent"]
         confidence = classification["confidence"]
 
-        # Step 3: Booking lookup for check_booking with provided ID
-        if intent == "check_booking" and booking_id and db:
+        # Step 4: Extract entities from this query
+        from app.services.chatbot.session import SessionManager
+        entities = SessionManager.extract_entities(query, intent)
+
+        # Step 5: Build response based on intent (with real data when available)
+        response_text = ""
+        suggested_actions: list[str] = []
+
+        if intent == "check_booking" and db:
+            degradation, response_text = await self._handle_check_booking(
+                db, booking_id, effective_phone, detected_lang, degradation,
+            )
+            if degradation >= 4:
+                # Lookup failed completely — fall through to template
+                response_text = ""
+
+        if not response_text and intent == "surge_info" and db:
+            degradation, response_text = await self._handle_surge_info(
+                db, query, session_context, entities, detected_lang, degradation,
+            )
+
+        if not response_text and intent == "get_departure_info" and db:
+            degradation, response_text = await self._handle_departure_info(
+                db, query, session_context, entities, detected_lang, degradation,
+            )
+
+        if not response_text and intent == "request_requeue" and db:
+            degradation, response_text = await self._handle_requeue_start(
+                db, effective_phone, booking_id, session_context,
+                entities, detected_lang, degradation,
+            )
+
+        # Step 6: Fall back to templates if no real-data response yet
+        if not response_text:
+            if intent == "fallback":
+                response_text = FALLBACK_RESPONSES.get(
+                    detected_lang, FALLBACK_RESPONSES["en"]
+                )
+            else:
+                response_text = INTENT_RESPONSES.get(intent, {}).get(
+                    detected_lang,
+                    INTENT_RESPONSES.get(intent, {}).get("en", ""),
+                )
+
+        suggested_actions = self._get_suggestions(intent, detected_lang)
+
+        # Step 7: Try LLM enhancement for complex intents (if we have real data)
+        if intent in COMPLEX_INTENTS and response_text and degradation < 2:
             try:
-                response_text = await self._lookup_booking(
-                    booking_id, detected_lang, db
-                )
-                return ChatbotResponse(
-                    response_text=response_text,
-                    detected_language=detected_lang,
+                from app.services.chatbot.llm import LLMResponder
+
+                llm_text = await LLMResponder.generate_response(
                     intent=intent,
-                    suggested_actions=["View QR code", "Check boarding window"],
-                    confidence=confidence,
+                    response_data={"template_response": response_text},
+                    language=detected_lang,
+                    session_context=session_context,
+                    query=query,
                 )
-            except Exception:
-                # Fall through to template response on lookup failure
-                pass
+                if llm_text:
+                    response_text = llm_text
+            except Exception as exc:
+                logger.warning("LLM enhancement failed: %s", exc)
+                degradation = max(degradation, 1)
 
-        # Step 4: Build response from templates
-        if intent == "fallback":
-            response_text = FALLBACK_RESPONSES.get(
-                detected_lang, FALLBACK_RESPONSES["en"]
-            )
-        else:
-            response_text = INTENT_RESPONSES.get(intent, {}).get(
-                detected_lang,
-                INTENT_RESPONSES.get(intent, {}).get("en", ""),
-            )
+        # Step 8: Build session metadata for this turn
+        session_metadata = {
+            "intent": intent,
+            "entities": entities,
+            "language": detected_lang,
+        }
 
-        return ChatbotResponse(
-            response_text=response_text,
-            detected_language=detected_lang,
-            intent=intent,
-            suggested_actions=self._get_suggestions(intent, detected_lang),
-            confidence=confidence,
+        # Merge with any flow metadata from rebooking
+        if intent == "request_requeue":
+            session_metadata["flow"] = "rebooking"
+            session_metadata["flow_step"] = 1
+
+        return (
+            ChatbotResponse(
+                response_text=response_text,
+                detected_language=detected_lang,
+                language_confidence=round(lang_confidence, 4),
+                intent=intent,
+                suggested_actions=suggested_actions,
+                confidence=confidence,
+                session_id=session_id,
+                degradation_level=degradation,
+            ),
+            session_metadata,
+            degradation,
         )
+
+    # ------------------------------------------------------------------
+    # Intent handlers — real data queries
+    # ------------------------------------------------------------------
+
+    async def _handle_check_booking(
+        self,
+        db: AsyncSession,
+        booking_id: uuid.UUID | None,
+        phone: str | None,
+        language: str,
+        degradation: int,
+    ) -> tuple[int, str]:
+        """Look up a booking by ID or phone and return a status message."""
+        booking: Booking | None = None
+
+        try:
+            if booking_id:
+                result = await db.execute(
+                    select(Booking).where(Booking.id == booking_id)
+                )
+                booking = result.scalars().first()
+            elif phone:
+                # Find passenger by phone, then latest booking
+                p_result = await db.execute(
+                    select(Passenger).where(Passenger.phone == phone)
+                )
+                passenger = p_result.scalars().first()
+                if passenger:
+                    b_result = await db.execute(
+                        select(Booking)
+                        .where(Booking.passenger_id == passenger.id)
+                        .order_by(Booking.created_at.desc())
+                        .limit(1)
+                    )
+                    booking = b_result.scalars().first()
+        except Exception as exc:
+            logger.warning("Booking lookup failed: %s", exc)
+            return max(degradation, 3), ""
+
+        if not booking:
+            templates = {
+                "en": "I couldn't find a booking with that information. Please double-check your booking ID or phone number and try again.",
+                "fil": "Hindi ko mahanap ang booking. Pakitingnan muli ang iyong booking ID o numero ng telepono at subukan ulit.",
+                "id": "Saya tidak dapat menemukan pemesanan dengan informasi tersebut. Silakan periksa kembali ID pemesanan atau nomor telepon Anda.",
+                "vi": "Tôi không tìm thấy đặt vé với thông tin đó. Vui lòng kiểm tra lại mã đặt vé hoặc số điện thoại.",
+            }
+            return degradation, templates.get(language, templates["en"])
+
+        # Build booking status response
+        status_map = {
+            BookingStatus.CONFIRMED: {
+                "en": "confirmed", "fil": "kumpirmado",
+                "id": "dikonfirmasi", "vi": "đã xác nhận",
+            },
+            BookingStatus.PENDING: {
+                "en": "pending", "fil": "nakabinbin",
+                "id": "tertunda", "vi": "đang chờ",
+            },
+            BookingStatus.BOARDED: {
+                "en": "boarded", "fil": "nakasakay na",
+                "id": "sudah naik", "vi": "đã lên xe",
+            },
+            BookingStatus.CANCELLED: {
+                "en": "cancelled", "fil": "kanselado",
+                "id": "dibatalkan", "vi": "đã hủy",
+            },
+            BookingStatus.MISSED: {
+                "en": "missed", "fil": "hindi nakasakay",
+                "id": "ketinggalan", "vi": "đã lỡ",
+            },
+        }
+
+        status_text = status_map.get(booking.status, {}).get(language, booking.status.value)
+
+        # Try to get route info
+        route_info = ""
+        try:
+            bus_result = await db.execute(
+                select(Bus).where(Bus.id == booking.bus_id)
+            )
+            bus = bus_result.scalars().first()
+            if bus:
+                route_result = await db.execute(
+                    select(BusRoute).where(BusRoute.id == bus.route_id)
+                )
+                route = route_result.scalars().first()
+                if route:
+                    route_info = f" {route.origin} → {route.destination}"
+        except Exception:
+            pass
+
+        templates = {
+            "en": f"Your booking is {status_text}.{route_info} Seat: {booking.seat_number}. "
+                  f"Departure: {booking.departure_date.strftime('%B %d, %Y')}. "
+                  f"Boarding window: {booking.boarding_window_start.strftime('%H:%M')} → "
+                  f"{booking.boarding_window_end.strftime('%H:%M')}.",
+            "fil": f"Ang iyong booking ay {status_text}.{route_info} Upuan: {booking.seat_number}. "
+                   f"Alis: {booking.departure_date.strftime('%B %d, %Y')}. "
+                   f"Oras ng pagsakay: {booking.boarding_window_start.strftime('%H:%M')} → "
+                   f"{booking.boarding_window_end.strftime('%H:%M')}.",
+            "id": f"Pemesanan Anda {status_text}.{route_info} Kursi: {booking.seat_number}. "
+                  f"Keberangkatan: {booking.departure_date.strftime('%B %d, %Y')}. "
+                  f"Waktu naik: {booking.boarding_window_start.strftime('%H:%M')} → "
+                  f"{booking.boarding_window_end.strftime('%H:%M')}.",
+            "vi": f"Đặt vé của bạn {status_text}.{route_info} Ghế: {booking.seat_number}. "
+                  f"Khởi hành: {booking.departure_date.strftime('%B %d, %Y')}. "
+                  f"Giờ lên xe: {booking.boarding_window_start.strftime('%H:%M')} → "
+                  f"{booking.boarding_window_end.strftime('%H:%M')}.",
+        }
+
+        return degradation, templates.get(language, templates["en"])
+
+    async def _handle_surge_info(
+        self,
+        db: AsyncSession,
+        query: str,
+        session_context: dict[str, Any] | None,
+        entities: dict[str, Any],
+        language: str,
+        degradation: int,
+    ) -> tuple[int, str]:
+        """Query real surge forecast for a route."""
+        try:
+            from app.services.forecasting.predictor import (
+                ForecastingService,
+                _route_slug_from_id,
+            )
+
+            # Determine route from context or entities
+            origin = None
+            destination = None
+
+            if session_context:
+                origin = session_context.get("origin")
+                destination = session_context.get("destination")
+            if not origin and entities.get("origin"):
+                origin = entities["origin"]
+                destination = entities.get("destination")
+
+            if not origin:
+                # Try to match route from query
+                route_cities = entities.get("route_cities", [])
+                if len(route_cities) >= 2:
+                    origin, destination = route_cities[0], route_cities[-1]
+
+            if not origin:
+                return degradation, ""  # Can't determine route — fall through
+
+            # Find matching route
+            route_result = await db.execute(
+                select(BusRoute).where(
+                    func.lower(BusRoute.origin).contains(origin.lower()),
+                    func.lower(BusRoute.destination).contains(destination.lower() if destination else origin.lower()),
+                ).limit(1)
+            )
+            route = route_result.scalars().first()
+
+            if not route:
+                return degradation, ""
+
+            # Get forecast
+            forecast_service = ForecastingService()
+            predictions = forecast_service.predict(route.id, horizon_days=7)
+
+            # Format response
+            surge_days = [p for p in predictions if p.surge_probability > 0.25]
+            if not surge_days:
+                response_map = {
+                    "en": f"The {route.origin} → {route.destination} route looks normal this week. No significant surge expected. Safe to travel!",
+                    "fil": f"Mukhang normal ang ruta {route.origin} → {route.destination} ngayong linggo. Walang inaasahang matinding surge. Ligtas bumyahe!",
+                    "id": f"Rute {route.origin} → {route.destination} terlihat normal minggu ini. Tidak ada lonjakan signifikan. Aman untuk bepergian!",
+                    "vi": f"Tuyến {route.origin} → {route.destination} có vẻ bình thường tuần này. Không có đợt tăng đột biến nào. An toàn để đi lại!",
+                }
+                return degradation, response_map.get(language, response_map["en"])
+
+            # Highlight top surge days
+            top = sorted(surge_days, key=lambda x: x.surge_probability, reverse=True)[:3]
+            day_strs = []
+            for p in top:
+                day_name = p.forecast_date.strftime("%A")
+                pct = int(p.surge_probability * 100)
+                holiday_note = f" ({p.holiday_name})" if p.holiday_name else ""
+                day_strs.append(f"{day_name}: {pct}%{holiday_note}")
+
+            response_map = {
+                "en": f"Surge forecast for {route.origin} → {route.destination} this week:\n"
+                      + "\n".join(f"• {d}" for d in day_strs)
+                      + f"\n\nI recommend booking early for the high-surge days.",
+                "fil": f"Surge forecast para sa {route.origin} → {route.destination} ngayong linggo:\n"
+                       + "\n".join(f"• {d}" for d in day_strs)
+                       + f"\n\nInirerekomenda kong mag-book nang maaga para sa mga araw na mataas ang surge.",
+            }
+            return degradation, response_map.get(language, response_map["en"])
+
+        except Exception as exc:
+            logger.warning("Surge info lookup failed: %s", exc)
+            return max(degradation, 3), ""
+
+    async def _handle_departure_info(
+        self,
+        db: AsyncSession,
+        query: str,
+        session_context: dict[str, Any] | None,
+        entities: dict[str, Any],
+        language: str,
+        degradation: int,
+    ) -> tuple[int, str]:
+        """Query real bus departure schedule for a route."""
+        try:
+            origin = None
+            destination = None
+
+            if session_context:
+                origin = session_context.get("origin")
+                destination = session_context.get("destination")
+            if not origin and entities.get("origin"):
+                origin = entities["origin"]
+                destination = entities.get("destination")
+            if not origin:
+                route_cities = entities.get("route_cities", [])
+                if len(route_cities) >= 2:
+                    origin, destination = route_cities[0], route_cities[-1]
+
+            if not origin:
+                return degradation, ""
+
+            # Find matching routes and their buses
+            route_result = await db.execute(
+                select(BusRoute).where(
+                    func.lower(BusRoute.origin).contains(origin.lower()),
+                    func.lower(BusRoute.destination).contains(
+                        destination.lower() if destination else origin.lower()
+                    ),
+                ).limit(3)
+            )
+            routes = route_result.scalars().all()
+
+            if not routes:
+                return degradation, ""
+
+            # Get buses for these routes
+            all_buses: list[Bus] = []
+            for route in routes:
+                bus_result = await db.execute(
+                    select(Bus).where(Bus.route_id == route.id).limit(5)
+                )
+                all_buses.extend(bus_result.scalars().all())
+
+            if not all_buses:
+                response_map = {
+                    "en": f"I found the {routes[0].origin} → {routes[0].destination} route but no buses are currently scheduled. Please check back later.",
+                    "fil": f"Nakita ko ang ruta {routes[0].origin} → {routes[0].destination} pero walang naka-schedule na bus. Pakitingnan muli.",
+                }
+                return degradation, response_map.get(language, response_map["en"])
+
+            # Format bus list
+            bus_lines = []
+            for bus in all_buses[:5]:
+                # Count booked seats to show availability
+                booked_count_result = await db.execute(
+                    select(func.count()).select_from(Booking).where(
+                        Booking.bus_id == bus.id,
+                        Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.PENDING]),
+                    )
+                )
+                booked = booked_count_result.scalar() or 0
+                available = max(0, bus.capacity - booked)
+                bus_lines.append(f"Bus {bus.plate_number} · {available} seats available")
+
+            response_map = {
+                "en": f"Buses on {routes[0].origin} → {routes[0].destination}:\n"
+                      + "\n".join(f"• {b}" for b in bus_lines)
+                      + f"\n\nWould you like to book a specific bus?",
+                "fil": f"Mga bus sa {routes[0].origin} → {routes[0].destination}:\n"
+                       + "\n".join(f"• {b}" for b in bus_lines)
+                       + f"\n\nGusto mo bang mag-book ng partikular na bus?",
+            }
+            return degradation, response_map.get(language, response_map["en"])
+
+        except Exception as exc:
+            logger.warning("Departure info lookup failed: %s", exc)
+            return max(degradation, 3), ""
+
+    async def _handle_requeue_start(
+        self,
+        db: AsyncSession,
+        phone: str | None,
+        booking_id: uuid.UUID | None,
+        session_context: dict[str, Any] | None,
+        entities: dict[str, Any],
+        language: str,
+        degradation: int,
+    ) -> tuple[int, str]:
+        """Start the rebooking flow — identify the missed booking."""
+        try:
+            booking: Booking | None = None
+
+            if booking_id:
+                result = await db.execute(
+                    select(Booking).where(Booking.id == booking_id)
+                )
+                booking = result.scalars().first()
+            elif phone:
+                p_result = await db.execute(
+                    select(Passenger).where(Passenger.phone == phone)
+                )
+                passenger = p_result.scalars().first()
+                if passenger:
+                    b_result = await db.execute(
+                        select(Booking)
+                        .where(Booking.passenger_id == passenger.id)
+                        .order_by(Booking.created_at.desc())
+                        .limit(1)
+                    )
+                    booking = b_result.scalars().first()
+            elif session_context:
+                ctx_phone = session_context.get("phone")
+                if ctx_phone:
+                    p_result = await db.execute(
+                        select(Passenger).where(Passenger.phone == ctx_phone)
+                    )
+                    passenger = p_result.scalars().first()
+                    if passenger:
+                        b_result = await db.execute(
+                            select(Booking)
+                            .where(Booking.passenger_id == passenger.id)
+                            .order_by(Booking.created_at.desc())
+                            .limit(1)
+                        )
+                        booking = b_result.scalars().first()
+
+            if not booking:
+                # Need to identify — ask for phone or booking ID
+                response_map = {
+                    "en": "I can help you rebook! First, I need to find your booking. Can you provide your booking ID or the phone number you used when booking?",
+                    "fil": "Matutulungan kitang mag-rebook! Kailangan ko munang mahanap ang booking mo. Pwede mo bang ibigay ang iyong booking ID o numero ng telepono?",
+                    "id": "Saya bisa membantu Anda memesan ulang! Pertama, saya perlu menemukan pemesanan Anda. Bisakah Anda memberikan ID pemesanan atau nomor telepon yang digunakan?",
+                    "vi": "Tôi có thể giúp bạn đặt lại! Trước tiên, tôi cần tìm đặt vé của bạn. Bạn có thể cung cấp mã đặt vé hoặc số điện thoại đã dùng không?",
+                }
+                return degradation, response_map.get(language, response_map["en"])
+
+            # Found the booking — confirm and find alternatives
+            bus_result = await db.execute(
+                select(Bus).where(Bus.id == booking.bus_id)
+            )
+            bus = bus_result.scalars().first()
+
+            response_map = {
+                "en": f"Found your booking: seat {booking.seat_number} on Bus {bus.plate_number if bus else 'Unknown'} "
+                      f"({booking.departure_date.strftime('%B %d')}). "
+                      f"Status: {booking.status.value}. "
+                      f"I'll find the next available bus on this route. One moment...",
+                "fil": f"Nakita ko ang booking mo: upuan {booking.seat_number} sa Bus {bus.plate_number if bus else 'Unknown'} "
+                       f"({booking.departure_date.strftime('%B %d')}). "
+                       f"Status: {booking.status.value}. "
+                       f"Hahanap ako ng susunod na available na bus sa rutang ito. Sandali lang...",
+            }
+            return degradation, response_map.get(language, response_map["en"])
+
+        except Exception as exc:
+            logger.warning("Requeue start failed: %s", exc)
+            return max(degradation, 3), ""
 
     # ------------------------------------------------------------------
     # Internal — language detection
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _detect_language(query: str) -> str:
-        """Detect the language of a query using char-set heuristics first,
-        then falling back to langdetect for ambiguous inputs.
+    def _detect_language(query: str) -> tuple[str, float]:
+        """Detect the language of a query and return (language, confidence).
 
-        Falls back to English only when all detection methods fail.
+        Uses char-set heuristics first, then falls back to langdetect.
+        Returns confidence alongside the language code.
+
+        Falls back to ("en", 0.40) only when all detection methods fail.
         """
         q = query.lower().strip()
 
@@ -406,8 +956,13 @@ class ChatbotService:
             "đi", "đâu", "bao", "nhiêu", "mấy", "giờ", "chuyến", "xe",
             "vé", "đặt", "hủy", "giúp", "vui", "lòng", "cảm", "ơn",
         }
-        if any(ch in q for ch in vi_chars) or sum(1 for w in vi_words if w in q.split()) >= 2:
-            return "vi"
+        vi_char_match = any(ch in q for ch in vi_chars)
+        vi_word_count = sum(1 for w in vi_words if w in q.split())
+        if vi_char_match:
+            confidence = 0.95 if vi_word_count >= 2 else 0.85
+            return "vi", confidence
+        if vi_word_count >= 2:
+            return "vi", 0.80
 
         # Filipino/Tagalog: common function words + particles
         fil_words = {
@@ -416,8 +971,11 @@ class ChatbotService:
             "hindi", "wala", "meron", "may", "ba", "na", "pa", "lang",
             "dito", "diyan", "doon", "kung", "para", "dahil",
         }
-        if sum(1 for w in fil_words if w in q.split()) >= 2:
-            return "fil"
+        fil_match_count = sum(1 for w in fil_words if w in q.split())
+        if fil_match_count >= 3:
+            return "fil", min(0.95, 0.75 + fil_match_count * 0.05)
+        if fil_match_count >= 2:
+            return "fil", 0.70
 
         # Indonesian/Bahasa: common function words
         id_words = {
@@ -426,12 +984,41 @@ class ChatbotService:
             "dengan", "untuk", "pada", "ada", "apa", "bagaimana", "kapan",
             "bus", "bis", "tiket", "pesan", "jadwal", "rute",
         }
-        if sum(1 for w in id_words if w in q.split()) >= 2:
-            return "id"
+        id_match_count = sum(1 for w in id_words if w in q.split())
+        if id_match_count >= 3:
+            return "id", min(0.95, 0.75 + id_match_count * 0.05)
+        if id_match_count >= 2:
+            return "id", 0.70
+
+        # --- Code-switch detection ---
+        # If query has English words mixed with some Filipino/Indonesian words,
+        # classify by the non-English signal
+        english_stopwords = {"the", "is", "a", "an", "in", "on", "at", "to", "for",
+                             "of", "and", "or", "but", "with", "from", "by", "my",
+                             "i", "you", "he", "she", "it", "we", "they", "me",
+                             "can", "will", "would", "could", "should", "what",
+                             "where", "when", "who", "how", "why", "which"}
+
+        words_in_query = set(q.split())
+        non_en_signals = fil_match_count + id_match_count
+        en_signals = len(words_in_query & english_stopwords)
+
+        # Code-switched: has both English and local language signals
+        if non_en_signals >= 2 and en_signals >= 1:
+            # Filipinos often code-switch — default to Filipino if we see any fil words
+            if fil_match_count >= id_match_count and fil_match_count > 0:
+                return "fil", 0.65
+            elif id_match_count > 0:
+                return "id", 0.65
+
+        # Short query with few signals → low confidence English
+        word_count = len(words_in_query)
+        if word_count <= 3 and non_en_signals == 0:
+            return "en", 0.50
 
         # --- Fallback layer: langdetect ---
         try:
-            lang = detect_language(query)
+            lang = detect_language_raw(query)
             lang_map = {
                 "tl": "fil",  # Tagalog → Filipino
                 "id": "id",
@@ -439,9 +1026,16 @@ class ChatbotService:
                 "en": "en",
                 "ms": "id",  # Malay → Indonesian (closest match)
             }
-            return lang_map.get(lang, "en")
+            detected = lang_map.get(lang, "en")
+
+            # Confidence based on langdetect + word count
+            if detected == "en":
+                confidence = 0.60 if word_count <= 5 else 0.70
+            else:
+                confidence = 0.65  # langdetect identified non-English
+            return detected, confidence
         except Exception:
-            return "en"
+            return "en", 0.40
 
     # ------------------------------------------------------------------
     # Internal — keyword fallback classifier
@@ -451,60 +1045,71 @@ class ChatbotService:
     def _classify_intent_fallback(query: str, language: str) -> tuple[str, float]:
         """Classify intent via keyword matching (fallback when model unavailable).
 
+        Handles negation, supports phrase-level matching (bigrams), and
+        weights rare keywords higher.
+
         Returns (intent, confidence) tuple.
         """
         query_lower = query.lower().strip()
+        query_words = query_lower.split()
         keywords = INTENT_KEYWORDS.get(language, INTENT_KEYWORDS["en"])
+
+        # Detect negation spans — words near negation markers should not count
+        negations = NEGATION_WORDS.get(language, NEGATION_WORDS["en"])
+        negated_positions: set[int] = set()
+        for i, word in enumerate(query_words):
+            clean_word = word.strip("',.!?")
+            if clean_word in negations:
+                # Mark this position and the next 2 as negated
+                for j in range(i, min(len(query_words), i + 3)):
+                    negated_positions.add(j)
 
         best_intent = "fallback"
         best_score = 0.0
 
+        # Count total word occurrences across all keywords for IDF-like weighting
+        word_freq: dict[str, int] = {}
+        for intent_words in keywords.values():
+            for w in intent_words:
+                word_freq[w] = word_freq.get(w, 0) + 1
+
         for intent, words in keywords.items():
-            score = sum(1 for w in words if w in query_lower)
-            normalized = score / max(len(words), 1)
+            score = 0.0
+            total_weight = len(words)
+
+            for i, word in enumerate(query_words):
+                clean_word = word.strip("',.!?")
+                if clean_word in negations:
+                    continue  # Skip negation words themselves
+
+                # Single-word matches
+                if clean_word in words:
+                    # IDF-like weighting: rare keywords count more
+                    freq = word_freq.get(clean_word, 1)
+                    weight = 1.0 / freq
+                    if i in negated_positions:
+                        weight *= -0.5  # Negated context reduces score
+                    score += weight
+
+                # Bigram matches (current word + next)
+                if i < len(query_words) - 1:
+                    next_word = query_words[i + 1].strip("',.!?")
+                    bigram = f"{clean_word} {next_word}"
+                    if bigram in words:
+                        freq = word_freq.get(bigram, 1)
+                        weight = 2.0 / freq  # Bigrams are stronger signals
+                        if i in negated_positions:
+                            weight *= -0.5
+                        score += weight
+
+            normalized = score / max(total_weight, 1)
             if normalized > best_score:
                 best_score = normalized
                 best_intent = intent
 
-        confidence = min(0.9, best_score * 3.0)
+        # Scale confidence — keyword matching tends to be conservative
+        confidence = min(0.85, best_score * 3.5)
         return best_intent, round(confidence, 2)
-
-    # ------------------------------------------------------------------
-    # Internal — booking lookup
-    # ------------------------------------------------------------------
-
-    async def _lookup_booking(
-        self, booking_id: UUID, language: str, db: AsyncSession
-    ) -> str:
-        """Look up a booking and return a status message in the user's language."""
-        result = await db.execute(
-            select(Booking).where(Booking.id == booking_id)
-        )
-        booking = result.scalars().first()
-
-        if not booking:
-            templates = {
-                "en": "I couldn't find a booking with that ID. Please double-check and try again.",
-                "fil": "Hindi ko mahanap ang booking na may ID na iyan. Pakitingnan muli at subukan ulit.",
-                "id": "Saya tidak dapat menemukan pemesanan dengan ID tersebut. Silakan periksa kembali dan coba lagi.",
-                "vi": "Tôi không tìm thấy đặt vé với mã đó. Vui lòng kiểm tra lại và thử lại.",
-            }
-            return templates.get(language, templates["en"])
-
-        status_map_en = {
-            BookingStatus.CONFIRMED: "confirmed",
-            BookingStatus.PENDING: "pending",
-            BookingStatus.BOARDED: "boarded",
-            BookingStatus.CANCELLED: "cancelled",
-            BookingStatus.MISSED: "missed",
-        }
-
-        status_text = status_map_en.get(booking.status, "unknown")
-        templates = {
-            "en": f"Your booking is {status_text}. Seat: {booking.seat_number}. Boarding window: {booking.boarding_window_start.strftime('%H:%M')} → {booking.boarding_window_end.strftime('%H:%M')}.",
-            "fil": f"Ang iyong booking ay {status_text}. Upuan: {booking.seat_number}. Oras ng pagsakay: {booking.boarding_window_start.strftime('%H:%M')} → {booking.boarding_window_end.strftime('%H:%M')}.",
-        }
-        return templates.get(language, templates["en"])
 
     # ------------------------------------------------------------------
     # Internal — suggestions

@@ -34,3 +34,19 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+### Connect to the backend
+
+Set this environment variable in Vercel:
+
+```bash
+NEXT_PUBLIC_API_URL=https://your-backend-domain/api/v1
+```
+
+Allow your Vercel origin in the backend CORS config:
+
+```bash
+ALLOWED_ORIGINS=https://your-project.vercel.app,https://your-custom-domain.com
+```
+
+The frontend uses `frontend/src/lib/api.ts` as the single API client, so changing `NEXT_PUBLIC_API_URL` is enough to point the deployed app at a new backend host.

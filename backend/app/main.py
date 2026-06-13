@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.router import api_router
 from app.core.config import get_settings
+from app.core.startup import warm_application
 from app.db.session import dispose_engine
 
 
@@ -20,9 +21,10 @@ from app.db.session import dispose_engine
 async def lifespan(app: FastAPI):
     """Application lifespan handler.
 
-    Startup: nothing needed (engine created lazily on first request)
+    Startup: preload model services and cache readiness state
     Shutdown: dispose the async SQLAlchemy engine
     """
+    app.state.runtime_status = await warm_application()
     yield
     await dispose_engine()
 

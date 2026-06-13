@@ -89,14 +89,25 @@ export interface ChatbotRequest {
   query: string;
   language?: string;
   booking_id?: string;
+  session_id?: string;
+  phone?: string;
 }
 
 export interface ChatbotResponse {
   response_text: string;
   detected_language: string;
+  language_confidence: number | null;
   intent: string;
   suggested_actions: string[];
   confidence: number;
+  session_id: string | null;
+  degradation_level: number;
+}
+
+export interface SessionCreateResponse {
+  session_id: string;
+  greeting: string;
+  language: string;
 }
 
 /** Passenger form data used in seat booking. */

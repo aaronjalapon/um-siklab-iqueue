@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Ticket, ShoppingCart, Tag, User } from "lucide-react";
+import { BusFront, Home, Ticket, ShoppingCart, Tag, User } from "lucide-react";
 import ChatbotPanel from "@/components/ChatbotPanel";
 
 export default function PassengerLayout({
@@ -13,25 +13,29 @@ export default function PassengerLayout({
   const pathname = usePathname();
 
   const navItems = [
-    { href: "/home", label: "Home", icon: Home },
-    { href: "/tickets", label: "My Ticket", icon: Ticket },
-    { href: "/buy", label: "Buy", icon: ShoppingCart, centerMobile: true },
-    { href: "/promo", label: "Promo", icon: Tag },
-    { href: "/account", label: "Account", icon: User },
+    { href: "/home", label: "Home", icon: Home, match: ["/home"] },
+    { href: "/tickets", label: "My Ticket", icon: Ticket, match: ["/tickets", "/confirmation"] },
+    { href: "/buy", label: "Buy", icon: ShoppingCart, centerMobile: true, match: ["/buy", "/book"] },
+    { href: "/promo", label: "Promo", icon: Tag, match: ["/promo"] },
+    { href: "/account", label: "Account", icon: User, match: ["/account"] },
   ];
 
+  const isItemActive = (item: (typeof navItems)[number]) =>
+    item.match.some((match) => pathname === match || pathname.startsWith(`${match}/`));
+
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 md:flex">
+    <div className="min-h-screen min-w-0 bg-slate-50 dark:bg-slate-950 md:flex">
       {/* Desktop Sidebar (hidden on mobile) */}
       <aside className="hidden md:flex flex-col w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 fixed h-full z-30 shadow-sm">
         <div className="p-6">
           <Link href="/home" className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-            🚌 IQueue
+            <BusFront className="h-7 w-7 text-brand-blue" aria-hidden />
+            IQueue
           </Link>
         </div>
         <nav className="flex-1 px-4 space-y-2 mt-4">
           {navItems.map((item) => {
-            const isActive = pathname === item.href || (item.href === '/buy' && pathname.startsWith('/buy')) || (item.href === '/home' && pathname === '/home');
+            const isActive = isItemActive(item);
             const Icon = item.icon;
             return (
               <Link
@@ -52,24 +56,23 @@ export default function PassengerLayout({
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 md:ml-64 pb-20 md:pb-0 overflow-x-hidden">
-        <div className="max-w-5xl mx-auto w-full">
-          {children}
-        </div>
+      <main className="min-w-0 flex-1 overflow-x-clip pb-24 md:ml-64 md:pb-0">
+        {children}
       </main>
 
       {/* Mobile Bottom Navigation (hidden on desktop) */}
-      <nav className="md:hidden fixed bottom-0 w-full bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-6 py-2 flex justify-between items-center pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.05)] dark:shadow-[0_-4px_20px_rgba(0,0,0,0.2)] z-40 rounded-t-3xl">
+      <nav className="md:hidden fixed inset-x-0 bottom-0 w-full bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-2 py-2 flex justify-around items-end pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.05)] dark:shadow-[0_-4px_20px_rgba(0,0,0,0.2)] z-40 rounded-t-3xl">
         {navItems.map((item) => {
-          const isActive = pathname === item.href || (item.href === '/buy' && pathname.startsWith('/buy')) || (item.href === '/home' && pathname === '/home');
+          const isActive = isItemActive(item);
           const Icon = item.icon;
 
           if (item.centerMobile) {
             return (
-              <div key={item.href} className="relative -top-6">
+              <div key={item.href} className="relative -top-5 flex flex-1 justify-center">
                 <Link
                   href={item.href}
                   className="w-14 h-14 bg-brand-blue rounded-full flex items-center justify-center text-white shadow-lg shadow-brand-blue/30 active:scale-95 transition-transform"
+                  aria-label={item.label}
                 >
                   <Icon className="w-6 h-6" />
                 </Link>
@@ -84,12 +87,14 @@ export default function PassengerLayout({
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center justify-center gap-1 w-12 pt-2 pb-1 ${
+              className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-1 px-1 pt-2 pb-1 ${
                 isActive ? "text-brand-blue" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
               } transition-colors`}
             >
               <Icon className="w-5 h-5" />
-              <span className="text-[10px] font-medium">{item.label}</span>
+              <span className="max-w-full truncate text-[10px] font-medium">
+                {item.label}
+              </span>
             </Link>
           );
         })}

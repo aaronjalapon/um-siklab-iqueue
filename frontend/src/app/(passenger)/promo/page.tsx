@@ -1,21 +1,49 @@
 "use client";
 
-import { Gift } from "lucide-react";
+import { Gift, TicketPercent } from "lucide-react";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { glassStyles } from "@/lib/design-system";
+
+const DEMO_REWARDS = [
+  "Earn points for on-time boarding",
+  "Operator promos can appear here",
+  "Discounts stay hidden until available",
+];
 
 export default function PromoPage() {
   return (
-    <div className="p-6 h-full flex flex-col items-center justify-center animate-in fade-in duration-500">
-      <div className="w-32 h-32 relative mb-8">
-        <div className="absolute inset-0 bg-orange-100 dark:bg-orange-900/30 rounded-3xl rotate-12 scale-110"></div>
-        <div className="absolute inset-0 bg-white dark:bg-slate-800 rounded-3xl shadow-lg border border-slate-100 dark:border-slate-700 flex items-center justify-center">
-          <Gift className="w-12 h-12 text-brand-orange" />
+    <div className={`${glassStyles.pageContainer} max-w-4xl`}>
+      <PageHeader
+        eyebrow="Promos"
+        title="Rewards and discounts"
+        description="Promo inventory is demo-ready and will show live operator offers when connected."
+      />
+
+      <section className={`${glassStyles.panel} grid gap-6 p-6 md:grid-cols-[220px_1fr] md:p-8`}>
+        <div className="flex h-44 items-center justify-center rounded-3xl border border-orange-100 bg-orange-50 dark:border-orange-900/40 dark:bg-orange-950/30">
+          <Gift className="h-16 w-16 text-brand-orange" aria-hidden />
         </div>
-      </div>
-      
-      <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-3 text-center">No Promos Yet</h2>
-      <p className="text-center text-slate-500 dark:text-slate-400 max-w-[280px]">
-        You've used all your promos! Keep booking tickets to earn more discounts and rewards.
-      </p>
+        <div className="flex flex-col justify-center">
+          <h2 className="text-xl font-bold text-foreground">
+            No promos available right now
+          </h2>
+          <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
+            The passenger app is ready for rewards, but this prototype keeps
+            promo redemption out of scope.
+          </p>
+          <div className="mt-5 grid gap-2">
+            {DEMO_REWARDS.map((reward) => (
+              <div
+                key={reward}
+                className="flex items-center gap-2 rounded-xl bg-white/55 px-3 py-2 text-sm text-slate-600 dark:bg-slate-900/40 dark:text-slate-300"
+              >
+                <TicketPercent className="h-4 w-4 text-brand-orange" />
+                {reward}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

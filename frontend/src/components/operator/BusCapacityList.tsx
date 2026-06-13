@@ -1,5 +1,6 @@
 import { glassStyles } from "@/lib/design-system";
 import type { BusCapacityEntry } from "@/lib/operator-mock";
+import { CapacityMeter } from "@/components/ui/CapacityMeter";
 
 interface BusCapacityListProps {
   buses: BusCapacityEntry[];
@@ -18,13 +19,15 @@ export function BusCapacityList({ buses }: BusCapacityListProps) {
           const pct = (bus.booked / bus.capacity) * 100;
           const isFull = pct >= 100;
           return (
-            <div key={bus.plate} className="flex flex-col gap-1.5">
-              <div className="flex justify-between items-end gap-2">
-                <span className="text-sm font-mono font-semibold text-slate-700 dark:text-slate-200">
-                  {bus.plate}
-                </span>
-                <span className="text-xs font-medium text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                  {bus.booked}/{bus.capacity}
+            <div key={bus.plate} className="rounded-2xl bg-white/45 p-3 dark:bg-slate-900/35">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <div>
+                  <span className="font-mono text-sm font-semibold text-slate-700 dark:text-slate-200">
+                    {bus.plate}
+                  </span>
+                  <p className="text-xs text-slate-400">{bus.route}</p>
+                </div>
+                <span className="flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400">
                   {isFull && (
                     <span
                       className={`${glassStyles.badge} bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200`}
@@ -32,31 +35,14 @@ export function BusCapacityList({ buses }: BusCapacityListProps) {
                       Full
                     </span>
                   )}
-                  <span
-                    className={
-                      pct > 90
-                        ? "text-red-500"
-                        : pct > 70
-                          ? "text-yellow-600"
-                          : "text-green-600"
-                    }
-                  >
-                    ({pct.toFixed(0)}%)
-                  </span>
+                  {pct.toFixed(0)}%
                 </span>
               </div>
-              <div className="w-full bg-slate-200/50 dark:bg-slate-700/50 rounded-full h-2 overflow-hidden shadow-inner">
-                <div
-                  className={`h-full rounded-full motion-safe-animate transition-all duration-700 ease-out ${
-                    pct > 90
-                      ? "bg-gradient-to-r from-red-400 to-red-600"
-                      : pct > 70
-                        ? "bg-gradient-to-r from-yellow-400 to-yellow-500"
-                        : "bg-gradient-to-r from-green-400 to-green-500"
-                  }`}
-                  style={{ width: `${Math.min(pct, 100)}%` }}
-                />
-              </div>
+              <CapacityMeter
+                booked={bus.booked}
+                capacity={bus.capacity}
+                label="Booked"
+              />
             </div>
           );
         })}

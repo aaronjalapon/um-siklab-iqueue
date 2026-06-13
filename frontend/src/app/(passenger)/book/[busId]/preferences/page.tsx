@@ -3,21 +3,46 @@
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ChevronRight, Users } from "lucide-react";
-import { LANGUAGE_LABELS } from "@/lib/utils";
+import {
+  Accessibility,
+  Armchair,
+  ArrowLeft,
+  BookOpen,
+  Briefcase,
+  ChevronRight,
+  Heart,
+  Languages,
+  Phone,
+  Shuffle,
+  UserRound,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
+import { BookingProgress } from "@/components/ui/BookingProgress";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { glassStyles } from "@/lib/design-system";
 import type { PassengerFormData } from "@/lib/types";
+import { LANGUAGE_LABELS } from "@/lib/utils";
 
-const TRAVEL_HABITS = [
-  { value: "business", label: "Business", icon: "💼" },
-  { value: "leisure", label: "Leisure", icon: "🏖️" },
-  { value: "student", label: "Student", icon: "📚" },
-  { value: "family", label: "Family", icon: "👨‍👩‍👧‍👦" },
+const TRAVEL_HABITS: {
+  value: string;
+  label: string;
+  Icon: LucideIcon;
+}[] = [
+  { value: "business", label: "Business", Icon: Briefcase },
+  { value: "leisure", label: "Leisure", Icon: Heart },
+  { value: "student", label: "Student", Icon: BookOpen },
+  { value: "family", label: "Family", Icon: Users },
 ];
 
-const SEAT_TYPES = [
-  { value: "", label: "No Preference", icon: "🎲" },
-  { value: "window", label: "Window", icon: "🪟" },
-  { value: "aisle", label: "Aisle", icon: "🚶" },
+const SEAT_TYPES: {
+  value: string;
+  label: string;
+  Icon: LucideIcon;
+}[] = [
+  { value: "", label: "No Preference", Icon: Shuffle },
+  { value: "window", label: "Window", Icon: Armchair },
+  { value: "aisle", label: "Aisle", Icon: Armchair },
 ];
 
 const SIDES = [
@@ -45,7 +70,9 @@ export default function PreferencesPage() {
     preferred_side: "",
   });
 
-  const [errors, setErrors] = useState<Partial<Record<keyof PassengerFormData, string>>>({});
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof PassengerFormData, string>>
+  >({});
 
   function updateField<K extends keyof PassengerFormData>(
     key: K,
@@ -65,7 +92,9 @@ export default function PreferencesPage() {
     const errs: Partial<Record<keyof PassengerFormData, string>> = {};
     if (!formData.name.trim()) errs.name = "Name is required";
     if (!formData.phone.trim()) errs.phone = "Phone is required";
-    else if (formData.phone.trim().length < 5) errs.phone = "Enter a valid phone number";
+    else if (formData.phone.trim().length < 5) {
+      errs.phone = "Enter a valid phone number";
+    }
     setErrors(errs);
     return Object.keys(errs).length === 0;
   }
@@ -74,7 +103,6 @@ export default function PreferencesPage() {
     e.preventDefault();
     if (!validate()) return;
 
-    // Encode preferences as URL params and navigate to seat selection
     const prefParams = new URLSearchParams({
       date,
       origin,
@@ -89,210 +117,249 @@ export default function PreferencesPage() {
       preferred_side: formData.preferred_side,
     });
 
-    router.push(
-      `/book/${busId}/seat-selection?${prefParams.toString()}`
-    );
+    router.push(`/book/${busId}/seat-selection?${prefParams.toString()}`);
   }
 
   return (
-    <div className="space-y-6 max-w-lg mx-auto">
-      {/* Back link */}
+    <div className={`${glassStyles.pageContainer} max-w-3xl`}>
       <Link
         href={`/buy?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(dest)}&date=${date}`}
-        className="text-sm text-blue-600 hover:underline inline-flex items-center gap-1"
+        className="inline-flex items-center gap-1 text-sm font-medium text-brand-blue hover:underline"
       >
-        <ArrowLeft className="w-3 h-3" /> Back to search
+        <ArrowLeft className="h-4 w-4" aria-hidden />
+        Back to search
       </Link>
 
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold">Your Preferences</h1>
-        <p className="text-gray-500 mt-1">
-          Help us find the best seat for you.{" "}
-          <span className="text-blue-600">
-            {origin} → {dest}
-          </span>{" "}
-          · {date}
-        </p>
-      </div>
+      <BookingProgress current="preferences" />
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Personal Info */}
-        <section className="bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl rounded-xl shadow-sm border border-white/20 p-6 space-y-4">
-          <h2 className="font-semibold text-lg flex items-center gap-2">
-            <Users className="w-5 h-5 text-blue-600" />
-            Personal Information
+      <PageHeader
+        eyebrow="Passenger profile"
+        title="Tell us what makes the trip easier"
+        description={
+          <>
+            IQueue uses this to recommend a seat for{" "}
+            <span className="font-semibold text-brand-blue">
+              {origin || "your origin"} {"->"} {dest || "your destination"}
+            </span>
+            {date ? ` on ${date}` : ""}.
+          </>
+        }
+      />
+
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <section className={`${glassStyles.panel} p-5 md:p-6`}>
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
+            <UserRound className="h-5 w-5 text-brand-blue" aria-hidden />
+            Passenger details
           </h2>
 
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              Full Name *
-            </label>
-            <input
-              id="name"
-              type="text"
-              value={formData.name}
-              onChange={(e) => updateField("name", e.target.value)}
-              placeholder="Juan Dela Cruz"
-              className={`w-full rounded-lg border px-3 py-2 text-sm bg-white dark:bg-slate-800 ${
-                errors.name ? "border-red-400" : "border-slate-300 dark:border-slate-600"
-              }`}
-            />
-            {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <label
+                htmlFor="name"
+                className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
+              >
+                Full name
+              </label>
+              <div className="relative">
+                <UserRound className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input
+                  id="name"
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => updateField("name", e.target.value)}
+                  placeholder="Juan Dela Cruz"
+                  className={`${glassStyles.input} w-full pl-9 text-sm ${
+                    errors.name ? "border-red-400" : ""
+                  }`}
+                />
+              </div>
+              {errors.name && (
+                <p className="mt-1 text-xs text-red-500">{errors.name}</p>
+              )}
+            </div>
+
+            <div>
+              <label
+                htmlFor="phone"
+                className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
+              >
+                Phone number
+              </label>
+              <div className="relative">
+                <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input
+                  id="phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => updateField("phone", e.target.value)}
+                  placeholder="+63 912 345 6789"
+                  className={`${glassStyles.input} w-full pl-9 text-sm ${
+                    errors.phone ? "border-red-400" : ""
+                  }`}
+                />
+              </div>
+              {errors.phone && (
+                <p className="mt-1 text-xs text-red-500">{errors.phone}</p>
+              )}
+            </div>
           </div>
 
-          <div>
-            <label htmlFor="phone" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              Phone Number *
-            </label>
-            <input
-              id="phone"
-              type="tel"
-              value={formData.phone}
-              onChange={(e) => updateField("phone", e.target.value)}
-              placeholder="+63 912 345 6789"
-              className={`w-full rounded-lg border px-3 py-2 text-sm bg-white dark:bg-slate-800 ${
-                errors.phone ? "border-red-400" : "border-slate-300 dark:border-slate-600"
-              }`}
-            />
-            {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
-          </div>
-
-          <div>
-            <label htmlFor="language" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              Preferred Language
-            </label>
-            <select
-              id="language"
-              value={formData.language_pref}
-              onChange={(e) => updateField("language_pref", e.target.value)}
-              className="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm bg-white dark:bg-slate-800"
+          <div className="mt-4">
+            <label
+              htmlFor="language"
+              className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
             >
-              {Object.entries(LANGUAGE_LABELS).map(([code, label]) => (
-                <option key={code} value={code}>
-                  {label}
-                </option>
-              ))}
-            </select>
+              Preferred language
+            </label>
+            <div className="relative">
+              <Languages className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <select
+                id="language"
+                value={formData.language_pref}
+                onChange={(e) => updateField("language_pref", e.target.value)}
+                className={`${glassStyles.input} w-full pl-9 text-sm`}
+              >
+                {Object.entries(LANGUAGE_LABELS).map(([code, label]) => (
+                  <option key={code} value={code}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </section>
 
-        {/* Travel Profile */}
-        <section className="bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl rounded-xl shadow-sm border border-white/20 p-6 space-y-4">
-          <h2 className="font-semibold text-lg">Travel Profile</h2>
+        <section className={`${glassStyles.panel} p-5 md:p-6`}>
+          <h2 className="mb-4 text-lg font-semibold text-foreground">
+            Travel profile
+          </h2>
 
           <fieldset>
-            <legend className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-              Travel Habit
+            <legend className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+              Trip style
             </legend>
             <div className="grid grid-cols-2 gap-2">
-              {TRAVEL_HABITS.map((h) => (
+              {TRAVEL_HABITS.map(({ value, label, Icon }) => (
                 <button
-                  key={h.value}
+                  key={value}
                   type="button"
-                  onClick={() => updateField("travel_habits", h.value)}
-                  className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border text-sm transition ${
-                    formData.travel_habits === h.value
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300"
-                      : "border-slate-200 dark:border-slate-700 hover:border-slate-300"
+                  onClick={() => updateField("travel_habits", value)}
+                  className={`flex min-h-12 items-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-medium transition ${
+                    formData.travel_habits === value
+                      ? "border-brand-blue bg-blue-50 text-brand-blue dark:bg-blue-950/30"
+                      : "border-glass-border bg-white/40 text-slate-600 hover:border-brand-blue/40 dark:bg-slate-900/30 dark:text-slate-300"
                   }`}
                 >
-                  <span className="text-lg">{h.icon}</span>
-                  {h.label}
+                  <Icon className="h-4 w-4 shrink-0" aria-hidden />
+                  {label}
                 </button>
               ))}
             </div>
           </fieldset>
 
-          <div>
-            <label htmlFor="interests" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              Lifestyle Interests{" "}
-              <span className="text-slate-400 font-normal">(optional)</span>
+          <div className="mt-4">
+            <label
+              htmlFor="interests"
+              className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
+            >
+              Lifestyle interests{" "}
+              <span className="font-normal text-slate-400">(optional)</span>
             </label>
             <input
               id="interests"
               type="text"
               value={formData.lifestyle_interests}
-              onChange={(e) => updateField("lifestyle_interests", e.target.value)}
-              placeholder="music, travel, tech, sports..."
-              className="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm bg-white dark:bg-slate-800"
+              onChange={(e) =>
+                updateField("lifestyle_interests", e.target.value)
+              }
+              placeholder="music, travel, tech, sports"
+              className={`${glassStyles.input} w-full text-sm`}
             />
-            <p className="text-xs text-slate-400 mt-1">
-              Comma-separated — helps match you with compatible seatmates
+            <p className="mt-1 text-xs text-slate-400">
+              Comma-separated interests help the allocator avoid awkward
+              seatmate pairings.
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <label className="mt-4 flex items-start gap-3 rounded-xl border border-glass-border bg-white/40 p-3 text-sm text-slate-700 dark:bg-slate-900/30 dark:text-slate-300">
             <input
-              id="accessibility"
               type="checkbox"
               checked={formData.accessibility_needs}
-              onChange={(e) => updateField("accessibility_needs", e.target.checked)}
-              className="rounded border-slate-300"
+              onChange={(e) =>
+                updateField("accessibility_needs", e.target.checked)
+              }
+              className="mt-1 rounded border-slate-300"
             />
-            <label htmlFor="accessibility" className="text-sm text-slate-700 dark:text-slate-300">
-              ♿ I need accessible seating (priority front-row assignment)
-            </label>
-          </div>
+            <span>
+              <span className="flex items-center gap-2 font-medium">
+                <Accessibility className="h-4 w-4 text-brand-blue" />
+                Accessible seating needed
+              </span>
+              <span className="mt-1 block text-xs text-slate-500">
+                Prioritizes front-row or easier-access seats when available.
+              </span>
+            </span>
+          </label>
         </section>
 
-        {/* Seat Preferences */}
-        <section className="bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl rounded-xl shadow-sm border border-white/20 p-6 space-y-4">
-          <h2 className="font-semibold text-lg">Seat Preferences</h2>
+        <section className={`${glassStyles.panel} p-5 md:p-6`}>
+          <h2 className="mb-4 text-lg font-semibold text-foreground">
+            Seat preferences
+          </h2>
 
           <fieldset>
-            <legend className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-              Seat Type
+            <legend className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+              Seat type
             </legend>
-            <div className="grid grid-cols-3 gap-2">
-              {SEAT_TYPES.map((s) => (
+            <div className="grid grid-cols-1 gap-2 min-[380px]:grid-cols-3">
+              {SEAT_TYPES.map(({ value, label, Icon }) => (
                 <button
-                  key={s.value}
+                  key={value}
                   type="button"
-                  onClick={() => updateField("preferred_seat_type", s.value)}
-                  className={`flex flex-col items-center gap-1 px-3 py-2.5 rounded-lg border text-sm transition ${
-                    formData.preferred_seat_type === s.value
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300"
-                      : "border-slate-200 dark:border-slate-700 hover:border-slate-300"
+                  onClick={() => updateField("preferred_seat_type", value)}
+                  className={`flex min-h-12 items-center justify-center gap-2 rounded-xl border px-3 py-3 text-center text-sm font-medium transition min-[380px]:min-h-20 min-[380px]:flex-col min-[380px]:gap-1 min-[380px]:px-2 ${
+                    formData.preferred_seat_type === value
+                      ? "border-brand-blue bg-blue-50 text-brand-blue dark:bg-blue-950/30"
+                      : "border-glass-border bg-white/40 text-slate-600 hover:border-brand-blue/40 dark:bg-slate-900/30 dark:text-slate-300"
                   }`}
                 >
-                  <span className="text-lg">{s.icon}</span>
-                  {s.label}
+                  <Icon className="h-4 w-4" aria-hidden />
+                  {label}
                 </button>
               ))}
             </div>
           </fieldset>
 
-          <fieldset>
-            <legend className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-              Bus Side Preference
+          <fieldset className="mt-4">
+            <legend className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+              Bus side
             </legend>
-            <div className="grid grid-cols-3 gap-2">
-              {SIDES.map((s) => (
+            <div className="grid grid-cols-1 gap-2 min-[380px]:grid-cols-3">
+              {SIDES.map((side) => (
                 <button
-                  key={s.value}
+                  key={side.value}
                   type="button"
-                  onClick={() => updateField("preferred_side", s.value)}
-                  className={`px-3 py-2.5 rounded-lg border text-sm transition ${
-                    formData.preferred_side === s.value
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300"
-                      : "border-slate-200 dark:border-slate-700 hover:border-slate-300"
+                  onClick={() => updateField("preferred_side", side.value)}
+                  className={`min-h-12 rounded-xl border px-3 py-2.5 text-sm font-medium transition ${
+                    formData.preferred_side === side.value
+                      ? "border-brand-blue bg-blue-50 text-brand-blue dark:bg-blue-950/30"
+                      : "border-glass-border bg-white/40 text-slate-600 hover:border-brand-blue/40 dark:bg-slate-900/30 dark:text-slate-300"
                   }`}
                 >
-                  {s.label}
+                  {side.label}
                 </button>
               ))}
             </div>
           </fieldset>
         </section>
 
-        {/* Submit */}
         <button
           type="submit"
-          className="w-full bg-blue-700 text-white font-semibold py-3 rounded-xl hover:bg-blue-800 transition flex items-center justify-center gap-2 shadow-lg shadow-blue-700/20"
+          className={`${glassStyles.primaryButton} flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl text-base font-bold`}
         >
           Find My Best Seat
-          <ChevronRight className="w-4 h-4" />
+          <ChevronRight className="h-4 w-4" aria-hidden />
         </button>
       </form>
     </div>

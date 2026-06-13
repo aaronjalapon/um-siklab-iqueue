@@ -1,18 +1,70 @@
 "use client";
 
-import { Suspense, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Filter, MapPin, Search } from "lucide-react";
-import { searchBuses } from "@/lib/api";
-import type { Bus } from "@/lib/types";
+import { Suspense, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import {
+  AlertCircle,
+  ArrowLeft,
+  BusFront,
+  CalendarDays,
+  Clock,
+  ListFilter,
+  MapPin,
+  Search,
+} from "lucide-react";
+import { CapacityMeter } from "@/components/ui/CapacityMeter";
+import { BookingProgress } from "@/components/ui/BookingProgress";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { searchBuses } from "@/lib/api";
+import { glassStyles } from "@/lib/design-system";
+import type { Bus } from "@/lib/types";
+import { formatDate, surgeColorClass, surgeLabel } from "@/lib/utils";
 
 const QUICK_ROUTES = [
-  { origin: "Davao City", destination: "Cagayan de Oro", label: "Davao → CDO" },
-  { origin: "Davao City", destination: "General Santos", label: "Davao → GenSan" },
-  { origin: "Davao City", destination: "Cotabato City", label: "Davao → Cotabato" },
-  { origin: "Cagayan de Oro", destination: "Iligan City", label: "CDO → Iligan" },
+  { origin: "Davao City", destination: "Cagayan de Oro", label: "Davao -> CDO" },
+  { origin: "Davao City", destination: "General Santos", label: "Davao -> GenSan" },
+  { origin: "Davao City", destination: "Cotabato City", label: "Davao -> Cotabato" },
+  { origin: "Cagayan de Oro", destination: "Iligan City", label: "CDO -> Iligan" },
 ];
+
+type SortMode = "recommended" | "seats" | "surge" | "price";
+
+function todayIsoDate(): string {
+  return new Date().toISOString().split("T")[0];
+}
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback;
+}
+
+function estimateFare(bus: Bus): number {
+  return Math.round(200 + (bus.surge_probability ?? 0) * 150);
+}
+
+function BusResultSkeleton() {
+  return (
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      {Array.from({ length: 4 }).map((_, index) => (
+        <div
+          key={index}
+          className={`${glassStyles.panel} min-h-[280px] p-5 animate-pulse motion-reduce:animate-none`}
+        >
+          <div className="mb-6 flex items-start justify-between">
+            <div className="h-7 w-32 rounded-lg bg-slate-200 dark:bg-slate-700" />
+            <div className="h-6 w-20 rounded-lg bg-slate-200 dark:bg-slate-700" />
+          </div>
+          <div className="space-y-4">
+            <div className="h-4 w-3/4 rounded bg-slate-200 dark:bg-slate-700" />
+            <div className="h-4 w-2/3 rounded bg-slate-200 dark:bg-slate-700" />
+            <div className="h-3 w-full rounded-full bg-slate-200 dark:bg-slate-700" />
+          </div>
+          <div className="mt-8 h-11 rounded-xl bg-slate-200 dark:bg-slate-700" />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function BuyPageInner() {
   const router = useRouter();
@@ -20,286 +72,306 @@ function BuyPageInner() {
 
   const [origin, setOrigin] = useState(searchParams.get("origin") || "");
   const [destination, setDestination] = useState(
-    searchParams.get("destination") || ""
+    searchParams.get("destination") || searchParams.get("dest") || ""
   );
   const [travelDate, setTravelDate] = useState(
-    new Date().toISOString().split("T")[0]
+    searchParams.get("date") || todayIsoDate()
   );
   const [buses, setBuses] = useState<Bus[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sortMode, setSortMode] = useState<SortMode>("recommended");
 
-  const handleSearch = async () => {
-    if (!origin.trim() || !destination.trim()) return;
+  const canSearch = origin.trim().length > 0 && destination.trim().length > 0;
+
+  const sortedBuses = useMemo(() => {
+    const list = [...buses];
+
+    list.sort((a, b) => {
+      if (sortMode === "seats") return b.available_seats - a.available_seats;
+      if (sortMode === "surge") {
+        return (b.surge_probability ?? 0) - (a.surge_probability ?? 0);
+      }
+      if (sortMode === "price") return estimateFare(a) - estimateFare(b);
+
+      const scoreA =
+        a.available_seats * 2 - Math.round((a.surge_probability ?? 0) * 20);
+      const scoreB =
+        b.available_seats * 2 - Math.round((b.surge_probability ?? 0) * 20);
+      return scoreB - scoreA;
+    });
+
+    return list;
+  }, [buses, sortMode]);
+
+  async function performSearch(
+    searchOrigin = origin,
+    searchDestination = destination,
+    searchDate = travelDate
+  ) {
+    const trimmedOrigin = searchOrigin.trim();
+    const trimmedDestination = searchDestination.trim();
+    if (!trimmedOrigin || !trimmedDestination) return;
+
     setLoading(true);
     setError(null);
     setHasSearched(true);
 
     try {
-      const data = await searchBuses(origin.trim(), destination.trim(), travelDate);
+      const data = await searchBuses(
+        trimmedOrigin,
+        trimmedDestination,
+        searchDate
+      );
       setBuses(data.buses);
       if (data.buses.length === 0) {
-        setError("No buses found for this route and date. Try another search.");
+        setError("No buses found for this route and date.");
       }
-    } catch (err: any) {
-      setError(err.message || "Failed to search buses. Please try again.");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Failed to search buses. Please try again."));
       setBuses([]);
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const handleQuickRoute = (o: string, d: string) => {
-    setOrigin(o);
-    setDestination(d);
-    // Auto-search after a brief delay for state to update
-    setTimeout(() => {
-      setLoading(true);
-      setError(null);
-      setHasSearched(true);
-      searchBuses(o, d, travelDate)
-        .then((data) => {
-          setBuses(data.buses);
-          if (data.buses.length === 0) {
-            setError("No buses found for this route and date. Try another search.");
-          }
-        })
-        .catch((err: any) => {
-          setError(err.message || "Failed to search buses.");
-          setBuses([]);
-        })
-        .finally(() => setLoading(false));
-    }, 0);
-  };
+  function handleQuickRoute(routeOrigin: string, routeDestination: string) {
+    setOrigin(routeOrigin);
+    setDestination(routeDestination);
+    void performSearch(routeOrigin, routeDestination, travelDate);
+  }
 
-  const handleBook = (bus: Bus) => {
-    router.push(
-      `/book/${bus.id}?date=${encodeURIComponent(travelDate)}&origin=${encodeURIComponent(bus.origin)}&dest=${encodeURIComponent(bus.destination)}`
-    );
-  };
+  function handleBook(bus: Bus) {
+    const params = new URLSearchParams({
+      date: travelDate,
+      origin: bus.origin,
+      dest: bus.destination,
+    });
 
-  const surgeBadge = (prob: number | null) => {
-    if (prob === null) return null;
-    if (prob >= 0.7) {
-      return (
-        <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs font-bold rounded-full">
-          High Demand
-        </span>
-      );
-    }
-    if (prob >= 0.4) {
-      return (
-        <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-bold rounded-full">
-          Moderate
-        </span>
-      );
-    }
-    return (
-      <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-bold rounded-full">
-        Normal
-      </span>
-    );
-  };
+    router.push(`/book/${bus.id}/preferences?${params.toString()}`);
+  }
+
+  const routeSummary =
+    hasSearched && canSearch
+      ? `${origin.trim()} -> ${destination.trim()} on ${formatDate(travelDate)}`
+      : "Search available inter-provincial buses and let IQueue pick your best seat.";
 
   return (
-    <div className="bg-slate-50 dark:bg-slate-950 min-h-screen pb-24 animate-in fade-in max-w-5xl mx-auto">
-      {/* Header */}
-      <div className="bg-white dark:bg-slate-900 px-4 md:px-8 pt-6 pb-6 md:pb-8 rounded-b-3xl md:rounded-b-[40px] shadow-sm border-b border-slate-100 dark:border-slate-800 sticky top-0 z-20">
-        <div className="flex items-center justify-between mb-6 md:mb-8">
-          <Link
-            href="/home"
-            className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5 text-slate-900 dark:text-white" />
-          </Link>
-          <h1 className="font-bold text-lg md:text-2xl text-slate-900 dark:text-white">
-            Find Your Bus
-          </h1>
-          <div className="w-9" /> {/* Spacer */}
-        </div>
+    <div className={`${glassStyles.pageContainer} max-w-6xl`}>
+      <Link
+        href="/home"
+        className="inline-flex items-center gap-1 text-sm font-medium text-brand-blue hover:underline"
+      >
+        <ArrowLeft className="h-4 w-4" aria-hidden />
+        Back home
+      </Link>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 max-w-3xl mx-auto">
-          <div className="relative flex items-center bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 hover:border-brand-blue/50 transition-colors">
-            <div className="w-3 h-3 rounded-full border-2 border-green-500 mr-3 shrink-0" />
+      <BookingProgress current="search" />
+
+      <PageHeader
+        eyebrow="Passenger booking"
+        title="Find Your Bus"
+        description={routeSummary}
+      />
+
+      <section className={`${glassStyles.panel} p-4 md:p-5`}>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_1fr_180px]">
+          <label className="flex items-center gap-3 rounded-xl border border-glass-border bg-white/50 px-3 py-3 dark:bg-slate-900/50">
+            <span className="h-3 w-3 shrink-0 rounded-full border-2 border-green-500" />
             <input
               type="text"
               placeholder="Origin city"
               value={origin}
               onChange={(e) => setOrigin(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              className="bg-transparent border-none outline-none w-full text-sm font-medium text-slate-900 dark:text-white placeholder-slate-400"
+              onKeyDown={(e) => e.key === "Enter" && void performSearch()}
+              className="w-full bg-transparent text-sm font-medium text-slate-900 outline-none placeholder:text-slate-400 dark:text-white"
             />
-          </div>
-          <div className="relative flex items-center bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 hover:border-brand-blue/50 transition-colors">
-            <div className="w-3 h-3 rounded-full border-2 border-brand-orange mr-3 shrink-0" />
+          </label>
+
+          <label className="flex items-center gap-3 rounded-xl border border-glass-border bg-white/50 px-3 py-3 dark:bg-slate-900/50">
+            <span className="h-3 w-3 shrink-0 rounded-full border-2 border-brand-orange" />
             <input
               type="text"
               placeholder="Destination city"
               value={destination}
               onChange={(e) => setDestination(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              className="bg-transparent border-none outline-none w-full text-sm font-medium text-slate-900 dark:text-white placeholder-slate-400"
+              onKeyDown={(e) => e.key === "Enter" && void performSearch()}
+              className="w-full bg-transparent text-sm font-medium text-slate-900 outline-none placeholder:text-slate-400 dark:text-white"
             />
-          </div>
-          <div className="relative flex items-center bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 hover:border-brand-blue/50 transition-colors">
+          </label>
+
+          <label className="flex items-center gap-3 rounded-xl border border-glass-border bg-white/50 px-3 py-3 dark:bg-slate-900/50">
+            <CalendarDays className="h-4 w-4 shrink-0 text-slate-400" />
             <input
               type="date"
               value={travelDate}
               onChange={(e) => setTravelDate(e.target.value)}
-              className="bg-transparent border-none outline-none w-full text-sm font-medium text-slate-900 dark:text-white"
+              className="w-full bg-transparent text-sm font-medium text-slate-900 outline-none dark:text-white"
             />
-          </div>
+          </label>
         </div>
 
-        <div className="max-w-3xl mx-auto flex justify-end mt-4">
+        <div className="mt-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap gap-2">
+            <span className="self-center text-xs font-medium text-slate-400">
+              Quick routes
+            </span>
+            {QUICK_ROUTES.map((route) => (
+              <button
+                key={route.label}
+                type="button"
+                onClick={() => handleQuickRoute(route.origin, route.destination)}
+                className="rounded-full border border-glass-border bg-white/60 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-brand-blue/40 hover:text-brand-blue dark:bg-slate-900/50 dark:text-slate-300"
+              >
+                {route.label}
+              </button>
+            ))}
+          </div>
+
           <button
-            onClick={handleSearch}
-            disabled={loading || !origin.trim() || !destination.trim()}
-            className="w-full md:w-auto md:min-w-[200px] bg-brand-blue text-white font-bold py-3.5 md:py-4 px-8 rounded-xl shadow-md shadow-brand-blue/20 hover:bg-blue-700 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+            type="button"
+            onClick={() => void performSearch()}
+            disabled={loading || !canSearch}
+            className={`${glassStyles.primaryButton} inline-flex min-h-11 items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-50`}
           >
-            {loading ? (
-              <>Searching...</>
-            ) : (
-              <>
-                <Search className="w-4 h-4" /> Search Tickets
-              </>
-            )}
+            <Search className="h-4 w-4" aria-hidden />
+            {loading ? "Searching..." : "Search Tickets"}
           </button>
         </div>
+      </section>
 
-        {/* Quick Routes */}
-        <div className="max-w-3xl mx-auto mt-4 flex flex-wrap gap-2">
-          <span className="text-xs text-slate-400 self-center mr-1">Quick:</span>
-          {QUICK_ROUTES.map((qr, i) => (
-            <button
-              key={i}
-              onClick={() => handleQuickRoute(qr.origin, qr.destination)}
-              className="text-xs px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-brand-blue hover:text-white transition-colors"
-            >
-              {qr.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      {hasSearched && (
+        <section className="space-y-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-lg font-bold text-foreground">
+                {loading
+                  ? "Checking available buses"
+                  : `${buses.length} ${buses.length === 1 ? "bus" : "buses"} found`}
+              </p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                {origin.trim()} {"->"} {destination.trim()}
+              </p>
+            </div>
 
-      {/* Results */}
-      <div className="p-4 md:p-8 space-y-4 md:space-y-6 max-w-5xl mx-auto">
-        {hasSearched && !loading && (
-          <div className="flex justify-between items-center mb-4 md:mb-6">
-            <span className="text-sm md:text-base font-bold text-slate-900 dark:text-white">
-              {buses.length} {buses.length === 1 ? "Bus" : "Buses"} Found
-            </span>
             {buses.length > 0 && (
-              <button className="flex items-center gap-2 text-sm md:text-base font-semibold text-brand-blue hover:text-blue-800 transition-colors px-3 py-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20">
-                <Filter className="w-4 h-4 md:w-5 md:h-5" /> Filter
-              </button>
+              <label className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                <ListFilter className="h-4 w-4" aria-hidden />
+                <select
+                  value={sortMode}
+                  onChange={(e) => setSortMode(e.target.value as SortMode)}
+                  className={`${glassStyles.input} py-2 text-sm`}
+                >
+                  <option value="recommended">Recommended</option>
+                  <option value="seats">Most seats</option>
+                  <option value="surge">Highest surge</option>
+                  <option value="price">Lowest fare</option>
+                </select>
+              </label>
             )}
           </div>
-        )}
 
-        {error && (
-          <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-4 text-sm">
-            {error}
-          </div>
-        )}
-
-        {loading && (
-          <div className="text-center py-12">
-            <p className="text-slate-400 animate-pulse">Searching available buses...</p>
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-          {buses.map((bus) => (
-            <div
-              key={bus.id}
-              className="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm hover:shadow-md border border-slate-100 dark:border-slate-700 transition-shadow"
-            >
-              <div className="flex justify-between items-start mb-6">
-                <div className="flex items-center gap-2">
-                  <span className="px-2 py-1 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] md:text-xs font-bold rounded">
-                    {bus.plate_number}
-                  </span>
-                  {surgeBadge(bus.surge_probability)}
-                </div>
-                <span className="font-bold text-brand-blue text-sm md:text-base">
-                  PHP {Math.round(200 + (bus.surge_probability ?? 0) * 150)}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-4">
-                <div className="flex flex-col items-center shrink-0">
-                  <div className="w-3 h-3 md:w-4 md:h-4 rounded-full border-2 border-green-500" />
-                  <div className="w-0.5 h-8 md:h-10 bg-slate-200 dark:bg-slate-700" />
-                  <div className="w-3 h-3 md:w-4 md:h-4 rounded-full border-2 border-brand-orange" />
-                </div>
-                <div className="flex-1 space-y-5 md:space-y-7">
-                  <div>
-                    <p className="text-xs md:text-sm text-slate-500">Depart</p>
-                    <p className="font-bold text-sm md:text-base text-slate-900 dark:text-white">
-                      {bus.origin}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs md:text-sm text-slate-500">Arrive</p>
-                    <p className="font-bold text-sm md:text-base text-slate-900 dark:text-white">
-                      {bus.destination}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-4 text-xs text-slate-500">
-                {bus.available_seats} of {bus.capacity} seats available
-              </div>
-
-              <div className="mt-1 w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all ${
-                    bus.available_seats / bus.capacity > 0.5
-                      ? "bg-green-500"
-                      : bus.available_seats > 0
-                        ? "bg-amber-500"
-                        : "bg-red-500"
-                  }`}
-                  style={{
-                    width: `${Math.round(
-                      ((bus.capacity - bus.available_seats) / bus.capacity) * 100
-                    )}%`,
-                  }}
-                />
-              </div>
-
-              <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 md:w-10 md:h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center text-brand-blue">
-                    <MapPin className="w-4 h-4 md:w-5 md:h-5" />
-                  </div>
-                  <span className="text-sm md:text-base font-semibold text-slate-900 dark:text-white">
-                    {bus.plate_number}
-                  </span>
-                </div>
-                <button
-                  disabled={bus.available_seats === 0}
-                  onClick={() => handleBook(bus)}
-                  className="px-5 py-2.5 bg-brand-blue hover:bg-blue-700 disabled:bg-slate-300 dark:disabled:bg-slate-700 disabled:text-slate-500 text-white text-sm md:text-base font-bold rounded-lg shadow-sm transition-colors"
-                >
-                  {bus.available_seats > 0 ? "Book Now" : "Full"}
-                </button>
+          {error && !loading && (
+            <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+              <div>
+                <p className="font-semibold">{error}</p>
+                <p className="mt-1 text-amber-700 dark:text-amber-200">
+                  Try another date, nearby terminal, or one of the quick routes.
+                </p>
               </div>
             </div>
-          ))}
-        </div>
+          )}
 
-        {hasSearched && !loading && buses.length === 0 && !error && (
-          <div className="text-center py-12 text-slate-400">
-            <MapPin className="w-12 h-12 mx-auto mb-3 opacity-30" />
-            <p className="font-medium">No buses found for this route</p>
-            <p className="text-sm mt-1">Try a different origin, destination, or date.</p>
-          </div>
-        )}
-      </div>
+          {loading ? (
+            <BusResultSkeleton />
+          ) : sortedBuses.length > 0 ? (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              {sortedBuses.map((bus) => {
+                const booked = bus.capacity - bus.available_seats;
+                const isFull = bus.available_seats <= 0;
+
+                return (
+                  <article
+                    key={bus.id}
+                    className={`${glassStyles.panel} flex min-h-[300px] flex-col p-5`}
+                  >
+                    <div className="mb-5 flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="mb-2 flex flex-wrap items-center gap-2">
+                          <span className="rounded-lg bg-slate-100 px-2 py-1 font-mono text-xs font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                            {bus.plate_number}
+                          </span>
+                          <span
+                            className={`${glassStyles.badge} ${surgeColorClass(
+                              bus.surge_probability
+                            )}`}
+                          >
+                            {surgeLabel(bus.surge_probability)} demand
+                          </span>
+                        </div>
+                        <h2 className="text-lg font-bold text-foreground">
+                          {bus.origin} {"->"} {bus.destination}
+                        </h2>
+                      </div>
+                      <p className="shrink-0 text-right text-lg font-bold text-brand-blue">
+                        PHP {estimateFare(bus)}
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-3 text-sm min-[420px]:grid-cols-2">
+                      <div className="rounded-xl bg-white/50 p-3 dark:bg-slate-900/40">
+                        <p className="text-xs text-slate-400">Departure</p>
+                        <p className="mt-1 flex items-center gap-1.5 font-semibold text-foreground">
+                          <Clock className="h-4 w-4 text-brand-blue" />
+                          Today window
+                        </p>
+                      </div>
+                      <div className="rounded-xl bg-white/50 p-3 dark:bg-slate-900/40">
+                        <p className="text-xs text-slate-400">Terminal bus</p>
+                        <p className="mt-1 flex items-center gap-1.5 font-semibold text-foreground">
+                          <BusFront className="h-4 w-4 text-brand-orange" />
+                          {bus.plate_number}
+                        </p>
+                      </div>
+                    </div>
+
+                    <CapacityMeter
+                      booked={booked}
+                      capacity={bus.capacity}
+                      label={`${bus.available_seats} seats available`}
+                      className="mt-5"
+                    />
+
+                    <div className="mt-auto pt-5">
+                      <button
+                        type="button"
+                        disabled={isFull}
+                        onClick={() => handleBook(bus)}
+                        className={`${glassStyles.primaryButton} flex min-h-11 w-full items-center justify-center gap-2 text-sm font-bold disabled:cursor-not-allowed disabled:border-slate-300 disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none dark:disabled:bg-slate-700`}
+                      >
+                        <MapPin className="h-4 w-4" aria-hidden />
+                        {isFull ? "Bus Full" : "Continue to Preferences"}
+                      </button>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            !error && (
+              <div className={`${glassStyles.panel} py-12 text-center`}>
+                <MapPin className="mx-auto mb-3 h-12 w-12 text-slate-300" />
+                <p className="font-semibold text-foreground">No buses found</p>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                  Try a different origin, destination, or date.
+                </p>
+              </div>
+            )
+          )}
+        </section>
+      )}
     </div>
   );
 }
@@ -308,7 +380,10 @@ export default function BuyPage() {
   return (
     <Suspense
       fallback={
-        <div className="text-center py-12 text-slate-400">Loading...</div>
+        <div className={`${glassStyles.pageContainer} max-w-6xl`}>
+          <div className={`${glassStyles.skeleton} h-32`} />
+          <BusResultSkeleton />
+        </div>
       }
     >
       <BuyPageInner />

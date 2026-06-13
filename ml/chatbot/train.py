@@ -128,7 +128,7 @@ def main() -> None:
         description="Fine-tune XLM-RoBERTa for IQueue intent classification"
     )
     parser.add_argument(
-        "--epochs", type=int, default=5, help="Number of training epochs (default: 5)"
+        "--epochs", type=int, default=8, help="Number of training epochs (default: 8)"
     )
     parser.add_argument(
         "--batch-size",

@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 import { BoardingQueueTable } from "@/components/operator/BoardingQueueTable";
 import { DataStatusBanner } from "@/components/operator/DataStatusBanner";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { glassStyles } from "@/lib/design-system";
 import {
   generateMockBoardingQueue,
@@ -27,19 +28,18 @@ export default function OperatorQueuePage() {
 
   return (
     <div className={glassStyles.pageContainer}>
-      <header>
-        <h1 className="text-2xl font-bold text-foreground">Boarding Queue</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-          Passengers by AI-assigned boarding window
-        </p>
-      </header>
+      <PageHeader
+        eyebrow="Gate operations"
+        title="Boarding Queue"
+        description="Passengers grouped by AI-assigned boarding window."
+      />
 
       <DataStatusBanner message="Queue uses demo data — connect the backend for live boarding windows." />
 
       {toast && (
         <div
           role="status"
-          className="fixed bottom-24 md:bottom-6 left-1/2 -translate-x-1/2 z-50 max-w-md px-4 py-3 rounded-xl bg-slate-900 text-white text-sm shadow-lg dark:bg-slate-100 dark:text-slate-900"
+          className="fixed bottom-24 left-3 right-3 z-50 rounded-xl bg-slate-900 px-4 py-3 text-center text-sm text-white shadow-lg dark:bg-slate-100 dark:text-slate-900 sm:left-1/2 sm:right-auto sm:max-w-md sm:-translate-x-1/2 md:bottom-6"
         >
           {toast}
         </div>

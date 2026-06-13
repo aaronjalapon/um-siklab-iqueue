@@ -30,7 +30,7 @@ const STATE_ICONS: Partial<Record<SeatCellState, string>> = {
 
 const SIZE_CLASSES = {
   sm: "w-8 h-8 text-[10px]",
-  md: "w-10 h-10 text-xs",
+  md: "w-9 h-9 text-[11px] sm:w-10 sm:h-10 sm:text-xs",
 };
 
 export function SeatCell({

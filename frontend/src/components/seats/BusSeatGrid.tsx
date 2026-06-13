@@ -59,18 +59,17 @@ export function BusSeatGrid({
     );
   }
 
-  const totalRows = rows.length;
   const seatsPerRow = rows[0]?.length || 4;
   const aisleAfterCol = Math.ceil(seatsPerRow / 2);
 
   return (
-    <div className="overflow-x-auto min-w-[320px]">
+    <div className="w-full overflow-x-auto">
       {/* Front of bus indicator */}
       <div className="text-xs text-center text-slate-400 mb-3 tracking-widest uppercase">
         — Front of Bus —
       </div>
 
-      <div className="space-y-2 max-w-xs mx-auto">
+      <div className="mx-auto w-max max-w-full space-y-2 px-1">
         {rows.map((rowSeats, ri) => (
           <div
             key={ri}

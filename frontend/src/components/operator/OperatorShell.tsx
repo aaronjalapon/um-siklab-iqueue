@@ -22,7 +22,7 @@ export function OperatorShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 md:flex">
+    <div className="min-h-screen min-w-0 bg-slate-50 dark:bg-slate-950 md:flex">
       <aside className="hidden md:flex flex-col w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 fixed h-full z-30 shadow-sm">
         <div className="p-6">
           <Link
@@ -59,12 +59,12 @@ export function OperatorShell({ children }: { children: React.ReactNode }) {
         </nav>
       </aside>
 
-      <main className="flex-1 md:ml-64 pb-20 md:pb-0 overflow-x-hidden min-h-screen">
+      <main className="min-h-screen min-w-0 flex-1 overflow-x-clip pb-24 md:ml-64 md:pb-0">
         {children}
       </main>
 
       <nav
-        className="md:hidden fixed bottom-0 w-full bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-2 py-2 flex justify-around items-center pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.05)] dark:shadow-[0_-4px_20px_rgba(0,0,0,0.2)] z-40 rounded-t-3xl"
+        className="md:hidden fixed inset-x-0 bottom-0 w-full bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-2 py-2 flex justify-around items-center pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.05)] dark:shadow-[0_-4px_20px_rgba(0,0,0,0.2)] z-40 rounded-t-3xl"
         aria-label="Operator navigation"
       >
         {NAV_ITEMS.map((item) => {

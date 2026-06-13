@@ -1,12 +1,16 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faChartLine, faChair, faQrcode, faComments } from "@fortawesome/free-solid-svg-icons";
-import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
+import {
+  Armchair,
+  ChartLine,
+  MessageCircle,
+  QrCode,
+  type LucideIcon,
+} from "lucide-react";
 
 type Feature = {
-  icon: IconDefinition;
+  icon: LucideIcon;
   iconClass: string;
   title: string;
   subtitle: string;
@@ -19,7 +23,7 @@ type Feature = {
 
 const features: Feature[] = [
   {
-    icon: faChartLine,
+    icon: ChartLine,
     iconClass: "text-blue-300",
     title: "Demand Forecasting",
     subtitle: "Prophet + LSTM Hybrid",
@@ -31,7 +35,7 @@ const features: Feature[] = [
     badgeText: "7-Day Forecast",
   },
   {
-    icon: faChair,
+    icon: Armchair,
     iconClass: "text-purple-300",
     title: "Smart Seat Allocator",
     subtitle: "Affinity-Based Pairing",
@@ -43,7 +47,7 @@ const features: Feature[] = [
     badgeText: "AI-Matched",
   },
   {
-    icon: faQrcode,
+    icon: QrCode,
     iconClass: "text-orange-300",
     title: "QR Boarding Pass",
     subtitle: "HMAC-SHA256 Signed",
@@ -55,7 +59,7 @@ const features: Feature[] = [
     badgeText: "Offline-Ready",
   },
   {
-    icon: faComments,
+    icon: MessageCircle,
     iconClass: "text-green-300",
     title: "Multilingual Chatbot",
     subtitle: "mBERT / Flan-T5",
@@ -117,30 +121,33 @@ export default function FeaturesSection() {
           viewport={{ once: true, margin: "-80px" }}
           className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6"
         >
-          {features.map((feature) => (
-            <motion.div
-              key={feature.title}
-              variants={cardVariants}
-              whileHover={{ y: -6, scale: 1.02 }}
-              transition={{ type: "spring", stiffness: 300, damping: 20 }}
-              className={`relative rounded-2xl border ${feature.border} bg-gradient-to-br ${feature.accent} backdrop-blur-xl p-6 flex flex-col gap-4 overflow-hidden group cursor-default`}
-            >
-              {/* Subtle glow on hover */}
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-white/3 transition-opacity duration-300 rounded-2xl" />
+          {features.map((feature) => {
+            const Icon = feature.icon;
+            return (
+              <motion.div
+                key={feature.title}
+                variants={cardVariants}
+                whileHover={{ y: -6, scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                className={`relative rounded-2xl border ${feature.border} bg-gradient-to-br ${feature.accent} backdrop-blur-xl p-6 flex flex-col gap-4 overflow-hidden group cursor-default`}
+              >
+                {/* Subtle glow on hover */}
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-white/3 transition-opacity duration-300 rounded-2xl" />
 
-              <FontAwesomeIcon icon={feature.icon} className={`text-3xl ${feature.iconClass}`} />
+                <Icon className={`h-8 w-8 ${feature.iconClass}`} aria-hidden />
 
-              <div>
-                <span className={`inline-block text-[10px] font-bold uppercase tracking-wider border px-2 py-0.5 rounded-full mb-2 ${feature.badge}`}>
-                  {feature.badgeText}
-                </span>
-                <h3 className="text-white font-bold text-lg leading-tight">{feature.title}</h3>
-                <p className="text-slate-400 text-xs font-semibold mt-0.5">{feature.subtitle}</p>
-              </div>
+                <div>
+                  <span className={`inline-block text-[10px] font-bold uppercase tracking-wider border px-2 py-0.5 rounded-full mb-2 ${feature.badge}`}>
+                    {feature.badgeText}
+                  </span>
+                  <h3 className="text-white font-bold text-lg leading-tight">{feature.title}</h3>
+                  <p className="text-slate-400 text-xs font-semibold mt-0.5">{feature.subtitle}</p>
+                </div>
 
-              <p className="text-slate-400 text-sm leading-relaxed flex-1">{feature.description}</p>
-            </motion.div>
-          ))}
+                <p className="text-slate-400 text-sm leading-relaxed flex-1">{feature.description}</p>
+              </motion.div>
+            );
+          })}
         </motion.div>
       </div>
     </section>

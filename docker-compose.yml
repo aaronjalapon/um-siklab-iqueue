@@ -2,9 +2,9 @@
 # IQueue — Production-like Full Stack
 # =============================================================================
 # Usage:
-#   docker compose up -d              # Start all services
-#   docker compose down               # Stop all services
-#   docker compose logs -f backend    # Tail backend logs
+#   COMPOSE_BAKE=true docker compose up -d           # Start all services
+#   docker compose down                              # Stop all services
+#   docker compose logs -f backend                   # Tail backend logs
 # =============================================================================
 
 services:
@@ -34,6 +34,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      target: runtime-ml
     container_name: iqueue-api
     restart: unless-stopped
     depends_on:

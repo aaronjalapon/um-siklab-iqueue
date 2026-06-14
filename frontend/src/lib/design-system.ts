@@ -8,10 +8,10 @@
 
 export const glassStyles = {
   // Base frosted glass panel with shadow and subtle border
-  panel: 'bg-glass-bg backdrop-blur-xl border border-glass-border shadow-[var(--glass-shadow)] rounded-2xl',
+  panel: 'bg-glass-bg backdrop-blur-xl border border-glass-border shadow-glass rounded-2xl',
   
   // Interactive glass button (e.g. for booking)
-  button: 'bg-glass-bg hover:bg-white/40 dark:hover:bg-slate-800/60 backdrop-blur-md border border-glass-border rounded-xl transition-all duration-300 shadow-[var(--glass-shadow)] text-foreground trim-cap-alpha',
+  button: 'bg-glass-bg hover:bg-white/40 dark:hover:bg-slate-800/60 backdrop-blur-md border border-glass-border rounded-xl transition-all duration-300 shadow-glass text-foreground trim-cap-alpha',
   
   // Primary action button (solid with glass highlights)
   primaryButton: 'bg-brand-blue hover:bg-blue-600 text-white border border-blue-500 rounded-xl transition-colors duration-300 shadow-lg shadow-blue-500/20 trim-cap-alpha px-4 py-2',
@@ -24,7 +24,7 @@ export const glassStyles = {
 
   // Operator dashboard stat card
   statCard:
-    'bg-glass-bg backdrop-blur-xl border border-glass-border shadow-[var(--glass-shadow)] rounded-2xl p-5 flex items-center gap-4 transition-shadow hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.25)]',
+    'bg-glass-bg backdrop-blur-xl border border-glass-border shadow-glass rounded-2xl p-5 flex items-center gap-4 transition-shadow hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.25)]',
 
   sectionTitle: 'text-lg font-semibold text-foreground trim-cap-alpha',
 

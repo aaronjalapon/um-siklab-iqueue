@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1.7
+
 # =============================================================================
 # IQueue — Frontend Development Image
 # Lightweight Node image for hot reload (not the production runner).
@@ -7,7 +9,7 @@ FROM node:24-alpine
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
-RUN npm install --legacy-peer-deps
+RUN --mount=type=cache,target=/root/.npm npm ci --legacy-peer-deps
 
 EXPOSE 3000
 

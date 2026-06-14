@@ -1,41 +1,7 @@
 # =============================================================================
-# IQueue — Backend Dependencies
-# Pinned to latest stable versions as of May 2026
+# IQueue — Full Backend Runtime Dependencies
+# Compatibility umbrella for production-like installs and full local setup.
 # =============================================================================
 
-# Core Web Framework
-fastapi>=0.136.0,<1.0.0
-uvicorn[standard]>=0.48.0
-
-# Database
-sqlalchemy[asyncio]>=2.0.50
-asyncpg>=0.31.0
-alembic>=1.18.0
-
-# Data Validation
-pydantic[email]>=2.13.0
-pydantic-settings>=2.14.0
-
-# Environment
-python-dotenv>=1.2.0
-
-# QR Code Generation
-qrcode[pil]>=8.2
-
-# Machine Learning & AI
-prophet>=1.3.0
-torch>=2.12.0
-transformers>=5.9.0
-sentencepiece>=0.2.1
-
-# Language Detection
-langdetect>=1.0.9
-
-# HTTP (for external API calls)
-httpx>=0.28.0
-
-# WebSockets
-websockets>=16.0
-
-# Date/Time
-python-dateutil>=2.9.0
+-r requirements.base.txt
+-r requirements.ml.txt

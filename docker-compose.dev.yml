@@ -2,7 +2,7 @@
 # IQueue — Development Overrides
 # =============================================================================
 # Usage:
-#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+#   COMPOSE_BAKE=true docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 #
 # This file overrides the production config for local development:
 #   - Hot reload for backend (volume-mounted code)
@@ -20,7 +20,7 @@ services:
   # --- FastAPI Backend (dev: hot reload, volume mounts) ---
   backend:
     build:
-      target: runtime  # skip builder stage, use local venv
+      target: runtime-base  # lightweight dev image; skips optional ML deps
     volumes:
       - ./backend:/app
       - ./data:/app/data

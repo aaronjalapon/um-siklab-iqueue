@@ -1,5 +1,13 @@
 "use client";
 
+import {
+  Accessibility,
+  Check,
+  Star,
+  Users,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 import type { SeatMapEntry, SeatCellState } from "@/types/seat";
 
 interface SeatCellProps {
@@ -20,12 +28,12 @@ const STATE_STYLES: Record<SeatCellState, string> = {
   blocked: "bg-red-100 border-red-300 text-red-300 cursor-not-allowed",
 };
 
-const STATE_ICONS: Partial<Record<SeatCellState, string>> = {
-  selected: "✓",
-  auto_assigned: "★",
-  group_reserved: "G",
-  accessibility: "♿",
-  blocked: "✕",
+const STATE_ICONS: Partial<Record<SeatCellState, LucideIcon>> = {
+  selected: Check,
+  auto_assigned: Star,
+  group_reserved: Users,
+  accessibility: Accessibility,
+  blocked: X,
 };
 
 const SIZE_CLASSES = {
@@ -46,7 +54,7 @@ export function SeatCell({
     "rounded font-medium transition-all duration-200 flex items-center justify-center relative border";
   const stateClasses = STATE_STYLES[state] || STATE_STYLES.available;
   const sizeClasses = SIZE_CLASSES[size];
-  const icon = STATE_ICONS[state];
+  const Icon = STATE_ICONS[state];
 
   const handleClick = () => {
     if (isInteractive && onClick) {
@@ -62,13 +70,16 @@ export function SeatCell({
       className={`${baseClasses} ${stateClasses} ${sizeClasses}`}
       onClick={isInteractive ? handleClick : undefined}
       disabled={!isInteractive}
-      title={`Seat ${seat.seat_label} · ${seat.seat_type} · ${seat.side}${state === "auto_assigned" ? " (AI Recommended)" : ""}`}
-      aria-label={`Seat ${seat.seat_label}, ${state.replace("_", " ")}`}
+      title={`Seat ${seat.seat_label} · ${seat.seat_type} · ${seat.side}${seat.is_accessibility ? " · accessibility-priority" : ""}${state === "auto_assigned" ? " (AI Recommended)" : ""}`}
+      aria-label={`Seat ${seat.seat_label}, ${state.replace("_", " ")}${seat.is_accessibility ? ", accessibility priority" : ""}`}
     >
       {seat.seat_label}
-      {icon && (
-        <span className="absolute -top-1 -right-1 text-[8px] leading-none" aria-hidden>
-          {icon}
+      {Icon && (
+        <span
+          className="absolute -right-1 -top-1 inline-flex h-3.5 w-3.5 items-center justify-center rounded-full bg-white/90 text-[8px] leading-none shadow-sm"
+          aria-hidden
+        >
+          <Icon className="h-2.5 w-2.5" />
         </span>
       )}
     </Component>

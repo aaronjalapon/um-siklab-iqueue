@@ -13,6 +13,8 @@ class SeatInfo(BaseModel):
 
     seat_number: str
     is_available: bool
+    is_accessibility: bool = False
+    is_near_exit: bool = False
     passenger_name: str | None = None
 
 
@@ -27,6 +29,8 @@ class BusResponse(BaseModel):
     origin: str = ""
     destination: str = ""
     available_seats: int = 0
+    accessibility_seat_count: int = 0
+    accessibility_available_count: int = 0
     surge_probability: float | None = None
 
     model_config = {"from_attributes": True}
@@ -49,3 +53,5 @@ class SeatMapResponse(BaseModel):
     seats: list[SeatInfo]
     booked_count: int
     available_count: int
+    accessibility_seat_count: int = 0
+    accessibility_available_count: int = 0

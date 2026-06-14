@@ -33,8 +33,9 @@ try:
 except ImportError:
     pass
 
-from sqlalchemy import select, text
+from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import selectinload
 from sqlalchemy.orm import sessionmaker
 
 # ---------------------------------------------------------------------------
@@ -220,6 +221,34 @@ async def seed(engine, dry_run: bool = False) -> None:
                 },
             )
             print(f"+ Created bus: {b['plate']} ({b['route_slug']}, cap={b['capacity']})")
+
+        # --- Physical seat rows ---
+        from app.models.bus import Bus
+        from app.models.seat import Seat
+        from app.services.seat_assignment.bus_layout import generate_seats_for_bus
+
+        buses_result = await session.execute(
+            select(Bus)
+            .options(selectinload(Bus.layout))
+            .where(Bus.tenant_id == TENANT_ID)
+        )
+        demo_buses = buses_result.scalars().all()
+        for bus in demo_buses:
+            seat_count = (
+                await session.scalar(
+                    select(func.count(Seat.id)).where(Seat.bus_id == bus.id)
+                )
+            ) or 0
+            if seat_count:
+                print(f"  ✓ Seats for bus {bus.plate_number} exist — skipping")
+                continue
+
+            if dry_run:
+                print(f"  Would create accessibility-aware seats for {bus.plate_number}")
+                continue
+
+            await generate_seats_for_bus(bus, session)
+            print(f"+ Created seats for {bus.plate_number} (front rows marked accessible)")
 
         # --- Passenger ---
         existing = await session.execute(

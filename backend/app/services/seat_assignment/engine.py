@@ -24,7 +24,7 @@ from sqlalchemy.orm import selectinload
 from app.models.booking import Booking, BookingStatus
 from app.models.bus import Bus
 from app.models.seat import Seat, SeatReservation, SeatStatus
-from app.services.seat_assignment.bus_layout import get_seat_row
+from app.services.seat_assignment.bus_layout import generate_seats_for_bus
 from app.services.seat_assignment.scorer import (
     PassengerContext,
     score_seat,
@@ -150,6 +150,8 @@ class SeatAllocator:
             .options(selectinload(Seat.reservation))
         )
         all_seats = result.scalars().all()
+        if not all_seats:
+            all_seats = await generate_seats_for_bus(bus, self.session)
 
         # Fetch all existing reservations for scoring context
         reservations_result = await self.session.execute(
@@ -162,7 +164,18 @@ class SeatAllocator:
 
         # Score each available seat
         candidates: list[_ScoredCandidate] = []
-        for seat in all_seats:
+        available_seats = [
+            seat for seat in all_seats if seat.status == SeatStatus.AVAILABLE
+        ]
+        if (
+            not passenger.needs_accessibility
+            and any(not seat.is_accessibility for seat in available_seats)
+        ):
+            available_seats = [
+                seat for seat in available_seats if not seat.is_accessibility
+            ]
+
+        for seat in available_seats:
             if seat.status != SeatStatus.AVAILABLE:
                 continue
             s = score_seat(
@@ -240,6 +253,7 @@ class SeatAllocator:
             "seat_type": winner.seat.seat_type.value,
             "side": winner.seat.side,
             "row_number": winner.seat.row_number,
+            "is_accessibility": winner.seat.is_accessibility,
             "affinity_score": winner.score,
             "boarding_window": bw_str,
         }
@@ -289,6 +303,15 @@ class SeatAllocator:
         """
         bus_id = UUID(str(bus_id))
 
+        bus_result = await self.session.execute(
+            select(Bus)
+            .options(selectinload(Bus.layout))
+            .where(Bus.id == bus_id)
+        )
+        bus = bus_result.scalars().first()
+        if bus is None:
+            raise BusNotFoundError(f"Bus {bus_id} not found")
+
         result = await self.session.execute(
             select(Seat)
             .where(Seat.bus_id == bus_id)
@@ -296,6 +319,8 @@ class SeatAllocator:
             .order_by(Seat.row_number, Seat.col_number)
         )
         seats = result.scalars().all()
+        if not seats:
+            seats = await generate_seats_for_bus(bus, self.session)
 
         entries: list[dict] = []
         for seat in seats:

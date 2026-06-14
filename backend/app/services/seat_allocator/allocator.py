@@ -110,6 +110,10 @@ class SeatAllocator:
             accessible = [s for s in available if self._row_number(s) <= 2]
             if accessible:
                 available = accessible
+        else:
+            standard = [s for s in available if self._row_number(s) > 2]
+            if standard:
+                available = standard
 
         # --- Priority 2: Group seating ---
         if travel_group and len(travel_group) > 1:

@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
+import importlib
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 import logging
+from typing import TYPE_CHECKING
 
 from app.db.session import probe_database as probe_database_session
-from app.services.chatbot.bot import get_chatbot_service
-from app.services.forecasting.predictor import ForecastingService
+
+if TYPE_CHECKING:
+    from app.services.forecasting.predictor import ForecastingService
 
 logger = logging.getLogger(__name__)
 
@@ -34,12 +37,27 @@ _forecasting_service: ForecastingService | None = None
 _runtime_state = RuntimeReadiness()
 
 
-def get_forecasting_service() -> ForecastingService:
-    """Return the singleton forecasting service instance."""
+def _load_chatbot_service():
+    """Load the chatbot singleton lazily to keep the base image lightweight."""
+
+    module = importlib.import_module("app.services.chatbot.bot")
+    return module.get_chatbot_service()
+
+
+def get_forecasting_service() -> ForecastingService | None:
+    """Return the singleton forecasting service instance when available."""
 
     global _forecasting_service
     if _forecasting_service is None:
-        _forecasting_service = ForecastingService()
+        try:
+            module = importlib.import_module("app.services.forecasting.predictor")
+        except ImportError as exc:
+            logger.warning(
+                "Forecasting dependencies unavailable during startup: %s",
+                exc,
+            )
+            return None
+        _forecasting_service = module.ForecastingService()
     return _forecasting_service
 
 
@@ -60,7 +78,7 @@ async def warm_application() -> RuntimeReadiness:
     state = RuntimeReadiness(initialized_at=datetime.now(timezone.utc))
 
     try:
-        chatbot_service = get_chatbot_service()
+        chatbot_service = _load_chatbot_service()
         state.chatbot_ready = bool(chatbot_service and chatbot_service._model_available)
     except Exception as exc:
         state.last_error = f"chatbot: {exc}"
@@ -68,8 +86,11 @@ async def warm_application() -> RuntimeReadiness:
 
     try:
         forecasting_service = get_forecasting_service()
-        forecasting_service.warmup()
-        state.forecasting_ready = forecasting_service.is_ready
+        if forecasting_service is None:
+            state.last_error = state.last_error or "forecasting: optional dependencies unavailable"
+        else:
+            forecasting_service.warmup()
+            state.forecasting_ready = forecasting_service.is_ready
     except Exception as exc:
         state.last_error = f"forecasting: {exc}"
         logger.exception("Failed to warm forecasting service")

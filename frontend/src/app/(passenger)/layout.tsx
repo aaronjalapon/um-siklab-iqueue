@@ -1,8 +1,17 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BusFront, Home, Ticket, ShoppingCart, Tag, User } from "lucide-react";
+import {
+  BusFront,
+  Home,
+  Ticket,
+  ShoppingCart,
+  Tag,
+  User,
+  WifiOff,
+} from "lucide-react";
 import ChatbotPanel from "@/components/ChatbotPanel";
 
 export default function PassengerLayout({
@@ -11,6 +20,22 @@ export default function PassengerLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const [isOnline, setIsOnline] = useState(true);
+
+  useEffect(() => {
+    function updateOnlineState() {
+      setIsOnline(navigator.onLine);
+    }
+
+    updateOnlineState();
+    window.addEventListener("online", updateOnlineState);
+    window.addEventListener("offline", updateOnlineState);
+
+    return () => {
+      window.removeEventListener("online", updateOnlineState);
+      window.removeEventListener("offline", updateOnlineState);
+    };
+  }, []);
 
   const navItems = [
     { href: "/home", label: "Home", icon: Home, match: ["/home"] },
@@ -57,6 +82,14 @@ export default function PassengerLayout({
 
       {/* Main Content Area */}
       <main className="min-w-0 flex-1 overflow-x-clip pb-24 md:ml-64 md:pb-0">
+        {!isOnline && (
+          <div className="sticky top-0 z-20 border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-900 shadow-sm dark:border-amber-900/50 dark:bg-amber-950/80 dark:text-amber-100">
+            <span className="mx-auto flex max-w-7xl items-center gap-2">
+              <WifiOff className="h-4 w-4" aria-hidden />
+              Offline mode
+            </span>
+          </div>
+        )}
         {children}
       </main>
 

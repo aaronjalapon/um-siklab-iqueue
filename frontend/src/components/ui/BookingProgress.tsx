@@ -18,7 +18,7 @@ export function BookingProgress({ current }: BookingProgressProps) {
 
   return (
     <nav aria-label="Booking progress" className="w-full">
-      <ol className="grid grid-cols-4 gap-1 rounded-2xl border border-glass-border bg-glass-bg p-1.5 text-[10px] shadow-glass backdrop-blur-xl sm:gap-2 sm:p-2 sm:text-xs">
+      <ol className="grid grid-cols-4 gap-1 rounded-2xl border border-glass-border bg-glass-bg p-1.5 text-[10px] glass-shadow backdrop-blur-xl sm:gap-2 sm:p-2 sm:text-xs">
         {STEPS.map((step, index) => {
           const isCurrent = index === currentIndex;
           const isDone = index < currentIndex;

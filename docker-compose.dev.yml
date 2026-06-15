@@ -42,7 +42,7 @@ services:
       dockerfile: Dockerfile.dev
     command: >
       sh -c "rm -rf /tmp/iqueue-next &&
-             npm run dev:docker"
+             npm run dev:webpack"
     volumes:
       - ./frontend:/app
       - /app/node_modules  # anonymous volume to preserve node_modules

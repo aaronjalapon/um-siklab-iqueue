@@ -1,7 +1,8 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { config } from "@fortawesome/fontawesome-svg-core";
 import "@fortawesome/fontawesome-svg-core/styles.css";
+import PWARegistrar from "@/components/PWARegistrar";
 import "./globals.css";
 
 config.autoAddCss = false;
@@ -17,8 +18,40 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "IQueue — Smart Bus Boarding",
+  title: {
+    default: "IQueue — Smart Bus Boarding",
+    template: "%s | IQueue",
+  },
   description: "AI-powered smart boarding platform for inter-provincial bus terminals across ASEAN.",
+  applicationName: "IQueue",
+  appleWebApp: {
+    capable: true,
+    title: "IQueue",
+    statusBarStyle: "default",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  icons: {
+    icon: [
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      {
+        url: "/icons/apple-touch-icon.png",
+        sizes: "180x180",
+        type: "image/png",
+      },
+    ],
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#1A73E8" },
+    { media: "(prefers-color-scheme: dark)", color: "#0f172a" },
+  ],
 };
 
 export default function RootLayout({
@@ -31,6 +64,7 @@ export default function RootLayout({
         <div className="flex-1 w-full relative z-0">
           {children}
         </div>
+        <PWARegistrar />
       </body>
     </html>
   );

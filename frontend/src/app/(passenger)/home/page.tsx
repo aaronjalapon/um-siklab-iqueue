@@ -43,7 +43,7 @@ export default function HomePage() {
         actions={
           <button
             type="button"
-            className="relative flex h-11 w-11 items-center justify-center rounded-full border border-glass-border bg-glass-bg text-slate-600 shadow-glass backdrop-blur-xl transition hover:text-brand-blue dark:text-slate-300"
+            className="relative flex h-11 w-11 items-center justify-center rounded-full border border-glass-border bg-glass-bg text-slate-600 glass-shadow backdrop-blur-xl transition hover:text-brand-blue dark:text-slate-300"
             aria-label="Notifications"
           >
             <Bell className="h-5 w-5" aria-hidden />

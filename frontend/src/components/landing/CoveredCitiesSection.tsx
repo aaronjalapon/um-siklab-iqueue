@@ -249,7 +249,8 @@ export default function CoveredCitiesSection() {
   const [isMapReady, setIsMapReady] = useState(false);
 
   useEffect(() => {
-    setIsMapReady(true);
+    const frame = requestAnimationFrame(() => setIsMapReady(true));
+    return () => cancelAnimationFrame(frame);
   }, []);
 
   return (

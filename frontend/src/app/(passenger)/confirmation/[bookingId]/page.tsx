@@ -3,27 +3,56 @@
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { QRCodeSVG } from "qrcode.react";
-import { ArrowLeft, CheckCircle, Clock, MapPin } from "lucide-react";
+import { ArrowLeft, WifiOff } from "lucide-react";
+import BoardingPassCard from "@/components/boarding/BoardingPassCard";
 import { BookingProgress } from "@/components/ui/BookingProgress";
 import { PageHeader } from "@/components/ui/PageHeader";
+import {
+  getSavedBoardingPassById,
+  saveBoardingPass,
+} from "@/lib/boarding-passes";
 import { getBooking } from "@/lib/api";
 import { glassStyles } from "@/lib/design-system";
 import type { BookingDetail } from "@/lib/types";
-import { formatBoardingWindow, formatDate, statusColorClass } from "@/lib/utils";
 
 export default function ConfirmationPage() {
   const { bookingId } = useParams<{ bookingId: string }>();
   const [booking, setBooking] = useState<BookingDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSavedCopy, setIsSavedCopy] = useState(false);
 
   useEffect(() => {
     if (!bookingId) return;
+
+    let cancelled = false;
+
     getBooking(bookingId)
-      .then(setBooking)
-      .catch((err: Error) => setError(err.message))
-      .finally(() => setLoading(false));
+      .then((data) => {
+        if (cancelled) return;
+        setBooking(data);
+        setIsSavedCopy(false);
+        setError(null);
+        saveBoardingPass(data);
+      })
+      .catch((err: Error) => {
+        const savedPass = getSavedBoardingPassById(bookingId);
+        if (cancelled) return;
+        if (savedPass) {
+          setBooking(savedPass);
+          setIsSavedCopy(true);
+          setError(null);
+          return;
+        }
+        setError(err.message);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [bookingId]);
 
   if (loading) {
@@ -71,86 +100,16 @@ export default function ConfirmationPage() {
         description="Show this QR code at the gate during your assigned boarding window."
       />
 
-      <section className={`${glassStyles.panel} overflow-hidden`}>
-        <div className="flex items-center justify-between gap-3 border-b border-glass-border p-5">
-          <div className="flex items-center gap-3">
-            <CheckCircle className="h-6 w-6 text-green-600" aria-hidden />
-            <div>
-              <h2 className="font-semibold text-foreground">
-                IQueue Boarding Pass
-              </h2>
-              <p className="text-xs text-slate-500">
-                ID {booking.id.slice(0, 8)}
-              </p>
-            </div>
-          </div>
-          <span
-            className={`${glassStyles.badge} ${statusColorClass(
-              booking.status
-            )}`}
-          >
-            {booking.status.toUpperCase()}
-          </span>
+      {isSavedCopy && (
+        <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
+          <WifiOff className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+          <p className="font-semibold">
+            Showing the saved boarding pass from this device.
+          </p>
         </div>
+      )}
 
-        <div className="grid gap-5 p-5 md:grid-cols-[1fr_240px]">
-          <div className="space-y-4">
-            <div className="rounded-2xl bg-white/55 p-4 dark:bg-slate-900/40">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                Route
-              </p>
-              <p className="mt-1 flex items-center gap-2 text-lg font-bold text-foreground">
-                <MapPin className="h-4 w-4 text-brand-blue" aria-hidden />
-                {booking.route_origin || "Origin"} {"->"}{" "}
-                {booking.route_destination || "Destination"}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
-              <div className="rounded-2xl bg-white/55 p-4 dark:bg-slate-900/40">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                  Seat
-                </p>
-                <p className="mt-1 text-3xl font-black text-foreground">
-                  {booking.seat_number}
-                </p>
-              </div>
-              <div className="rounded-2xl bg-white/55 p-4 dark:bg-slate-900/40">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                  Departure
-                </p>
-                <p className="mt-1 text-sm font-bold text-foreground">
-                  {formatDate(booking.departure_date)}
-                </p>
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-brand-orange/25 bg-orange-50 p-4 text-brand-orange dark:bg-orange-950/20">
-              <p className="flex items-center gap-2 text-sm font-bold">
-                <Clock className="h-4 w-4" aria-hidden />
-                Boarding window
-              </p>
-              <p className="mt-1 text-sm">
-                {formatBoardingWindow(
-                  booking.boarding_window_start,
-                  booking.boarding_window_end
-                )}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-col items-center justify-center rounded-2xl bg-white p-4 text-center shadow-sm">
-            <QRCodeSVG
-              value={booking.qr_token || JSON.stringify(booking)}
-              size={200}
-              level="M"
-            />
-            <p className="mt-3 text-xs font-medium text-slate-500">
-              Offline-scannable QR pass
-            </p>
-          </div>
-        </div>
-      </section>
+      <BoardingPassCard booking={booking} savedCopy={isSavedCopy} />
     </div>
   );
 }

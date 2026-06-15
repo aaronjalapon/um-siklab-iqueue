@@ -3,7 +3,7 @@
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useRef, useMemo } from "react";
 import Link from "next/link";
-import { ArrowLeft, Check, Star, RefreshCw } from "lucide-react";
+import { Accessibility, ArrowLeft, Check, Star, RefreshCw } from "lucide-react";
 import { createBooking, createPassenger } from "@/lib/api";
 import { BusSeatGrid } from "@/components/seats/BusSeatGrid";
 import { SeatLegend } from "@/components/seats/SeatLegend";
@@ -256,11 +256,20 @@ export default function SeatSelectionPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 relative items-start">
         {/* Seat Grid */}
         <div className={`lg:col-span-2 ${glassStyles.panel} p-6`}>
+          <div className="mb-4 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
+            <Accessibility className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+            <p>
+              {accessibilityNeeds
+                ? "Accessibility-priority seats are highlighted near the front door."
+                : "Front priority seats are held for passengers who need easier access while other seats are available."}
+            </p>
+          </div>
           <BusSeatGrid
             seats={seats}
             autoAssignedSeatId={autoAssigned?.seat_id}
             selectedSeatId={manualMode ? selectedSeatId : undefined}
             onSeatSelect={handleManualSelect}
+            needsAccessibility={accessibilityNeeds}
           />
           <div className="mt-4">
             <SeatLegend variant="passenger" />
@@ -283,6 +292,12 @@ export default function SeatSelectionPage() {
               <p className="text-sm text-teal-700 capitalize">
                 {autoAssigned.seat_type} · {autoAssigned.side} side
               </p>
+              {autoAssigned.is_accessibility && (
+                <p className="inline-flex items-center gap-1.5 rounded-full bg-white/70 px-2 py-1 text-xs font-semibold text-teal-800">
+                  <Accessibility className="h-3.5 w-3.5" aria-hidden />
+                  Accessibility-priority seat
+                </p>
+              )}
               {autoAssigned.affinity_score > 0 && (
                 <p className="text-sm text-teal-700">
                   Affinity Score: {autoAssigned.affinity_score.toFixed(0)}

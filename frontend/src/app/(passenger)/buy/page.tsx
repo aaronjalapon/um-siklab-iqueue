@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   AlertCircle,
   ArrowLeft,
+  Accessibility,
   BusFront,
   CalendarDays,
   Clock,
@@ -333,6 +334,16 @@ function BuyPageInner() {
                         <p className="mt-1 flex items-center gap-1.5 font-semibold text-foreground">
                           <BusFront className="h-4 w-4 text-brand-orange" />
                           {bus.plate_number}
+                        </p>
+                      </div>
+                      <div className="rounded-xl bg-amber-50 p-3 text-amber-900 dark:bg-amber-950/30 dark:text-amber-100 min-[420px]:col-span-2">
+                        <p className="text-xs text-amber-700/80 dark:text-amber-200/80">
+                          Accessibility priority
+                        </p>
+                        <p className="mt-1 flex items-center gap-1.5 font-semibold">
+                          <Accessibility className="h-4 w-4" aria-hidden />
+                          {bus.accessibility_available_count} of{" "}
+                          {bus.accessibility_seat_count} seats open
                         </p>
                       </div>
                     </div>

@@ -46,6 +46,9 @@ class SeatAssignmentResult(BaseModel):
     seat_type: str = Field(..., description="window | aisle | middle")
     side: str = Field(..., description="left | right")
     row_number: int
+    is_accessibility: bool = Field(
+        False, description="Whether this is an accessibility-priority seat"
+    )
     affinity_score: float
     boarding_window: Optional[str] = Field(
         None, description="HH:MM–HH:MM format"
@@ -97,3 +100,5 @@ class SeatMapResponse(BaseModel):
     total_seats: int
     occupied_count: int
     available_count: int
+    accessibility_seat_count: int
+    accessibility_available_count: int

@@ -40,7 +40,9 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
-    command: npm run dev:docker
+    command: >
+      sh -c "rm -rf /tmp/iqueue-next &&
+             npm run dev:docker"
     volumes:
       - ./frontend:/app
       - /app/node_modules  # anonymous volume to preserve node_modules

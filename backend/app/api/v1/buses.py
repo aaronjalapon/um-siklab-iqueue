@@ -13,6 +13,7 @@ from app.core.deps import get_db
 from app.models.booking import Booking, BookingStatus
 from app.models.bus import Bus
 from app.models.bus_route import BusRoute
+from app.models.seat import Seat, SeatStatus
 from app.schemas.bus import BusResponse, BusListResponse, SeatInfo, SeatMapResponse
 
 logger = logging.getLogger(__name__)
@@ -78,6 +79,33 @@ async def list_buses(
                 )
             )
         ) or 0
+        accessibility_total = (
+            await db.scalar(
+                select(func.count(Seat.id)).where(
+                    Seat.bus_id == bus.id,
+                    Seat.is_accessibility.is_(True),
+                )
+            )
+        ) or 0
+        accessibility_available = (
+            await db.scalar(
+                select(func.count(Seat.id)).where(
+                    Seat.bus_id == bus.id,
+                    Seat.is_accessibility.is_(True),
+                    Seat.status == SeatStatus.AVAILABLE,
+                )
+            )
+        ) or 0
+        if accessibility_total == 0:
+            accessibility_total = min(bus.capacity, 8)
+            booked_standard_seats = max(
+                0,
+                bookings_count - (bus.capacity - accessibility_total),
+            )
+            accessibility_available = max(
+                0,
+                accessibility_total - booked_standard_seats,
+            )
 
         bus_responses.append({
             "id": bus.id,
@@ -88,6 +116,8 @@ async def list_buses(
             "origin": route.origin,
             "destination": route.destination,
             "available_seats": max(0, bus.capacity - bookings_count),
+            "accessibility_seat_count": accessibility_total,
+            "accessibility_available_count": accessibility_available,
             "surge_probability": None,  # Populated below from forecast service
         })
 
@@ -189,15 +219,39 @@ async def get_seat_map(
 
     booked_seats = {b.seat_number for b in bookings}
 
+    seat_rows_result = await db.execute(
+        select(Seat)
+        .where(Seat.bus_id == bus_id)
+        .order_by(Seat.row_number, Seat.col_number)
+    )
+    seat_rows = seat_rows_result.scalars().all()
+
     # Build seat map
     seats = []
-    for seat_num in range(1, bus.capacity + 1):
-        seat_str = str(seat_num)
-        seats.append(SeatInfo(
-            seat_number=seat_str,
-            is_available=seat_str not in booked_seats,
-            passenger_name=None,
-        ))
+    if seat_rows:
+        for seat in seat_rows:
+            seats.append(SeatInfo(
+                seat_number=seat.seat_label,
+                is_available=seat.seat_label not in booked_seats,
+                is_accessibility=seat.is_accessibility,
+                is_near_exit=seat.is_near_exit,
+                passenger_name=None,
+            ))
+    else:
+        columns = ("A", "B", "C", "D")
+        for seat_num in range(1, bus.capacity + 1):
+            row = (seat_num - 1) // len(columns) + 1
+            col = columns[(seat_num - 1) % len(columns)]
+            seat_str = f"{row}{col}"
+            seats.append(SeatInfo(
+                seat_number=seat_str,
+                is_available=seat_str not in booked_seats,
+                is_accessibility=row <= 2,
+                is_near_exit=row == 1,
+                passenger_name=None,
+            ))
+
+    accessibility_seats = [seat for seat in seats if seat.is_accessibility]
 
     return {
         "bus_id": bus.id,
@@ -205,4 +259,8 @@ async def get_seat_map(
         "seats": seats,
         "booked_count": len(booked_seats),
         "available_count": bus.capacity - len(booked_seats),
+        "accessibility_seat_count": len(accessibility_seats),
+        "accessibility_available_count": sum(
+            1 for seat in accessibility_seats if seat.is_available
+        ),
     }

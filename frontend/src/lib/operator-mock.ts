@@ -79,6 +79,8 @@ export interface MockFleetBus {
   origin: string;
   destination: string;
   available_seats: number;
+  accessibility_seat_count: number;
+  accessibility_available_count: number;
   surge_probability: number | null;
 }
 
@@ -92,6 +94,11 @@ export function mockFleetFromCapacity(): MockFleetBus[] {
     origin: bus.route?.split(" → ")[0] ?? "Davao",
     destination: bus.route?.split(" → ")[1] ?? "Manila",
     available_seats: bus.capacity - bus.booked,
+    accessibility_seat_count: Math.min(bus.capacity, 8),
+    accessibility_available_count: Math.max(
+      0,
+      Math.min(bus.capacity, 8) - Math.max(0, bus.booked - (bus.capacity - 8))
+    ),
     surge_probability:
       bus.booked / bus.capacity > 0.9
         ? 0.82

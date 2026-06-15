@@ -106,6 +106,10 @@ textarea {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+.shadow-glass {
+  box-shadow: var(--glass-shadow);
+}
+
 /* 3. Global Reduced Motion override for view transitions */
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-group(*),

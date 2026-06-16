@@ -1,6 +1,23 @@
 import type { MetadataRoute } from "next";
+import { SHOULD_ENABLE_PWA } from "@/lib/pwa-runtime";
 
 export default function manifest(): MetadataRoute.Manifest {
+  if (!SHOULD_ENABLE_PWA) {
+    return {
+      name: "IQueue",
+      short_name: "IQueue",
+      description:
+        "AI-powered smart boarding and QR passes for inter-provincial bus terminals.",
+      start_url: "/home",
+      scope: "/",
+      display: "browser",
+      background_color: "#FCFCFD",
+      theme_color: "#1A73E8",
+      lang: "en",
+      icons: [],
+    };
+  }
+
   return {
     name: "IQueue",
     short_name: "IQueue",

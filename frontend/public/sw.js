@@ -2,6 +2,9 @@ const CACHE_VERSION = "iqueue-pwa-v1";
 const PRECACHE = `${CACHE_VERSION}-precache`;
 const PAGES = `${CACHE_VERSION}-pages`;
 const ASSETS = `${CACHE_VERSION}-assets`;
+const IS_LOCAL_DEV_HOST = ["localhost", "127.0.0.1", "::1"].includes(
+  self.location.hostname
+);
 
 const PRECACHE_URLS = [
   "/",
@@ -17,6 +20,11 @@ const PRECACHE_URLS = [
 ];
 
 self.addEventListener("install", (event) => {
+  if (IS_LOCAL_DEV_HOST) {
+    self.skipWaiting();
+    return;
+  }
+
   event.waitUntil(
     caches.open(PRECACHE).then((cache) =>
       Promise.allSettled(
@@ -30,6 +38,22 @@ self.addEventListener("install", (event) => {
 });
 
 self.addEventListener("activate", (event) => {
+  if (IS_LOCAL_DEV_HOST) {
+    event.waitUntil(
+      caches
+        .keys()
+        .then((cacheNames) =>
+          Promise.all(
+            cacheNames
+              .filter((cacheName) => cacheName.startsWith("iqueue-pwa-"))
+              .map((cacheName) => caches.delete(cacheName))
+          )
+        )
+        .then(() => self.registration.unregister())
+    );
+    return;
+  }
+
   const expectedCaches = new Set([PRECACHE, PAGES, ASSETS]);
   event.waitUntil(
     caches
@@ -50,6 +74,8 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
+  if (IS_LOCAL_DEV_HOST) return;
+
   const { request } = event;
 
   if (request.method !== "GET") return;

@@ -1,7 +1,7 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   Bell,
   BusFront,
@@ -23,15 +23,15 @@ const QUICK_ROUTES = [
 ];
 
 export default function HomePage() {
-  const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  function openQuickRoute(destination: string) {
+  function buildBuyHref(destination = "") {
     const params = new URLSearchParams({
       origin: "Davao City",
-      destination,
+      ...(destination ? { destination } : {}),
     });
-    router.push(`/buy?${params.toString()}`);
+    const query = params.toString();
+    return query ? `/buy?${query}` : "/buy";
   }
 
   return (
@@ -52,9 +52,9 @@ export default function HomePage() {
         }
       />
 
-      <button
-        type="button"
-        onClick={() => router.push("/buy")}
+      <Link
+        href={buildBuyHref()}
+        prefetch={false}
         className={`${glassStyles.panel} flex w-full items-center gap-3 p-4 text-left transition hover:border-brand-blue/40 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)]`}
       >
         <Search className="h-5 w-5 shrink-0 text-brand-blue" aria-hidden />
@@ -66,7 +66,7 @@ export default function HomePage() {
             Origin, destination, date, then AI seat recommendation.
           </span>
         </span>
-      </button>
+      </Link>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.4fr_1fr]">
         <section className={`${glassStyles.panel} overflow-hidden`}>
@@ -145,10 +145,10 @@ export default function HomePage() {
 
           <div className="grid grid-cols-1 gap-3">
             {QUICK_ROUTES.map((route) => (
-              <button
+              <Link
                 key={route.label}
-                type="button"
-                onClick={() => openQuickRoute(route.destination)}
+                href={buildBuyHref(route.destination)}
+                prefetch={false}
                 className={`${glassStyles.panel} flex items-center justify-between gap-3 p-4 text-left transition hover:border-brand-blue/40`}
               >
                 <span className="min-w-0">
@@ -161,7 +161,7 @@ export default function HomePage() {
                   </span>
                 </span>
                 <Search className="h-5 w-5 shrink-0 text-brand-blue" />
-              </button>
+              </Link>
             ))}
           </div>
         </section>

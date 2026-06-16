@@ -2,12 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Download, Smartphone, X } from "lucide-react";
+import {
+  cleanupDevelopmentPwaState,
+  PWA_INSTALL_DISMISS_KEY,
+  SHOULD_ENABLE_PWA,
+} from "@/lib/pwa-runtime";
 
-const SHOULD_REGISTER =
-  process.env.NODE_ENV === "production" ||
-  process.env.NEXT_PUBLIC_ENABLE_SW === "true";
-
-const DISMISS_KEY = "iqueue:pwa-install-dismissed:v1";
 const DISMISS_TTL_MS = 1000 * 60 * 60 * 24;
 
 type BeforeInstallPromptEvent = Event & {
@@ -34,7 +34,14 @@ function isStandaloneMode() {
 function wasDismissedRecently() {
   if (typeof window === "undefined") return false;
 
-  const dismissedAt = window.localStorage.getItem(DISMISS_KEY);
+  let dismissedAt: string | null = null;
+
+  try {
+    dismissedAt = window.localStorage.getItem(PWA_INSTALL_DISMISS_KEY);
+  } catch {
+    return false;
+  }
+
   if (!dismissedAt) return false;
 
   const parsed = Number(dismissedAt);
@@ -50,12 +57,17 @@ export default function PWARegistrar() {
   const [isInstalling, setIsInstalling] = useState(false);
 
   const shouldShowInstallPrompt = useMemo(
-    () => SHOULD_REGISTER && isInstallVisible && deferredPrompt !== null,
+    () => SHOULD_ENABLE_PWA && isInstallVisible && deferredPrompt !== null,
     [deferredPrompt, isInstallVisible]
   );
 
   useEffect(() => {
-    if (!SHOULD_REGISTER || !("serviceWorker" in navigator)) return;
+    if (!("serviceWorker" in navigator)) return;
+
+    if (!SHOULD_ENABLE_PWA) {
+      void cleanupDevelopmentPwaState();
+      return;
+    }
 
     let cancelled = false;
 
@@ -83,7 +95,7 @@ export default function PWARegistrar() {
   }, []);
 
   useEffect(() => {
-    if (!SHOULD_REGISTER || typeof window === "undefined") return;
+    if (!SHOULD_ENABLE_PWA || typeof window === "undefined") return;
 
     function handleBeforeInstallPrompt(event: Event) {
       const installEvent = event as BeforeInstallPromptEvent;
@@ -96,7 +108,11 @@ export default function PWARegistrar() {
     }
 
     function handleInstalled() {
-      window.localStorage.removeItem(DISMISS_KEY);
+      try {
+        window.localStorage.removeItem(PWA_INSTALL_DISMISS_KEY);
+      } catch {
+        // Ignore storage failures for the install banner state.
+      }
       setDeferredPrompt(null);
       setIsInstallVisible(false);
       setIsInstalling(false);
@@ -131,16 +147,34 @@ export default function PWARegistrar() {
 
     if (outcome === "accepted") {
       setIsInstallVisible(false);
-      window.localStorage.removeItem(DISMISS_KEY);
+      try {
+        window.localStorage.removeItem(PWA_INSTALL_DISMISS_KEY);
+      } catch {
+        // Ignore storage failures for the install banner state.
+      }
       return;
     }
 
-    window.localStorage.setItem(DISMISS_KEY, String(Date.now()));
+    try {
+      window.localStorage.setItem(
+        PWA_INSTALL_DISMISS_KEY,
+        String(Date.now())
+      );
+    } catch {
+      // Ignore storage failures for the install banner state.
+    }
     setIsInstallVisible(false);
   }
 
   function handleDismiss() {
-    window.localStorage.setItem(DISMISS_KEY, String(Date.now()));
+    try {
+      window.localStorage.setItem(
+        PWA_INSTALL_DISMISS_KEY,
+        String(Date.now())
+      );
+    } catch {
+      // Ignore storage failures for the install banner state.
+    }
     setIsInstallVisible(false);
   }
 

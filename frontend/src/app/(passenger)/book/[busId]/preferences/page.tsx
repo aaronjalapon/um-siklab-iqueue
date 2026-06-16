@@ -124,6 +124,7 @@ export default function PreferencesPage() {
     <div className={`${glassStyles.pageContainer} max-w-3xl`}>
       <Link
         href={`/buy?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(dest)}&date=${date}`}
+        prefetch={false}
         className="inline-flex items-center gap-1 text-sm font-medium text-brand-blue hover:underline"
       >
         <ArrowLeft className="h-4 w-4" aria-hidden />

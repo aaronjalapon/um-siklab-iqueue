@@ -220,6 +220,7 @@ export default function SeatSelectionPage() {
           <p className="text-sm mt-1">{error}</p>
           <Link
             href={`/buy?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(dest)}&date=${date}`}
+            prefetch={false}
             className="text-blue-600 hover:underline text-sm mt-3 inline-block"
           >
             Back to search
@@ -234,6 +235,7 @@ export default function SeatSelectionPage() {
       {/* Breadcrumb */}
       <Link
         href={`/book/${busId}/preferences?${new URLSearchParams({ date, origin, dest })}`}
+        prefetch={false}
         className="text-sm text-blue-600 hover:underline inline-flex items-center gap-1"
       >
         <ArrowLeft className="w-3 h-3" /> Back to preferences

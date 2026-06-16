@@ -2,7 +2,7 @@
 
 import { Suspense, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import {
   AlertCircle,
   ArrowLeft,
@@ -68,7 +68,6 @@ function BusResultSkeleton() {
 }
 
 function BuyPageInner() {
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   const [origin, setOrigin] = useState(searchParams.get("origin") || "");
@@ -143,14 +142,14 @@ function BuyPageInner() {
     void performSearch(routeOrigin, routeDestination, travelDate);
   }
 
-  function handleBook(bus: Bus) {
+  function buildPreferencesHref(bus: Bus) {
     const params = new URLSearchParams({
       date: travelDate,
       origin: bus.origin,
       dest: bus.destination,
     });
 
-    router.push(`/book/${bus.id}/preferences?${params.toString()}`);
+    return `/book/${bus.id}/preferences?${params.toString()}`;
   }
 
   const routeSummary =
@@ -356,15 +355,24 @@ function BuyPageInner() {
                     />
 
                     <div className="mt-auto pt-5">
-                      <button
-                        type="button"
-                        disabled={isFull}
-                        onClick={() => handleBook(bus)}
-                        className={`${glassStyles.primaryButton} flex min-h-11 w-full items-center justify-center gap-2 text-sm font-bold disabled:cursor-not-allowed disabled:border-slate-300 disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none dark:disabled:bg-slate-700`}
-                      >
-                        <MapPin className="h-4 w-4" aria-hidden />
-                        {isFull ? "Bus Full" : "Continue to Preferences"}
-                      </button>
+                      {isFull ? (
+                        <span
+                          className={`${glassStyles.primaryButton} flex min-h-11 w-full items-center justify-center gap-2 text-sm font-bold disabled:cursor-not-allowed disabled:border-slate-300 disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none dark:disabled:bg-slate-700`}
+                          aria-disabled="true"
+                        >
+                          <MapPin className="h-4 w-4" aria-hidden />
+                          Bus Full
+                        </span>
+                      ) : (
+                        <Link
+                          href={buildPreferencesHref(bus)}
+                          prefetch={false}
+                          className={`${glassStyles.primaryButton} flex min-h-11 w-full items-center justify-center gap-2 text-sm font-bold`}
+                        >
+                          <MapPin className="h-4 w-4" aria-hidden />
+                          Continue to Preferences
+                        </Link>
+                      )}
                     </div>
                   </article>
                 );

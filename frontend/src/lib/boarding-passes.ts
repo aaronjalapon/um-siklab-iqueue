@@ -64,6 +64,11 @@ function readStoredPasses(): SavedBoardingPass[] {
       );
     });
   } catch {
+    try {
+      storage.removeItem(BOARDING_PASS_STORAGE_KEY);
+    } catch {
+      // Ignore storage cleanup failures and fall back to an empty list.
+    }
     return [];
   }
 }
@@ -71,7 +76,12 @@ function readStoredPasses(): SavedBoardingPass[] {
 function writeStoredPasses(passes: SavedBoardingPass[]): void {
   const storage = getStorage();
   if (!storage) return;
-  storage.setItem(BOARDING_PASS_STORAGE_KEY, JSON.stringify(passes));
+
+  try {
+    storage.setItem(BOARDING_PASS_STORAGE_KEY, JSON.stringify(passes));
+  } catch {
+    // Ignore storage write failures so passenger pages can still render.
+  }
 }
 
 export function getSavedBoardingPasses(): SavedBoardingPass[] {

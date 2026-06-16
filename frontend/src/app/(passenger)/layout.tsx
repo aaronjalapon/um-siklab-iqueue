@@ -53,7 +53,11 @@ export default function PassengerLayout({
       {/* Desktop Sidebar (hidden on mobile) */}
       <aside className="hidden md:flex flex-col w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 fixed h-full z-30 shadow-sm">
         <div className="p-6">
-          <Link href="/home" className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+          <Link
+            href="/home"
+            prefetch={false}
+            className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2"
+          >
             <BusFront className="h-7 w-7 text-brand-blue" aria-hidden />
             IQueue
           </Link>
@@ -66,6 +70,7 @@ export default function PassengerLayout({
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={false}
                 className={`flex items-center gap-4 px-4 py-3 rounded-xl transition-colors font-semibold ${
                   isActive 
                     ? "bg-brand-blue text-white shadow-md shadow-brand-blue/20" 
@@ -104,6 +109,7 @@ export default function PassengerLayout({
               <div key={item.href} className="relative -top-5 flex flex-1 justify-center">
                 <Link
                   href={item.href}
+                  prefetch={false}
                   className="w-14 h-14 bg-brand-blue rounded-full flex items-center justify-center text-white shadow-lg shadow-brand-blue/30 active:scale-95 transition-transform"
                   aria-label={item.label}
                 >
@@ -120,6 +126,7 @@ export default function PassengerLayout({
             <Link
               key={item.href}
               href={item.href}
+              prefetch={false}
               className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-1 px-1 pt-2 pb-1 ${
                 isActive ? "text-brand-blue" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
               } transition-colors`}

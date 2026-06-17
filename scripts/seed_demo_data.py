@@ -33,7 +33,7 @@ try:
 except ImportError:
     pass
 
-from sqlalchemy import select, text
+from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -220,6 +220,29 @@ async def seed(engine, dry_run: bool = False) -> None:
                 },
             )
             print(f"+ Created bus: {b['plate']} ({b['route_slug']}, cap={b['capacity']})")
+
+        # --- Physical Seats ---
+        # The passenger booking flow reads from the seat assignment tables.
+        # Keep this idempotent so rerunning the seed can repair older dev DBs.
+        from app.models.bus import Bus
+        from app.models.seat import Seat
+        from app.services.seat_assignment.bus_layout import generate_seats_for_bus
+
+        buses_result = await session.execute(select(Bus))
+        for bus in buses_result.scalars().all():
+            seat_count = await session.scalar(
+                select(func.count(Seat.id)).where(Seat.bus_id == bus.id)
+            )
+            if seat_count:
+                print(f"  ✓ Seats for bus {bus.plate_number} exist — skipping")
+                continue
+
+            if dry_run:
+                print(f"  Would generate seats for bus: {bus.plate_number}")
+                continue
+
+            seats = await generate_seats_for_bus(bus, session)
+            print(f"+ Generated {len(seats)} seats for bus: {bus.plate_number}")
 
         # --- Passenger ---
         existing = await session.execute(

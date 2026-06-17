@@ -25,7 +25,7 @@ class ChatbotResponse(BaseModel):
 
     response_text: str = Field(..., description="Chatbot's reply in the user's language")
     detected_language: str = Field(..., description="Detected ISO 639-1 language code")
-    intent: str = Field(..., description="Classified intent (check_booking, request_requeue, get_departure_info, surge_info, fallback)")
+    intent: str = Field(..., description="Classified intent (greeting, check_booking, request_requeue, get_departure_info, surge_info, fallback)")
     suggested_actions: list[str] = Field(
         default_factory=list,
         description="Suggested follow-up actions the user can take",

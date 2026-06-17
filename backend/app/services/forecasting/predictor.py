@@ -85,6 +85,17 @@ class ForecastingService:
 
         self._ensure_loaded()
 
+    @property
+    def is_ready(self) -> bool:
+        """Return whether forecasting has completed startup initialization."""
+
+        return self._loaded
+
+    def warmup(self) -> None:
+        """Load forecasting artifacts so startup readiness can report status."""
+
+        self._ensure_loaded()
+
     # ------------------------------------------------------------------
     # Model loading
     # ------------------------------------------------------------------

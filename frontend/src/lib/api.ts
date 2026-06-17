@@ -12,8 +12,37 @@ import type {
   SeatMapResponse,
 } from "./types";
 
+function getApiBaseUrl(): string {
+  const configured =
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+
+  if (typeof window === "undefined") {
+    return configured;
+  }
+
+  try {
+    const url = new URL(configured);
+    const isLocalApiHost = ["localhost", "127.0.0.1", "0.0.0.0"].includes(
+      url.hostname
+    );
+    const browserHost = window.location.hostname;
+    const isBrowserOnLocalhost = ["localhost", "127.0.0.1"].includes(
+      browserHost
+    );
+
+    if (isLocalApiHost && !isBrowserOnLocalhost) {
+      url.hostname = browserHost;
+      return url.toString();
+    }
+  } catch {
+    return configured;
+  }
+
+  return configured;
+}
+
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1",
+  baseURL: getApiBaseUrl(),
   timeout: 15000,
   headers: { "Content-Type": "application/json" },
 });

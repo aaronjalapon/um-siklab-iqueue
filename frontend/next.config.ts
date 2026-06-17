@@ -1,9 +1,10 @@
 import path from "path";
 import type { NextConfig } from "next";
 
-// In Docker, write the dev cache to /tmp — the /app/.next anonymous volume can end up read-only.
+// In Docker, avoid the default .next path because older containers may have
+// stale anonymous-volume state there.
 const distDir =
-	process.env.DOCKER === "1" ? "/tmp/iqueue-next" : ".next";
+	process.env.DOCKER === "1" ? ".next-docker" : ".next";
 
 const nextConfig: NextConfig = {
 	distDir,

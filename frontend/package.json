@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dev:docker": "next dev -H 0.0.0.0",
+    "dev:docker": "sh ./scripts/start-dev-docker.sh",
     "dev:webpack": "next dev --webpack -H 0.0.0.0",
     "build": "next build",
     "start": "next start",

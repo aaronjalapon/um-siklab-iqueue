@@ -30,11 +30,21 @@ def upgrade() -> None:
     op.execute("DROP TYPE IF EXISTS seat_status CASCADE")
     op.execute("DROP TYPE IF EXISTS seat_type CASCADE")
 
-    seat_type_enum = sa.Enum(
+    seat_type_enum = postgresql.ENUM(
         "WINDOW", "AISLE", "MIDDLE", name="seat_type",
     )
-    seat_status_enum = sa.Enum(
+    seat_status_enum = postgresql.ENUM(
         "AVAILABLE", "OCCUPIED", "RESERVED", "BLOCKED", name="seat_status",
+    )
+    seat_type_enum.create(op.get_bind(), checkfirst=True)
+    seat_status_enum.create(op.get_bind(), checkfirst=True)
+    seat_type_column_enum = postgresql.ENUM(
+        "WINDOW", "AISLE", "MIDDLE", name="seat_type", create_type=False,
+    )
+    seat_status_column_enum = postgresql.ENUM(
+        "AVAILABLE", "OCCUPIED", "RESERVED", "BLOCKED",
+        name="seat_status",
+        create_type=False,
     )
 
     # --- Bus Layouts ---
@@ -101,7 +111,7 @@ def upgrade() -> None:
         sa.Column("col_number", sa.Integer(), nullable=False),
         sa.Column(
             "seat_type",
-            seat_type_enum,
+            seat_type_column_enum,
             nullable=False,
         ),
         sa.Column("is_near_exit", sa.Boolean(), server_default=sa.text("false")),
@@ -109,7 +119,7 @@ def upgrade() -> None:
         sa.Column("side", sa.String(10), nullable=False),
         sa.Column(
             "status",
-            seat_status_enum,
+            seat_status_column_enum,
             nullable=False,
             server_default="AVAILABLE",
         ),

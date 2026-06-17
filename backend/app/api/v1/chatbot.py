@@ -67,7 +67,8 @@ async def chatbot_message(
 ) -> ChatbotResponse:
     """Process a user query and return a chatbot response.
 
-    The chatbot supports 5 intents across 4 ASEAN languages:
+    The chatbot supports 6 intents across 4 ASEAN languages:
+    - **greeting** — Friendly opening/help prompt
     - **check_booking** — Look up booking status by ID or phone
     - **request_requeue** — Initiate rebooking for missed buses
     - **get_departure_info** — Query bus schedule and departure times

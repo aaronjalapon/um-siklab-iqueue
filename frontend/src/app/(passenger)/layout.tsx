@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Ticket, ShoppingCart, Tag, User } from "lucide-react";
+import BrandLogo from "@/components/BrandLogo";
 import ChatbotPanel from "@/components/ChatbotPanel";
 
 export default function PassengerLayout({
@@ -25,8 +26,12 @@ export default function PassengerLayout({
       {/* Desktop Sidebar (hidden on mobile) */}
       <aside className="hidden md:flex flex-col w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 fixed h-full z-30 shadow-sm">
         <div className="p-6">
-          <Link href="/home" className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-            🚌 IQueue
+          <Link
+            href="/home"
+            className="inline-flex"
+            aria-label="IQueue passenger home"
+          >
+            <BrandLogo textClassName="text-2xl font-bold tracking-tight text-slate-900 dark:text-white" />
           </Link>
         </div>
         <nav className="flex-1 px-4 space-y-2 mt-4">

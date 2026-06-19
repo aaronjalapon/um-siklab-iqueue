@@ -37,7 +37,7 @@ async def create_booking(
     - Generates a QR boarding pass token
     - Persists the booking and returns it with the QR token
     """
-    from datetime import timezone, timedelta
+    from datetime import datetime, timezone, timedelta
 
     # Validate passenger exists
     passenger = await db.get(Passenger, payload.passenger_id)

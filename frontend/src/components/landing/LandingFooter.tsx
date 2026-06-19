@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Bus, Code2, X as XIcon } from "lucide-react";
+import { Code2, X as XIcon } from "lucide-react";
+import BrandLogo from "@/components/BrandLogo";
 
 const footerLinks = [
   {
@@ -48,11 +49,11 @@ export default function LandingFooter() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-14">
           {/* Brand col */}
           <div className="col-span-2 md:col-span-1">
-            <Link href="/" className="flex items-center gap-2.5 mb-4 group">
-              <div className="w-9 h-9 bg-brand-blue rounded-xl flex items-center justify-center shadow-lg shadow-brand-blue/30 group-hover:scale-105 transition-transform">
-                <Bus className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-bold text-white tracking-tight">IQueue</span>
+            <Link href="/" className="mb-4 inline-flex group" aria-label="IQueue home">
+              <BrandLogo
+                className="transition-transform group-hover:scale-105"
+                textClassName="text-xl font-bold text-white tracking-tight"
+              />
             </Link>
             <p className="text-slate-400 text-sm leading-relaxed max-w-[200px]">
               AI-powered smart boarding for inter-provincial bus terminals across ASEAN.

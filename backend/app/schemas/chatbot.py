@@ -32,12 +32,14 @@ class ChatbotResponse(BaseModel):
     response_text: str = Field(..., description="Chatbot's reply in the user's language")
     detected_language: str = Field(..., description="Detected ISO 639-1 language code")
     language_confidence: float | None = Field(
-        None, ge=0.0, le=1.0,
+        None,
+        ge=0.0,
+        le=1.0,
         description="Confidence score for the detected language (0-1)",
     )
     intent: str = Field(
         ...,
-        description="Classified intent (check_booking, request_requeue, get_departure_info, surge_info, fallback)",
+        description="Classified intent (greeting, check_booking, request_requeue, get_departure_info, surge_info, fallback)",
     )
     suggested_actions: list[str] = Field(
         default_factory=list,

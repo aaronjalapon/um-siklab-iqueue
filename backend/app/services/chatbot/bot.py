@@ -5,6 +5,7 @@ Uses a fine-tuned XLM-RoBERTa model for intent classification with
 keyword-based fallback when the model is unavailable.
 
 Intent targets:
+  - greeting         — "Hello"
   - check_booking    — "Where is my booking?"
   - request_requeue  — "I missed my bus, can I rebook?"
   - get_departure_info — "When does my bus leave?"
@@ -34,12 +35,45 @@ from app.schemas.chatbot import ChatbotResponse
 
 logger = logging.getLogger(__name__)
 
+KNOWN_ROUTE_TERMS = {
+    "davao",
+    "cagayan",
+    "cdo",
+    "cotabato",
+    "general santos",
+    "gensan",
+    "iligan",
+    "butuan",
+    "zamboanga",
+}
+
+ROUTE_SEARCH_TERMS = {
+    "book",
+    "bus",
+    "buy",
+    "destination",
+    "go to",
+    "going to",
+    "inquire",
+    "inquiry",
+    "route",
+    "routes",
+    "search",
+    "ticket",
+    "travel to",
+    "trip",
+}
+
 # ---------------------------------------------------------------------------
 # Intent keyword dictionaries per language (fallback when model unavailable)
 # ---------------------------------------------------------------------------
 
 INTENT_KEYWORDS: dict[str, dict[str, list[str]]] = {
     "en": {
+        "greeting": [
+            "hello", "hi", "hey", "good morning", "good afternoon",
+            "good evening", "help", "start", "can i inquire",
+        ],
         "check_booking": [
             "booking", "my booking", "where is my", "booking status",
             "my ticket", "check booking", "find booking", "reservation",
@@ -52,8 +86,12 @@ INTENT_KEYWORDS: dict[str, dict[str, list[str]]] = {
         ],
         "get_departure_info": [
             "departure", "leave", "depart", "what time", "when does",
-            "schedule", "departure time", "gate", "platform",
-            "when is", "bus leaves", "leaving at",
+            "schedule", "departure time", "gate", "platform", "route",
+            "routes", "search routes", "ticket", "tickets", "book ticket",
+            "search for ticket", "go to", "going to", "want to go",
+            "cotabato", "davao", "cagayan", "cdo", "general santos",
+            "gensan", "iligan", "butuan", "zamboanga", "when is",
+            "bus leaves", "leaving at",
         ],
         "surge_info": [
             "crowded", "busy", "full", "surge", "peak", "holiday",
@@ -62,6 +100,10 @@ INTENT_KEYWORDS: dict[str, dict[str, list[str]]] = {
         ],
     },
     "fil": {
+        "greeting": [
+            "hello", "hi", "kumusta", "kamusta", "magandang umaga",
+            "magandang hapon", "magandang gabi", "tulong",
+        ],
         "check_booking": [
             "booking", "tiket", "nasaan", "booking ko", "reserbasyon",
             "tingnan", "status", "kumpirma", "hanapin", "booking status",
@@ -84,6 +126,10 @@ INTENT_KEYWORDS: dict[str, dict[str, list[str]]] = {
         ],
     },
     "id": {
+        "greeting": [
+            "halo", "hello", "hi", "hai", "selamat pagi", "selamat siang",
+            "selamat malam", "bantuan",
+        ],
         "check_booking": [
             "booking", "tiket", "pesanan", "di mana", "status",
             "konfirmasi", "cek", "reservasi", "cari tiket",
@@ -102,6 +148,10 @@ INTENT_KEYWORDS: dict[str, dict[str, list[str]]] = {
         ],
     },
     "vi": {
+        "greeting": [
+            "xin chào", "chào", "hello", "hi", "chào buổi sáng",
+            "chào buổi tối", "giúp",
+        ],
         "check_booking": [
             "đặt chỗ", "vé", "booking", "đâu", "trạng thái",
             "xác nhận", "kiểm tra", "đặt vé", "tìm vé",
@@ -138,6 +188,13 @@ FALLBACK_RESPONSES: dict[str, str] = {
     "fil": "Paumanhin, hindi ko maintindihan. Maaari mo akong tanungin tungkol sa iyong booking, oras ng alis, muling pag-book, o dami ng tao. Paano ako makakatulong?",
     "id": "Maaf, saya tidak mengerti. Anda bisa bertanya tentang status pemesanan, jadwal keberangkatan, pemesanan ulang, atau tingkat keramaian. Ada yang bisa saya bantu?",
     "vi": "Xin lỗi, tôi chưa hiểu. Bạn có thể hỏi về trạng thái đặt vé, giờ khởi hành, đặt lại vé, hoặc mức độ đông đúc. Tôi có thể giúp gì?",
+}
+
+GREETING_RESPONSES: dict[str, str] = {
+    "en": "Hello! I can help with booking status, bus schedules, rebooking, and crowd forecasts. What would you like to do?",
+    "fil": "Kumusta! Matutulungan kitang tingnan ang booking, iskedyul ng bus, rebooking, at dami ng tao. Ano ang gusto mong gawin?",
+    "id": "Halo! Saya bisa membantu memeriksa pemesanan, jadwal bus, pemesanan ulang, dan prediksi keramaian. Apa yang ingin Anda lakukan?",
+    "vi": "Xin chào! Tôi có thể giúp kiểm tra đặt vé, lịch xe, đặt lại vé, và dự báo đông đúc. Bạn muốn làm gì?",
 }
 
 INTENT_RESPONSES: dict[str, dict[str, str]] = {
@@ -464,8 +521,48 @@ class ChatbotService:
         # Also try extracting phone from query
         if not effective_phone:
             from app.services.chatbot.session import SessionManager
+
             entities = SessionManager.extract_entities(query, "")
             effective_phone = entities.get("phone")
+
+        greeting_intent, greeting_confidence = self._classify_intent_fallback(
+            query, detected_lang
+        )
+        if greeting_intent == "greeting":
+            return (
+                ChatbotResponse(
+                    response_text=GREETING_RESPONSES.get(
+                        detected_lang, GREETING_RESPONSES["en"]
+                    ),
+                    detected_language=detected_lang,
+                    language_confidence=round(lang_confidence, 4),
+                    intent="greeting",
+                    suggested_actions=self._get_suggestions("greeting", detected_lang),
+                    confidence=max(greeting_confidence, 0.9),
+                    session_id=session_id,
+                    degradation_level=degradation,
+                ),
+                {"intent": "greeting", "entities": {}, "language": detected_lang},
+                degradation,
+            )
+
+        route_intent, route_confidence = self._detect_route_search_intent(query)
+        if route_intent:
+            response_text = self._route_search_response(query, detected_lang)
+            return (
+                ChatbotResponse(
+                    response_text=response_text,
+                    detected_language=detected_lang,
+                    language_confidence=round(lang_confidence, 4),
+                    intent=route_intent,
+                    suggested_actions=self._get_suggestions(route_intent, detected_lang),
+                    confidence=route_confidence,
+                    session_id=session_id,
+                    degradation_level=degradation,
+                ),
+                {"intent": route_intent, "entities": {}, "language": detected_lang},
+                degradation,
+            )
 
         # Step 3: Classify intent
         if self._model_available:
@@ -1111,6 +1208,50 @@ class ChatbotService:
         confidence = min(0.85, best_score * 3.5)
         return best_intent, round(confidence, 2)
 
+    @staticmethod
+    def _detect_route_search_intent(query: str) -> tuple[str | None, float]:
+        """Detect route/ticket search phrases before the ML fallback gate."""
+
+        query_lower = query.lower().strip()
+        has_route_term = any(term in query_lower for term in ROUTE_SEARCH_TERMS)
+        has_known_city = any(term in query_lower for term in KNOWN_ROUTE_TERMS)
+
+        if has_route_term and has_known_city:
+            return "get_departure_info", 0.9
+        if has_known_city and query_lower.startswith(("i want", "want", "to ")):
+            return "get_departure_info", 0.85
+        if "search routes" in query_lower or "search for routes" in query_lower:
+            return "get_departure_info", 0.85
+
+        return None, 0.0
+
+    @staticmethod
+    def _route_search_response(query: str, language: str) -> str:
+        """Return a route-search prompt with destination context when present."""
+
+        query_lower = query.lower()
+        destination = next(
+            (term.title() for term in KNOWN_ROUTE_TERMS if term in query_lower),
+            None,
+        )
+
+        if language == "fil":
+            if destination:
+                return f"Makakatulong ako maghanap ng biyahe papuntang {destination}. Ano ang pinanggagalingan mo at anong petsa ng biyahe?"
+            return "Makakatulong ako maghanap ng ruta. Pakibigay ang pinanggagalingan, destinasyon, at petsa ng biyahe."
+        if language == "id":
+            if destination:
+                return f"Saya bisa membantu mencari perjalanan ke {destination}. Dari mana Anda berangkat dan tanggal berapa?"
+            return "Saya bisa membantu mencari rute. Mohon berikan asal, tujuan, dan tanggal perjalanan."
+        if language == "vi":
+            if destination:
+                return f"Tôi có thể giúp tìm chuyến đi đến {destination}. Bạn khởi hành từ đâu và vào ngày nào?"
+            return "Tôi có thể giúp tìm tuyến xe. Vui lòng cho biết điểm đi, điểm đến, và ngày đi."
+
+        if destination:
+            return f"I can help search trips to {destination}. Where are you coming from, and what travel date should I use?"
+        return "I can help search routes. Please tell me your origin, destination, and travel date."
+
     # ------------------------------------------------------------------
     # Internal — suggestions
     # ------------------------------------------------------------------
@@ -1142,6 +1283,12 @@ class ChatbotService:
                 "fil": ["Tingnan forecast", "Pumili ng ibang petsa"],
                 "id": ["Lihat prediksi", "Pilih tanggal lain", "Pesan awal"],
                 "vi": ["Xem dự báo", "Chọn ngày khác", "Đặt sớm"],
+            },
+            "greeting": {
+                "en": ["Search routes", "Check booking", "Ask about schedules"],
+                "fil": ["Maghanap ng ruta", "Tingnan booking", "Oras ng alis"],
+                "id": ["Cari rute", "Cek pemesanan", "Tanya jadwal"],
+                "vi": ["Tìm tuyến", "Kiểm tra vé", "Hỏi lịch trình"],
             },
             "fallback": {
                 "en": ["Search routes", "Check bookings", "Ask about schedules"],

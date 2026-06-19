@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import { config } from "@fortawesome/fontawesome-svg-core";
 import "@fortawesome/fontawesome-svg-core/styles.css";
 import DevelopmentRuntimeGate from "@/components/DevelopmentRuntimeGate";
@@ -8,16 +7,6 @@ import { SHOULD_ENABLE_PWA } from "@/lib/pwa-runtime";
 import "./globals.css";
 
 config.autoAddCss = false;
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: {
@@ -39,9 +28,11 @@ export const metadata: Metadata = {
   icons: SHOULD_ENABLE_PWA
     ? {
         icon: [
+          { url: "/logo.svg", type: "image/svg+xml" },
           { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
           { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
         ],
+        shortcut: [{ url: "/logo.svg", type: "image/svg+xml" }],
         apple: [
           {
             url: "/icons/apple-touch-icon.png",
@@ -64,7 +55,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`} suppressHydrationWarning>
+    <html lang="en" className="h-full antialiased" suppressHydrationWarning>
       <body suppressHydrationWarning className="min-h-full bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 text-foreground flex flex-col font-sans relative overflow-x-hidden">
         {/* Main Content */}
         <div className="flex-1 w-full relative z-0">

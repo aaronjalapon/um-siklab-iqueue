@@ -222,7 +222,9 @@ async def seed(engine, dry_run: bool = False) -> None:
             )
             print(f"+ Created bus: {b['plate']} ({b['route_slug']}, cap={b['capacity']})")
 
-        # --- Physical seat rows ---
+        # --- Physical Seats ---
+        # The passenger booking flow reads from the seat assignment tables.
+        # Keep this idempotent so rerunning the seed can repair older dev DBs.
         from app.models.bus import Bus
         from app.models.seat import Seat
         from app.services.seat_assignment.bus_layout import generate_seats_for_bus

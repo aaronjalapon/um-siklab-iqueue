@@ -187,8 +187,8 @@ def upgrade() -> None:
     )
 
     # --- Booking Status Enum ---
-    booking_status_enum = sa.Enum(
-        "pending", "confirmed", "boarded", "missed", "cancelled",
+    booking_status_enum = postgresql.ENUM(
+        "PENDING", "CONFIRMED", "BOARDED", "MISSED", "CANCELLED",
         name="booking_status",
     )
     booking_status_enum.create(op.get_bind(), checkfirst=True)
@@ -235,12 +235,12 @@ def upgrade() -> None:
         ),
         sa.Column(
             "status",
-            sa.Enum(
-                "pending", "confirmed", "boarded", "missed", "cancelled",
+            postgresql.ENUM(
+                "PENDING", "CONFIRMED", "BOARDED", "MISSED", "CANCELLED",
                 name="booking_status", create_type=False,
             ),
             nullable=False,
-            server_default="confirmed",
+            server_default="CONFIRMED",
         ),
         sa.Column(
             "qr_token",

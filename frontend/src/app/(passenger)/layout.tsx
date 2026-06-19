@@ -3,15 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  BusFront,
-  Home,
-  Ticket,
-  ShoppingCart,
-  Tag,
-  User,
-  WifiOff,
-} from "lucide-react";
+import { Home, ShoppingCart, Tag, Ticket, User, WifiOff } from "lucide-react";
+import BrandLogo from "@/components/BrandLogo";
 import ChatbotPanel from "@/components/ChatbotPanel";
 
 export default function PassengerLayout({
@@ -56,10 +49,10 @@ export default function PassengerLayout({
           <Link
             href="/home"
             prefetch={false}
-            className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2"
+            className="inline-flex"
+            aria-label="IQueue passenger home"
           >
-            <BusFront className="h-7 w-7 text-brand-blue" aria-hidden />
-            IQueue
+            <BrandLogo textClassName="text-2xl font-bold tracking-tight text-slate-900 dark:text-white" />
           </Link>
         </div>
         <nav className="flex-1 px-4 space-y-2 mt-4">

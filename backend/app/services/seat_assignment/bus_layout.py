@@ -34,21 +34,33 @@ _SIDE_MAP = {1: "left", 2: "left", 3: "right", 4: "right"}
 _TYPE_MAP = {1: SeatType.WINDOW, 2: SeatType.AISLE, 3: SeatType.AISLE, 4: SeatType.WINDOW}
 
 
-def get_default_layout() -> dict:
-    """Return the standard 14-row × 4-col Mindanao bus layout config.
+def get_default_layout(
+    total_rows: int = 14,
+    seats_per_row: int = 4,
+    total_capacity: int | None = None,
+) -> dict:
+    """Return a standard Mindanao bus layout config.
 
     Used as the default when no custom layout_config is provided.
     """
     config: dict[str, dict] = {}
-    for row in range(1, 15):
-        for col in range(1, 5):
+    max_seats = total_capacity or total_rows * seats_per_row
+    generated = 0
+
+    for row in range(1, total_rows + 1):
+        for col in range(1, seats_per_row + 1):
+            if generated >= max_seats:
+                return config
+
             label = f"{row}{_COL_LABELS[col]}"
             config[label] = {
                 "type": _TYPE_MAP[col].value,
                 "side": _SIDE_MAP[col],
-                "is_near_exit": row in (1, 14),
+                "is_near_exit": row in (1, total_rows),
                 "is_accessibility": row <= 2,
             }
+            generated += 1
+
     return config
 
 
@@ -67,8 +79,19 @@ async def generate_seats_for_bus(bus: Bus, session: AsyncSession) -> list[Seat]:
     """
     if bus.layout and bus.layout.layout_config:
         config = bus.layout.layout_config
+    elif bus.layout:
+        config = get_default_layout(
+            total_rows=bus.layout.total_rows,
+            seats_per_row=bus.layout.seats_per_row,
+            total_capacity=bus.layout.total_capacity,
+        )
     else:
-        config = get_default_layout()
+        total_rows = (bus.capacity + 3) // 4
+        config = get_default_layout(
+            total_rows=total_rows,
+            seats_per_row=4,
+            total_capacity=bus.capacity,
+        )
 
     seats: list[Seat] = []
     for label, overrides in config.items():

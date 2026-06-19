@@ -10,6 +10,7 @@ import type {
   ChatbotResponse,
   ForecastResponse,
   SeatMapResponse,
+  SessionCreateResponse,
 } from "./types";
 
 function getApiBaseUrl(): string {
@@ -118,6 +119,14 @@ export async function sendChatMessage(
   payload: ChatbotRequest
 ): Promise<ChatbotResponse> {
   const { data } = await api.post<ChatbotResponse>("/chatbot/message", payload);
+  return data;
+}
+
+export async function createChatSession(
+  language?: string
+): Promise<SessionCreateResponse> {
+  const params = language ? { language } : {};
+  const { data } = await api.post<SessionCreateResponse>("/chatbot/session", null, { params });
   return data;
 }
 

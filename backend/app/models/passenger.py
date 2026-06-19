@@ -45,6 +45,9 @@ class Passenger(Base):
     bookings: Mapped[list["Booking"]] = relationship(
         "Booking", back_populates="passenger", cascade="all, delete-orphan"
     )
+    chat_sessions: Mapped[list["ChatSession"]] = relationship(
+        "ChatSession", back_populates="passenger", cascade="all, delete-orphan"
+    )
 
     def __repr__(self) -> str:
         return (

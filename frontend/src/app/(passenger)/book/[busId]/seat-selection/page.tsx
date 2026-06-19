@@ -1,13 +1,16 @@
 "use client";
 
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import Link from "next/link";
-import { ArrowLeft, Check, Star, RefreshCw } from "lucide-react";
+import { Accessibility, ArrowLeft, Check, Star, RefreshCw } from "lucide-react";
 import { createBooking, createPassenger } from "@/lib/api";
 import { BusSeatGrid } from "@/components/seats/BusSeatGrid";
 import { SeatLegend } from "@/components/seats/SeatLegend";
+import { BookingProgress } from "@/components/ui/BookingProgress";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { useSeatMap } from "@/hooks/useSeatMap";
+import { glassStyles } from "@/lib/design-system";
 import type { SeatMapEntry, SeatAssignmentResult } from "@/types/seat";
 import type { PassengerContext } from "@/types/seat";
 
@@ -32,28 +35,40 @@ export default function SeatSelectionPage() {
   const { seats, loading, error, assignSeat } = useSeatMap(busId);
 
   const [autoAssigned, setAutoAssigned] = useState<SeatAssignmentResult | null>(null);
-  const [autoAssigning, setAutoAssigning] = useState(true);
+  const [autoAssigning, setAutoAssigning] = useState(false);
+  const [assignmentStarted, setAssignmentStarted] = useState(false);
   const [selectedSeatId, setSelectedSeatId] = useState<string | undefined>(undefined);
   const [manualMode, setManualMode] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const passengerContext: PassengerContext = {
-    booking_id: "temp", // will be replaced by real booking ID
-    passenger_name: name,
-    language_preference: languagePref,
-    travel_habit: travelHabits || undefined,
-    lifestyle_interest: lifestyleInterests || undefined,
-    needs_accessibility: accessibilityNeeds,
-    preferred_seat_type: (preferredSeatType || undefined) as
-      | "window"
-      | "aisle"
-      | undefined,
-    preferred_side: (preferredSide || undefined) as
-      | "left"
-      | "right"
-      | undefined,
-  };
+  const passengerContext: PassengerContext = useMemo(
+    () => ({
+      booking_id: "temp",
+      passenger_name: name,
+      language_preference: languagePref,
+      travel_habit: travelHabits || undefined,
+      lifestyle_interest: lifestyleInterests || undefined,
+      needs_accessibility: accessibilityNeeds,
+      preferred_seat_type: (preferredSeatType || undefined) as
+        | "window"
+        | "aisle"
+        | undefined,
+      preferred_side: (preferredSide || undefined) as
+        | "left"
+        | "right"
+        | undefined,
+    }),
+    [
+      accessibilityNeeds,
+      languagePref,
+      lifestyleInterests,
+      name,
+      preferredSeatType,
+      preferredSide,
+      travelHabits,
+    ]
+  );
 
   // Auto-assign on mount — fires once when seats first load
   const hasAutoAssigned = useRef(false);
@@ -61,6 +76,7 @@ export default function SeatSelectionPage() {
   useEffect(() => {
     if (!busId || seats.length === 0 || hasAutoAssigned.current) return;
     hasAutoAssigned.current = true;
+    setAssignmentStarted(true);
 
     let cancelled = false;
 
@@ -84,27 +100,32 @@ export default function SeatSelectionPage() {
     return () => { cancelled = true; };
   }, [busId, seats.length, assignSeat, passengerContext]);
 
-  const handleManualSelect = useCallback(
-    async (seat: SeatMapEntry) => {
-      if (seat.status !== "available" && seat.status !== "occupied") return;
-      setManualMode(true);
-      setSelectedSeatId(seat.seat_id);
-      // Re-assign with override
-      try {
-        const ctx: PassengerContext = {
-          ...passengerContext,
-          preferred_seat_type: seat.seat_type,
-        };
-        const result = await assignSeat(ctx);
-        setAutoAssigned(result);
-      } catch {
-        // keep selected
-      }
-    },
-    [assignSeat, passengerContext]
-  );
+  async function handleManualSelect(seat: SeatMapEntry) {
+    if (seat.status !== "available") return;
+    setManualMode(true);
+    setSelectedSeatId(seat.seat_id);
+    try {
+      const ctx: PassengerContext = {
+        ...passengerContext,
+        preferred_seat_type: seat.seat_type,
+      };
+      const result = await assignSeat(ctx);
+      setAutoAssigned(result);
+    } catch {
+      // Keep the visible manual selection if the recommendation API is unavailable.
+    }
+  }
 
   const handleConfirm = async () => {
+    const selectedSeatLabel =
+      seats.find((seat) => seat.seat_id === selectedSeatId)?.seat_label ??
+      autoAssigned?.seat_label;
+
+    if (!selectedSeatLabel) {
+      setSubmitError("Select an available seat before confirming.");
+      return;
+    }
+
     setSubmitting(true);
     setSubmitError(null);
     try {
@@ -124,7 +145,7 @@ export default function SeatSelectionPage() {
         passenger_id: passenger.id,
         bus_id: busId,
         departure_date: new Date(date).toISOString(),
-        seat_preference: autoAssigned?.seat_label,
+        seat_preference: selectedSeatLabel,
         passenger_name: name,
         language_preference: languagePref,
         travel_habit: travelHabits || undefined,
@@ -142,14 +163,25 @@ export default function SeatSelectionPage() {
     }
   };
 
-  const isLoading = loading || autoAssigning;
+  const activeSeatLabel =
+    seats.find((seat) => seat.seat_id === selectedSeatId)?.seat_label ??
+    autoAssigned?.seat_label;
+  const awaitingInitialAssignment =
+    seats.length > 0 && !assignmentStarted && !manualMode && !autoAssigned;
+  const isLoading = loading || autoAssigning || awaitingInitialAssignment;
+  const canConfirm = Boolean(activeSeatLabel) && !submitting;
 
   // Skeleton grid
   if (isLoading) {
     return (
-      <div className="space-y-6 max-w-7xl mx-auto">
-        <h1 className="text-2xl font-bold">Finding Your Best Seat...</h1>
-        <div className="bg-white/70 rounded-xl shadow-sm border p-6">
+      <div className={`${glassStyles.pageContainer} max-w-7xl`}>
+        <BookingProgress current="seat" />
+        <PageHeader
+          eyebrow="AI seat allocator"
+          title="Finding Your Best Seat"
+          description="Loading the seat map and applying your preferences before anything is shown."
+        />
+        <div className={`${glassStyles.panel} p-6`}>
           <div className="space-y-2 max-w-xs mx-auto">
             {Array.from({ length: 6 }).map((_, ri) => (
               <div key={ri} className="flex justify-center gap-2">
@@ -188,6 +220,7 @@ export default function SeatSelectionPage() {
           <p className="text-sm mt-1">{error}</p>
           <Link
             href={`/buy?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(dest)}&date=${date}`}
+            prefetch={false}
             className="text-blue-600 hover:underline text-sm mt-3 inline-block"
           >
             Back to search
@@ -198,21 +231,23 @@ export default function SeatSelectionPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className={`${glassStyles.pageContainer} max-w-7xl`}>
       {/* Breadcrumb */}
       <Link
         href={`/book/${busId}/preferences?${new URLSearchParams({ date, origin, dest })}`}
+        prefetch={false}
         className="text-sm text-blue-600 hover:underline inline-flex items-center gap-1"
       >
         <ArrowLeft className="w-3 h-3" /> Back to preferences
       </Link>
 
-      <div>
-        <h1 className="text-2xl font-bold">Select Your Seat</h1>
-        <p className="text-gray-500">
-          {origin} → {dest} · {date}
-        </p>
-      </div>
+      <BookingProgress current="seat" />
+
+      <PageHeader
+        eyebrow="Seat assignment"
+        title="Select Your Seat"
+        description={`${origin || "Origin"} -> ${dest || "Destination"}${date ? ` · ${date}` : ""}`}
+      />
 
       {submitError && (
         <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4">
@@ -222,12 +257,21 @@ export default function SeatSelectionPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 relative items-start">
         {/* Seat Grid */}
-        <div className="lg:col-span-2 bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/20 p-6">
+        <div className={`lg:col-span-2 ${glassStyles.panel} p-6`}>
+          <div className="mb-4 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
+            <Accessibility className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+            <p>
+              {accessibilityNeeds
+                ? "Accessibility-priority seats are highlighted near the front door."
+                : "Front priority seats are held for passengers who need easier access while other seats are available."}
+            </p>
+          </div>
           <BusSeatGrid
             seats={seats}
             autoAssignedSeatId={autoAssigned?.seat_id}
             selectedSeatId={manualMode ? selectedSeatId : undefined}
             onSeatSelect={handleManualSelect}
+            needsAccessibility={accessibilityNeeds}
           />
           <div className="mt-4">
             <SeatLegend variant="passenger" />
@@ -235,7 +279,7 @@ export default function SeatSelectionPage() {
         </div>
 
         {/* Confirmation Card */}
-        <div className="bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/20 p-6 lg:sticky lg:top-24 space-y-4">
+        <div className={`${glassStyles.panel} p-6 lg:sticky lg:top-24 space-y-4`}>
           <h2 className="font-semibold text-lg">Your Seat</h2>
 
           {autoAssigned && !manualMode && (
@@ -250,6 +294,12 @@ export default function SeatSelectionPage() {
               <p className="text-sm text-teal-700 capitalize">
                 {autoAssigned.seat_type} · {autoAssigned.side} side
               </p>
+              {autoAssigned.is_accessibility && (
+                <p className="inline-flex items-center gap-1.5 rounded-full bg-white/70 px-2 py-1 text-xs font-semibold text-teal-800">
+                  <Accessibility className="h-3.5 w-3.5" aria-hidden />
+                  Accessibility-priority seat
+                </p>
+              )}
               {autoAssigned.affinity_score > 0 && (
                 <p className="text-sm text-teal-700">
                   Affinity Score: {autoAssigned.affinity_score.toFixed(0)}
@@ -266,7 +316,7 @@ export default function SeatSelectionPage() {
           {manualMode && selectedSeatId && (
             <div className="bg-amber-50 border border-amber-300 rounded-lg p-3 text-sm space-y-2">
               <p className="font-semibold text-amber-800">
-                Manually selected seat
+                Manually selected seat {activeSeatLabel ? ` ${activeSeatLabel}` : ""}
               </p>
               <button
                 type="button"
@@ -285,7 +335,7 @@ export default function SeatSelectionPage() {
             <button
               type="button"
               onClick={handleConfirm}
-              disabled={submitting}
+              disabled={!canConfirm}
               className="w-full bg-blue-700 text-white font-semibold py-2.5 rounded-lg hover:bg-blue-800 disabled:bg-gray-300 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
             >
               {submitting ? (

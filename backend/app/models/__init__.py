@@ -7,6 +7,7 @@ from app.models.bus import Bus
 from app.models.bus_layout import BusLayout
 from app.models.bus_route import BusRoute
 from app.models.booking import Booking, BookingStatus
+from app.models.chat_session import ChatMessage, ChatSession
 from app.models.passenger import Passenger
 from app.models.seat import Seat, SeatReservation, SeatStatus, SeatType
 from app.models.surge_forecast import SurgeForecast
@@ -20,6 +21,8 @@ __all__ = [
     "Passenger",
     "Booking",
     "BookingStatus",
+    "ChatSession",
+    "ChatMessage",
     "Seat",
     "SeatReservation",
     "SeatStatus",

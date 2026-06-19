@@ -2,9 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { ArrowRight, MapPin, QrCode, Clock, Zap } from "lucide-react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faChartLine, faCheck } from "@fortawesome/free-solid-svg-icons";
+import { ArrowRight, CheckCircle2, Clock, MapPin, QrCode, TrendingUp, Zap } from "lucide-react";
 
 const EASE_OUT = [0.16, 1, 0.3, 1] as const;
 const EASE_IN_OUT = [0.42, 0, 0.58, 1] as const;
@@ -16,17 +14,10 @@ const floatingCard = {
 
 export default function HeroSection() {
   return (
-    <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-slate-950 px-4 pt-24 pb-16">
-      {/* Animated gradient background */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-[-20%] left-[-15%] w-[600px] h-[600px] bg-brand-blue/20 rounded-full blur-[120px] animate-pulse" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] bg-brand-orange/15 rounded-full blur-[120px] animate-pulse [animation-delay:1s]" />
-        <div className="absolute top-[40%] left-[50%] -translate-x-1/2 w-[300px] h-[300px] bg-purple-600/10 rounded-full blur-[80px]" />
-      </div>
-
+    <section className="relative flex min-h-[100svh] flex-col items-center justify-center overflow-hidden bg-slate-950 px-4 pb-14 pt-20 sm:pt-24 md:pb-16">
       {/* Grid overlay */}
       <div
-        className="absolute inset-0 opacity-[0.03]"
+        className="absolute inset-0 opacity-[0.04]"
         style={{
           backgroundImage:
             "linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)",
@@ -34,7 +25,7 @@ export default function HeroSection() {
         }}
       />
 
-      <div className="relative z-10 max-w-7xl mx-auto w-full grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+      <div className="relative z-10 mx-auto grid w-full max-w-7xl items-center gap-10 lg:grid-cols-2 lg:gap-20">
         {/* Left: Text */}
         <div className="text-center lg:text-left">
           <motion.div
@@ -51,9 +42,9 @@ export default function HeroSection() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold text-white leading-[1.05] tracking-tight mb-6"
+            className="mb-5 text-4xl font-extrabold leading-tight text-white sm:text-5xl lg:text-6xl xl:text-7xl"
           >
-            Board Smarter{" "}
+            IQueue Smart Boarding{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-blue to-cyan-400">
               Across ASEAN
             </span>
@@ -63,7 +54,7 @@ export default function HeroSection() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-slate-400 text-lg sm:text-xl leading-relaxed mb-10 max-w-xl mx-auto lg:mx-0"
+            className="mx-auto mb-8 max-w-xl text-base leading-relaxed text-slate-400 sm:text-lg lg:mx-0 lg:text-xl"
           >
             AI-powered seat allocation, QR boarding passes, and demand forecasting — all in one platform built for inter-provincial bus terminals.
           </motion.p>
@@ -72,12 +63,12 @@ export default function HeroSection() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
+            className="flex flex-col justify-center gap-3 sm:flex-row sm:gap-4 lg:justify-start"
           >
             <Link
               id="hero-book-now"
               href="/buy"
-              className="group inline-flex items-center justify-center gap-2 bg-brand-blue hover:bg-blue-600 text-white font-bold px-7 py-4 rounded-xl shadow-xl shadow-brand-blue/30 hover:shadow-brand-blue/50 transition-all hover:scale-105 active:scale-95 text-base"
+              className="group inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-brand-blue px-6 py-3.5 text-base font-bold text-white shadow-xl shadow-brand-blue/30 transition-all hover:bg-blue-600 hover:shadow-brand-blue/50 active:scale-95 sm:px-7 sm:py-4"
             >
               Book Your Seat
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -85,7 +76,7 @@ export default function HeroSection() {
             <Link
               id="hero-operator-login"
               href="/operator"
-              className="inline-flex items-center justify-center gap-2 text-slate-300 hover:text-white font-semibold px-7 py-4 rounded-xl border border-white/20 hover:border-white/40 backdrop-blur-sm transition-all text-base"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/20 px-6 py-3.5 text-base font-semibold text-slate-300 backdrop-blur-sm transition-all hover:border-white/40 hover:text-white sm:px-7 sm:py-4"
             >
               Operator Dashboard
             </Link>
@@ -96,7 +87,7 @@ export default function HeroSection() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.5 }}
-            className="flex flex-wrap gap-8 justify-center lg:justify-start mt-12"
+            className="mt-10 flex flex-wrap justify-center gap-5 sm:gap-8 lg:justify-start"
           >
             {[
               { value: "7-Day", label: "Surge Forecast" },
@@ -125,7 +116,7 @@ export default function HeroSection() {
           <motion.div
             animate={{ y: [0, -12, 0] }}
             transition={{ repeat: Infinity, duration: 4, ease: EASE_IN_OUT }}
-            className="relative bg-white/8 backdrop-blur-2xl border border-white/15 rounded-3xl p-6 w-full max-w-sm shadow-2xl"
+            className="relative w-full max-w-[22rem] rounded-3xl border border-white/15 bg-white/8 p-4 shadow-2xl backdrop-blur-2xl sm:p-6"
           >
             {/* Card header */}
             <div className="flex justify-between items-center mb-5">
@@ -202,9 +193,9 @@ export default function HeroSection() {
           <motion.div
             animate={{ y: [0, -8, 0] }}
             transition={{ repeat: Infinity, duration: 3, ease: EASE_IN_OUT, delay: 0.5 }}
-            className="absolute -top-5 -right-4 bg-brand-blue/20 backdrop-blur-xl border border-brand-blue/30 rounded-2xl px-3 py-2 flex items-center gap-2"
+            className="absolute -right-2 -top-4 flex items-center gap-2 rounded-2xl border border-brand-blue/30 bg-brand-blue/20 px-3 py-2 backdrop-blur-xl sm:-right-4 sm:-top-5"
           >
-              <FontAwesomeIcon icon={faChartLine} className="text-brand-blue text-lg" />
+              <TrendingUp className="h-5 w-5 text-brand-blue" aria-hidden />
             <div>
               <p className="text-white text-xs font-bold">Surge Predicted</p>
               <p className="text-blue-300 text-[10px]">+340% this weekend</p>
@@ -214,9 +205,9 @@ export default function HeroSection() {
           <motion.div
             animate={{ y: [0, 10, 0] }}
             transition={{ repeat: Infinity, duration: 3.5, ease: EASE_IN_OUT, delay: 1 }}
-            className="absolute -bottom-5 -left-4 bg-green-500/15 backdrop-blur-xl border border-green-500/25 rounded-2xl px-3 py-2 flex items-center gap-2"
+            className="absolute -bottom-4 -left-2 flex items-center gap-2 rounded-2xl border border-green-500/25 bg-green-500/15 px-3 py-2 backdrop-blur-xl sm:-bottom-5 sm:-left-4"
           >
-              <FontAwesomeIcon icon={faCheck} className="text-green-400 text-lg" />
+              <CheckCircle2 className="h-5 w-5 text-green-400" aria-hidden />
             <div>
               <p className="text-white text-xs font-bold">Seat Assigned</p>
               <p className="text-green-400 text-[10px]">Matched by AI</p>
@@ -230,7 +221,7 @@ export default function HeroSection() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1.2, duration: 0.8 }}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-slate-500"
+        className="absolute bottom-4 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-2 text-slate-500 sm:flex"
       >
         <p className="text-xs font-medium tracking-widest uppercase">Scroll to explore</p>
         <motion.div

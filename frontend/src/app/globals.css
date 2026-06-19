@@ -9,7 +9,6 @@
   /* Glassmorphism Tokens - Light */
   --glass-bg: rgba(255, 255, 255, 0.6);
   --glass-border: rgba(255, 255, 255, 0.4);
-  --glass-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
 }
 
 @theme inline {
@@ -46,7 +45,6 @@
     /* Glassmorphism Tokens - Dark */
     --glass-bg: rgba(15, 23, 42, 0.6);
     --glass-border: rgba(255, 255, 255, 0.08);
-    --glass-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
   }
 }
 
@@ -54,6 +52,28 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--app-font-sans);
+}
+
+html,
+body {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
+@media (max-width: 639px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
 }
 
 /* Hide scrollbar for the mobile app feel */
@@ -84,6 +104,16 @@ body {
 /* Safe area for mobile bottom navigation */
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.glass-shadow {
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+}
+
+@media (prefers-color-scheme: dark) {
+  .glass-shadow {
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+  }
 }
 
 /* 3. Global Reduced Motion override for view transitions */

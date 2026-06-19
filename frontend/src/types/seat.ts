@@ -31,6 +31,8 @@ export interface SeatMapSummaryResponse {
   total_seats: number;
   occupied_count: number;
   available_count: number;
+  accessibility_seat_count: number;
+  accessibility_available_count: number;
 }
 
 export interface PassengerContext {
@@ -51,6 +53,7 @@ export interface SeatAssignmentResult {
   seat_type: SeatType;
   side: SeatSide;
   row_number: number;
+  is_accessibility: boolean;
   affinity_score: number;
   boarding_window?: string;
 }

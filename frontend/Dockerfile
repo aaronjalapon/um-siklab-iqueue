@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1.7
+
 # =============================================================================
 # IQueue — Frontend Dockerfile
 # Multi-stage build for Next.js 16 (Node 24 LTS)
@@ -7,7 +9,7 @@
 FROM node:24-alpine AS builder
 WORKDIR /app
 COPY package.json package-lock.json* ./
-RUN npm install --legacy-peer-deps
+RUN --mount=type=cache,target=/root/.npm npm ci --legacy-peer-deps
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build

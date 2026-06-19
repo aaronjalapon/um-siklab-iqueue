@@ -1,0 +1,11 @@
+# =============================================================================
+# IQueue — Optional ML Runtime Dependencies
+# Installed in the production-like image and full local setups only.
+# =============================================================================
+
+prophet==1.3.0
+torch==2.12.0
+transformers==5.9.0
+sentencepiece==0.2.1
+numpy==2.4.6
+pandas==3.0.3

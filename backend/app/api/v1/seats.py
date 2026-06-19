@@ -119,12 +119,17 @@ async def get_seat_map_summary(
         )
 
     occupied = sum(1 for s in seats if s["status"] == "occupied")
+    accessibility_seats = [s for s in seats if s["is_accessibility"]]
     return SeatMapResponse(
         bus_id=str(bus_id),
         seats=seats,
         total_seats=len(seats),
         occupied_count=occupied,
         available_count=len(seats) - occupied,
+        accessibility_seat_count=len(accessibility_seats),
+        accessibility_available_count=sum(
+            1 for s in accessibility_seats if s["status"] == "available"
+        ),
     ).model_dump()
 
 

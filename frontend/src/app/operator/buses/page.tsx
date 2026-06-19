@@ -1,10 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { ListFilter } from "lucide-react";
 import { DataStatusBanner } from "@/components/operator/DataStatusBanner";
 import { EmptyState } from "@/components/operator/EmptyState";
 import { FleetBusCard } from "@/components/operator/FleetBusCard";
 import { LoadingSkeleton } from "@/components/operator/LoadingSkeleton";
+import { PageHeader } from "@/components/ui/PageHeader";
 import {
   DEMO_ROUTES,
   todayIsoDate,
@@ -15,6 +17,9 @@ import { glassStyles } from "@/lib/design-system";
 export default function OperatorBusesPage() {
   const [routeIndex, setRouteIndex] = useState(0);
   const [travelDate, setTravelDate] = useState(todayIsoDate);
+  const [sortMode, setSortMode] = useState<"occupancy" | "available" | "plate">(
+    "occupancy"
+  );
 
   const route = DEMO_ROUTES[routeIndex];
 
@@ -26,20 +31,21 @@ export default function OperatorBusesPage() {
 
   const sortedBuses = useMemo(() => {
     return [...buses].sort((a, b) => {
+      if (sortMode === "available") return b.available_seats - a.available_seats;
+      if (sortMode === "plate") return a.plate_number.localeCompare(b.plate_number);
       const pctA = (a.capacity - a.available_seats) / a.capacity;
       const pctB = (b.capacity - b.available_seats) / b.capacity;
       return pctB - pctA;
     });
-  }, [buses]);
+  }, [buses, sortMode]);
 
   return (
     <div className={glassStyles.pageContainer}>
-      <header>
-        <h1 className="text-2xl font-bold text-foreground">Fleet Overview</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-          Capacity and surge by bus
-        </p>
-      </header>
+      <PageHeader
+        eyebrow="Fleet operations"
+        title="Fleet Overview"
+        description="Capacity, availability, and surge status by bus."
+      />
 
       {loadState === "demo" && (
         <DataStatusBanner message="Showing demo data. Real API data is unavailable — connect the backend to see live metrics." />
@@ -48,7 +54,7 @@ export default function OperatorBusesPage() {
         <DataStatusBanner message="Could not reach the backend. Check that the API server is running." />
       )}
 
-      <div className="flex flex-col sm:flex-row flex-wrap gap-4">
+      <div className={`${glassStyles.panel} grid grid-cols-1 gap-4 p-4 md:grid-cols-3`}>
         <div className="flex flex-col gap-1">
           <label
             htmlFor="fleet-route"
@@ -60,7 +66,7 @@ export default function OperatorBusesPage() {
             id="fleet-route"
             value={routeIndex}
             onChange={(e) => setRouteIndex(Number(e.target.value))}
-            className={`${glassStyles.input} text-sm max-w-xs`}
+            className={`${glassStyles.input} w-full text-sm`}
           >
             {DEMO_ROUTES.map((r, i) => (
               <option key={r.id} value={i}>
@@ -81,8 +87,31 @@ export default function OperatorBusesPage() {
             type="date"
             value={travelDate}
             onChange={(e) => setTravelDate(e.target.value)}
-            className={`${glassStyles.input} text-sm max-w-xs`}
+            className={`${glassStyles.input} w-full text-sm`}
           />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label
+            htmlFor="fleet-sort"
+            className="text-sm font-medium text-slate-600 dark:text-slate-300"
+          >
+            Sort
+          </label>
+          <div className="relative">
+            <ListFilter className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <select
+              id="fleet-sort"
+              value={sortMode}
+              onChange={(e) =>
+                setSortMode(e.target.value as "occupancy" | "available" | "plate")
+              }
+              className={`${glassStyles.input} w-full pl-9 text-sm`}
+            >
+              <option value="occupancy">Highest occupancy</option>
+              <option value="available">Most available seats</option>
+              <option value="plate">Plate number</option>
+            </select>
+          </div>
         </div>
       </div>
 

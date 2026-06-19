@@ -79,7 +79,7 @@ REMAP: dict[str, str] = {
 }
 
 TARGET_PER_INTENT_PER_LANG = 127
-SYNTHETIC_COUNT = 70
+SYNTHETIC_COUNT = 120  # Increased from 70 for better coverage
 
 SEED = 42
 
@@ -255,9 +255,68 @@ def _balance_massive(
     return balanced
 
 
+def _generate_code_switched(
+    intent: str,
+    n: int = 30,
+) -> list[str]:
+    """Generate Taglish (Tagalog-English code-switched) utterances.
+
+    Many Filipino passengers mix English words into their Tagalog queries.
+    This generates examples like "I missed my bus, pwedeng mag-rebook?"
+    """
+    api_key = os.getenv("DEEPSEEK_API_KEY")
+    if not api_key:
+        logger.warning(
+            "DEEPSEEK_API_KEY not set — skipping code-switched generation for %s", intent
+        )
+        return []
+
+    prompt = (
+        f"Generate {n} short, natural user queries that MIX Tagalog and English "
+        f"(Taglish / code-switching) expressing the intent '{intent}' in the context "
+        f"of a Philippine bus terminal booking app. "
+        f"These should sound like how real Filipinos text — mixing English words "
+        f"into primarily Tagalog sentences. Vary the ratio of English to Tagalog. "
+        f"Make them diverse in vocabulary and sentence structure. "
+        f"Return ONLY a JSON array of strings, no explanations."
+    )
+
+    try:
+        import httpx
+        import re as _re
+
+        response = httpx.post(
+            "https://api.deepseek.com/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": "deepseek-chat",
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": 1000,
+                "temperature": 0.8,
+            },
+            timeout=30.0,
+        )
+        response.raise_for_status()
+        data = response.json()
+        text = data["choices"][0]["message"]["content"]
+
+        match = _re.search(r"\[.*?\]", text, _re.DOTALL)
+        if match:
+            return json.loads(match.group())
+        else:
+            text = text.strip().removeprefix("```json").removeprefix("```").strip()
+            return json.loads(text)
+    except Exception as exc:
+        logger.warning("Code-switched generation failed for %s: %s", intent, exc)
+        return []
+
+
 def _fill_gaps_synthetic(rows: list[dict]) -> list[dict]:
     """Generate synthetic rows for intents with fewer than SYNTHETIC_COUNT examples
-    per language."""
+    per language. Also adds code-switched Taglish examples for Filipino."""
     # Count existing per (intent, language)
     counts: dict[tuple[str, str], int] = defaultdict(int)
     for r in rows:
@@ -284,6 +343,21 @@ def _fill_gaps_synthetic(rows: list[dict]) -> list[dict]:
                         "source": "synthetic",
                     }
                 )
+
+    # Add code-switched Taglish examples for Filipino (30 per intent)
+    logger.info("Generating code-switched Taglish examples for Filipino...")
+    for intent in LABELS:
+        cs_utterances = _generate_code_switched(intent, n=30)
+        for utt in cs_utterances:
+            synthetic_rows.append(
+                {
+                    "text": utt,
+                    "label": intent,
+                    "language": "fil",
+                    "source": "synthetic_cs",
+                }
+            )
+        logger.info("  %s: %d code-switched examples", intent, len(cs_utterances))
 
     return rows + synthetic_rows
 

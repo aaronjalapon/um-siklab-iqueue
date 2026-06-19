@@ -9,6 +9,8 @@ export interface Bus {
   origin: string;
   destination: string;
   available_seats: number;
+  accessibility_seat_count: number;
+  accessibility_available_count: number;
   surge_probability: number | null;
 }
 
@@ -22,6 +24,8 @@ export interface BusListResponse {
 export interface SeatInfo {
   seat_number: string;
   is_available: boolean;
+  is_accessibility: boolean;
+  is_near_exit: boolean;
   passenger_name: string | null;
 }
 
@@ -31,6 +35,8 @@ export interface SeatMapResponse {
   seats: SeatInfo[];
   booked_count: number;
   available_count: number;
+  accessibility_seat_count: number;
+  accessibility_available_count: number;
 }
 
 export interface BookingCreate {
@@ -89,14 +95,25 @@ export interface ChatbotRequest {
   query: string;
   language?: string;
   booking_id?: string;
+  session_id?: string;
+  phone?: string;
 }
 
 export interface ChatbotResponse {
   response_text: string;
   detected_language: string;
+  language_confidence: number | null;
   intent: string;
   suggested_actions: string[];
   confidence: number;
+  session_id: string | null;
+  degradation_level: number;
+}
+
+export interface SessionCreateResponse {
+  session_id: string;
+  greeting: string;
+  language: string;
 }
 
 /** Passenger form data used in seat booking. */

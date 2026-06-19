@@ -1,28 +1,22 @@
 # =============================================================================
 # IQueue — Development Dependencies
-# Pinned to latest stable versions as of May 2026
+# Lightweight local tooling: base API deps plus linting, tests, and typing.
+# Install full ML support separately with: pip install -r requirements.txt
 # =============================================================================
-# Install with: pip install -r requirements-dev.txt
-# These extend requirements.txt for local development.
 
--r requirements.txt
+-r requirements.base.txt
 
 # Linting & Formatting
-ruff>=0.15.0
-black>=26.0.0
+ruff==0.15.15
+black==26.5.1
 
 # Testing
-pytest>=9.0.0
-pytest-asyncio>=1.4.0
-pytest-cov>=7.0.0
-httpx>=0.28.0
-
-# Test database (in-memory SQLite for fast unit tests)
-aiosqlite>=0.22.0
-
-# Load Testing
-locust>=2.27.0
+pytest==9.0.3
+pytest-asyncio==1.4.0
+pytest-cov==7.1.0
+aiosqlite==0.22.1
+locust==2.44.0
 
 # Type Checking
-mypy>=1.10.0
-types-python-dateutil>=2.9.0
+mypy==2.1.0
+types-python-dateutil==2.9.0.20260518

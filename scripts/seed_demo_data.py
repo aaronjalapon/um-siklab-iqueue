@@ -35,6 +35,7 @@ except ImportError:
 
 from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import selectinload
 from sqlalchemy.orm import sessionmaker
 
 # ---------------------------------------------------------------------------
@@ -228,21 +229,28 @@ async def seed(engine, dry_run: bool = False) -> None:
         from app.models.seat import Seat
         from app.services.seat_assignment.bus_layout import generate_seats_for_bus
 
-        buses_result = await session.execute(select(Bus))
-        for bus in buses_result.scalars().all():
-            seat_count = await session.scalar(
-                select(func.count(Seat.id)).where(Seat.bus_id == bus.id)
-            )
+        buses_result = await session.execute(
+            select(Bus)
+            .options(selectinload(Bus.layout))
+            .where(Bus.tenant_id == TENANT_ID)
+        )
+        demo_buses = buses_result.scalars().all()
+        for bus in demo_buses:
+            seat_count = (
+                await session.scalar(
+                    select(func.count(Seat.id)).where(Seat.bus_id == bus.id)
+                )
+            ) or 0
             if seat_count:
                 print(f"  ✓ Seats for bus {bus.plate_number} exist — skipping")
                 continue
 
             if dry_run:
-                print(f"  Would generate seats for bus: {bus.plate_number}")
+                print(f"  Would create accessibility-aware seats for {bus.plate_number}")
                 continue
 
-            seats = await generate_seats_for_bus(bus, session)
-            print(f"+ Generated {len(seats)} seats for bus: {bus.plate_number}")
+            await generate_seats_for_bus(bus, session)
+            print(f"+ Created seats for {bus.plate_number} (front rows marked accessible)")
 
         # --- Passenger ---
         existing = await session.execute(

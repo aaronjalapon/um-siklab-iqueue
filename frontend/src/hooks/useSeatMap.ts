@@ -29,7 +29,7 @@ export function useSeatMap(busId: string) {
   }, [busId]);
 
   useEffect(() => {
-    fetchSeats();
+    queueMicrotask(fetchSeats);
   }, [fetchSeats]);
 
   const assignSeat = useCallback(

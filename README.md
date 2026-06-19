@@ -47,13 +47,20 @@ python scripts/generate_qr_keys.py
 ### 2. Start with Docker (Recommended)
 
 ```bash
-docker-compose -f docker-compose.dev.yml up
+COMPOSE_BAKE=true docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 ```
 
 This starts:
 - PostgreSQL 15 on port 5432
-- FastAPI backend on port 8000 (with hot reload)
+- FastAPI backend on port 8000 (with hot reload and the lightweight base image)
 - Next.js frontend on port 3000
+
+For a production-like backend image with forecasting and chatbot ML dependencies
+installed, use the base compose file:
+
+```bash
+COMPOSE_BAKE=true docker compose up --build
+```
 
 ### 3. Generate Demo Data
 

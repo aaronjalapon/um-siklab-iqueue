@@ -116,9 +116,9 @@ export function BoardingQueueTable({
         </span>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-3 lg:items-center lg:justify-between">
+      <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div
-          className={glassStyles.segmentedControl}
+          className={`${glassStyles.segmentedControl} min-w-0 overflow-x-auto`}
           role="tablist"
           aria-label="Queue filters"
         >
@@ -155,7 +155,54 @@ export function BoardingQueueTable({
           description="Try a different filter or search term."
         />
       ) : (
-        <div className={`${glassStyles.panel} overflow-x-auto`}>
+        <>
+        <div className="grid gap-3 md:hidden">
+          {filtered.map((entry) => {
+            const boarding = isBoardingNow(entry);
+            return (
+              <article
+                key={entry.bookingId}
+                className={`${glassStyles.panel} p-4 ${
+                  boarding ? "border-green-400 bg-green-50/70 dark:bg-green-950/20" : ""
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-foreground">
+                      {entry.passengerName}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {entry.busPlate} · Seat {entry.seatNumber}
+                    </p>
+                  </div>
+                  <span
+                    className={`${glassStyles.badge} ${statusColorClass(entry.status)}`}
+                  >
+                    {entry.status}
+                  </span>
+                </div>
+                <p className="mt-3 text-xs font-medium text-slate-500">
+                  {formatBoardingWindow(
+                    entry.boardingWindowStart,
+                    entry.boardingWindowEnd
+                  )}
+                </p>
+                {entry.status !== "boarded" && entry.status !== "missed" && (
+                  <button
+                    type="button"
+                    onClick={() => onMarkBoarded(entry.bookingId)}
+                    className={`${glassStyles.primaryButton} mt-4 inline-flex min-h-10 w-full items-center justify-center gap-1 text-xs`}
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" aria-hidden />
+                    Mark boarded
+                  </button>
+                )}
+              </article>
+            );
+          })}
+        </div>
+
+        <div className={`${glassStyles.panel} hidden overflow-x-auto md:block`}>
           <table className="w-full text-sm">
             <caption className="sr-only">
               Boarding queue — passengers sorted by boarding window
@@ -252,6 +299,7 @@ export function BoardingQueueTable({
             </tbody>
           </table>
         </div>
+        </>
       )}
     </div>
   );

@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { sendChatMessage } from "@/lib/api";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { sendChatMessage, createChatSession } from "@/lib/api";
 import type { ChatbotResponse } from "@/lib/types";
 import { LANGUAGE_LABELS } from "@/lib/utils";
-import { MessageCircle, Send, X } from "lucide-react";
+import { MessageCircle, Send, X, AlertTriangle } from "lucide-react";
 
 // ---------------------------------------------------------------------------
 // Language config
@@ -19,28 +19,20 @@ const LANGUAGES = [
 
 type LanguageCode = (typeof LANGUAGES)[number]["code"];
 
-const GREETINGS: Record<LanguageCode, string> = {
-  en: "Hi! I'm the IQueue assistant. I can help you check your booking, find departure info, or answer questions about surge crowds. How can I help?",
-  fil: "Kumusta! Ako ang IQueue assistant. Matutulungan kitang tingnan ang iyong booking, alamin ang oras ng alis, o sagutin ang mga tanong tungkol sa dami ng tao. Paano ako makakatulong?",
-  id: "Halo! Saya asisten IQueue. Saya bisa membantu Anda memeriksa pemesanan, mencari info keberangkatan, atau menjawab pertanyaan tentang tingkat keramaian. Ada yang bisa saya bantu?",
-  vi: "Xin chào! Tôi là trợ lý IQueue. Tôi có thể giúp bạn kiểm tra đặt vé, tìm thông tin khởi hành, hoặc trả lời câu hỏi về mức độ đông đúc. Tôi có thể giúp gì?",
-};
-
-// ---------------------------------------------------------------------------
-// UI chrome strings (localised per language)
-// ---------------------------------------------------------------------------
-
-const UI_STRINGS: Record<LanguageCode, { title: string; subtitle: string; placeholder: string; thinking: string; error: string }> = {
+const UI_STRINGS: Record<
+  LanguageCode,
+  { title: string; subtitle: string; placeholder: string; thinking: string; error: string }
+> = {
   en: {
     title: "IQueue Assistant",
-    subtitle: "AI-powered chatbot · 4 languages",
+    subtitle: "AI-powered · 4 languages",
     placeholder: "Type your question...",
     thinking: "Thinking...",
     error: "Sorry, I'm having trouble connecting. Please try again later.",
   },
   fil: {
     title: "IQueue Assistant",
-    subtitle: "AI-powered chatbot · 4 na wika",
+    subtitle: "AI-powered · 4 na wika",
     placeholder: "I-type ang iyong tanong...",
     thinking: "Nag-iisip...",
     error: "Paumanhin, may problema sa koneksyon. Pakisubukan muli.",
@@ -59,6 +51,13 @@ const UI_STRINGS: Record<LanguageCode, { title: string; subtitle: string; placeh
     thinking: "Đang suy nghĩ...",
     error: "Xin lỗi, tôi đang gặp sự cố kết nối. Vui lòng thử lại sau.",
   },
+};
+
+const QUICK_REPLIES: Record<LanguageCode, string[]> = {
+  en: ["Check my booking", "Is it crowded?", "When does my bus leave?", "I missed my bus"],
+  fil: ["Tingnan booking", "Marami bang tao?", "Kailan alis?", "Naiwan ng bus"],
+  id: ["Cek pesanan", "Apakah ramai?", "Kapan berangkat?", "Ketinggalan bus"],
+  vi: ["Kiểm tra vé", "Có đông không?", "Khi nào khởi hành?", "Bị lỡ xe"],
 };
 
 // ---------------------------------------------------------------------------
@@ -82,8 +81,10 @@ interface Message {
   role: "user" | "bot";
   text: string;
   language?: string;
+  languageConfidence?: number | null;
   intent?: string;
   suggested_actions?: string[];
+  degradation?: number;
 }
 
 interface ChatbotPanelProps {
@@ -98,32 +99,66 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
   const initialLang = detectBrowserLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [lang, setLang] = useState<LanguageCode>(initialLang);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: "bot",
-      text: GREETINGS[initialLang],
-      intent: "greeting",
-    },
-  ]);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const initializedRef = useRef(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = useCallback(() => {
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 100);
+  }, []);
+
+  // Initialize session when panel opens for the first time
+  useEffect(() => {
+    if (isOpen && !initializedRef.current) {
+      initializedRef.current = true;
+      createChatSession(lang)
+        .then((res) => {
+          setSessionId(res.session_id);
+          setMessages([
+            { role: "bot", text: res.greeting, intent: "greeting" },
+          ]);
+          scrollToBottom();
+        })
+        .catch(() => {
+          setMessages([
+            {
+              role: "bot",
+              text: "Hi! I'm the IQueue assistant. How can I help?",
+              intent: "greeting",
+            },
+          ]);
+        });
+    }
+    if (isOpen) scrollToBottom();
+  }, [isOpen, lang, scrollToBottom]);
 
   // --- Handlers ---
 
-  const handleSend = async () => {
-    if (!input.trim() || loading) return;
+  const handleSend = async (text?: string) => {
+    const query = (text || input).trim();
+    if (!query || loading) return;
 
-    const userMsg: Message = { role: "user", text: input.trim() };
+    const userMsg: Message = { role: "user", text: query };
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setLoading(true);
 
     try {
       const response: ChatbotResponse = await sendChatMessage({
-        query: userMsg.text,
+        query,
         booking_id: bookingId,
         language: lang,
+        session_id: sessionId || undefined,
       });
+
+      if (response.session_id && !sessionId) {
+        setSessionId(response.session_id);
+      }
 
       setMessages((prev) => [
         ...prev,
@@ -131,8 +166,10 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
           role: "bot",
           text: response.response_text,
           language: response.detected_language,
+          languageConfidence: response.language_confidence,
           intent: response.intent,
           suggested_actions: response.suggested_actions,
+          degradation: response.degradation_level,
         },
       ]);
     } catch {
@@ -146,60 +183,26 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
       ]);
     } finally {
       setLoading(false);
+      scrollToBottom();
     }
   };
 
   const handleSuggestionClick = async (action: string) => {
-    if (loading) return;
-
-    const userMsg: Message = { role: "user", text: action };
-    setMessages((prev) => [...prev, userMsg]);
-    setLoading(true);
-
-    try {
-      const response: ChatbotResponse = await sendChatMessage({
-        query: action,
-        booking_id: bookingId,
-        language: lang,
-      });
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "bot",
-          text: response.response_text,
-          language: response.detected_language,
-          intent: response.intent,
-          suggested_actions: response.suggested_actions,
-        },
-      ]);
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "bot",
-          text: UI_STRINGS[lang].error,
-          intent: "error",
-        },
-      ]);
-    } finally {
-      setLoading(false);
-    }
+    await handleSend(action);
   };
 
-  const handleLanguageChange = (code: LanguageCode) => {
+  const handleLanguageChange = async (code: LanguageCode) => {
     setLang(code);
-    // Replace the greeting with the selected language version
-    setMessages((prev) => {
-      const updated = [...prev];
-      if (updated.length > 0 && updated[0].intent === "greeting") {
-        updated[0] = {
-          ...updated[0],
-          text: GREETINGS[code],
-        };
-      }
-      return updated;
-    });
+    // Start a fresh session in the new language
+    try {
+      const res = await createChatSession(code);
+      setSessionId(res.session_id);
+      setMessages([
+        { role: "bot", text: res.greeting, intent: "greeting" },
+      ]);
+    } catch {
+      // Keep existing state
+    }
   };
 
   // --- Render ---
@@ -208,23 +211,32 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
     <>
       {/* Toggle Button */}
       <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 bg-blue-700 text-white p-4 rounded-full shadow-lg
+        className="fixed bottom-24 right-4 rounded-full bg-blue-700 p-3 text-white shadow-lg
+                   md:bottom-6 md:right-6
                    hover:bg-blue-800 transition z-50"
-        title="Chat with IQueue Assistant"
+        aria-label={isOpen ? "Close IQueue Assistant" : "Chat with IQueue Assistant"}
+        aria-expanded={isOpen}
+        aria-controls="iqueue-chatbot-panel"
       >
         {isOpen ? (
-          <X className="w-6 h-6" />
+          <X className="h-5 w-5 md:h-6 md:w-6" />
         ) : (
-          <MessageCircle className="w-6 h-6" />
+          <MessageCircle className="h-5 w-5 md:h-6 md:w-6" />
         )}
       </button>
 
       {/* Chat Panel */}
       {isOpen && (
         <div
-          className="fixed bottom-24 right-0 left-0 mx-4 sm:mx-auto sm:right-6 sm:left-auto
-                     w-auto sm:w-96 h-[70vh] max-h-[520px]
+          id="iqueue-chatbot-panel"
+          role="dialog"
+          aria-modal="false"
+          aria-label={UI_STRINGS[lang].title}
+          className="fixed bottom-40 left-3 right-3 mx-0 sm:left-auto sm:right-6
+                     w-auto sm:w-96 h-[min(68dvh,520px)] max-h-[calc(100dvh-10rem)]
+                     md:bottom-24
                      bg-white dark:bg-slate-900
                      rounded-xl shadow-2xl dark:shadow-2xl dark:shadow-black/40
                      border dark:border-white/10
@@ -234,11 +246,13 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
           <div className="bg-blue-700 text-white p-4 rounded-t-xl flex items-center justify-between shrink-0">
             <div>
               <h3 className="font-semibold">{UI_STRINGS[lang].title}</h3>
-              <p className="text-xs text-blue-200">
-                {UI_STRINGS[lang].subtitle}
-              </p>
+              <p className="text-xs text-blue-200">{UI_STRINGS[lang].subtitle}</p>
             </div>
-            <button onClick={() => setIsOpen(false)}>
+            <button
+              type="button"
+              onClick={() => setIsOpen(false)}
+              aria-label="Close assistant"
+            >
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -250,6 +264,7 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
           >
             {LANGUAGES.map((l) => (
               <button
+                type="button"
                 key={l.code}
                 onClick={() => handleLanguageChange(l.code)}
                 className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
@@ -280,9 +295,16 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
                   }`}
                 >
                   <p>{msg.text}</p>
+
+                  {/* Language & confidence indicator */}
                   {msg.language && (
                     <span className="text-xs opacity-70 mt-1 block">
                       {LANGUAGE_LABELS[msg.language] || msg.language}
+                      {msg.languageConfidence != null && (
+                        <span title={`Detection confidence: ${Math.round(msg.languageConfidence * 100)}%`}>
+                          {" "}· {Math.round(msg.languageConfidence * 100)}% confidence
+                        </span>
+                      )}
                       {msg.intent &&
                         msg.intent !== "fallback" &&
                         msg.intent !== "greeting" && (
@@ -291,13 +313,22 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
                     </span>
                   )}
 
-                  {/* Action pill buttons */}
+                  {/* Degradation warning */}
+                  {msg.degradation != null && msg.degradation > 0 && (
+                    <span className="text-xs text-amber-500 mt-1 flex items-center gap-1">
+                      <AlertTriangle className="w-3 h-3" />
+                      Running in reduced mode
+                    </span>
+                  )}
+
+                  {/* Suggested action pills */}
                   {msg.role === "bot" &&
                     msg.suggested_actions &&
                     msg.suggested_actions.length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         {msg.suggested_actions.map((action, ai) => (
                           <button
+                            type="button"
                             key={ai}
                             onClick={() => handleSuggestionClick(action)}
                             disabled={loading}
@@ -318,11 +349,30 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
               </div>
             ))}
             {loading && (
-              <div className="text-center text-gray-400 dark:text-slate-500 text-sm">
-                {UI_STRINGS[lang].thinking}
+              <div className="flex items-center gap-2 text-gray-400 dark:text-slate-500 text-sm px-2">
+                <span className="w-2 h-2 bg-blue-700 rounded-full animate-bounce [animation-delay:0ms]" />
+                <span className="w-2 h-2 bg-blue-700 rounded-full animate-bounce [animation-delay:150ms]" />
+                <span className="w-2 h-2 bg-blue-700 rounded-full animate-bounce [animation-delay:300ms]" />
               </div>
             )}
+            <div ref={messagesEndRef} />
           </div>
+
+          {/* Quick reply buttons */}
+          {messages.length > 0 && !loading && (
+            <div className="px-3 py-2 flex gap-1.5 overflow-x-auto border-t dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 shrink-0">
+              {QUICK_REPLIES[lang].map((reply, i) => (
+                <button
+                  type="button"
+                  key={i}
+                  onClick={() => handleSuggestionClick(reply)}
+                  className="flex-shrink-0 text-[11px] px-3 py-1.5 rounded-full bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 border dark:border-white/10 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+                >
+                  {reply}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Input */}
           <div className="border-t dark:border-slate-800 p-3 flex gap-2 shrink-0">
@@ -332,14 +382,17 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
               placeholder={UI_STRINGS[lang].placeholder}
+              disabled={loading}
               className="flex-1 border border-gray-300 dark:border-slate-700
                          rounded-lg px-3 py-2 text-sm
                          dark:bg-slate-800 dark:text-slate-200 dark:placeholder-slate-500
                          focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400
-                         focus:border-blue-500 dark:focus:border-blue-400"
+                         focus:border-blue-500 dark:focus:border-blue-400
+                         disabled:opacity-50"
             />
             <button
-              onClick={handleSend}
+              type="button"
+              onClick={() => handleSend()}
               disabled={loading || !input.trim()}
               className="bg-blue-700 text-white p-2 rounded-lg
                          hover:bg-blue-800

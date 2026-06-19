@@ -1,11 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Bus, TrendingUp, Users } from "lucide-react";
+import { AlertTriangle, Bus, TrendingUp, Users } from "lucide-react";
 import { BusCapacityList } from "@/components/operator/BusCapacityList";
 import { DataStatusBanner } from "@/components/operator/DataStatusBanner";
 import { StatCard } from "@/components/operator/StatCard";
 import { SurgeForecastChart } from "@/components/operator/SurgeForecastChart";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { useForecast } from "@/hooks/useForecast";
 import { useOperatorFleet, todayIsoDate } from "@/hooks/useOperatorFleet";
 import { glassStyles } from "@/lib/design-system";
@@ -21,7 +22,7 @@ export default function OperatorDashboard() {
   const selectedRoute =
     DEMO_ROUTES.find((r) => r.id === routeId) ?? DEMO_ROUTES[0];
 
-  const { predictions, routeOrigin, routeDestination, loadState, refetch, loadDemo } =
+  const { predictions, routeOrigin, routeDestination, loadState, refetch } =
     useForecast(routeId);
 
   // Fetch real fleet data for the selected route
@@ -79,6 +80,11 @@ export default function OperatorDashboard() {
     return `${(avg * 100).toFixed(0)}%`;
   }, [predictions]);
 
+  const highSurgeDays = useMemo(
+    () => predictions.filter((p) => p.surge_probability >= 0.7).length,
+    [predictions]
+  );
+
   const isForecastLoading = loadState === "loading";
   const isFleetLoading = fleetLoadState === "loading";
   const showDemoBanner =
@@ -87,12 +93,27 @@ export default function OperatorDashboard() {
 
   return (
     <div className={glassStyles.pageContainer}>
-      <header>
-        <h1 className="text-2xl font-bold text-foreground">Operator Dashboard</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-          Route: {routeLabel}
-        </p>
-      </header>
+      <PageHeader
+        eyebrow="Operator control room"
+        title="Operator Dashboard"
+        description={`Route: ${routeLabel}`}
+        actions={
+          <label className="flex w-full flex-col gap-1 text-sm font-medium text-slate-600 dark:text-slate-300 sm:min-w-[260px] sm:w-auto">
+            Forecast route
+            <select
+              value={routeId}
+              onChange={(e) => setRouteId(e.target.value)}
+              className={`${glassStyles.input} text-sm`}
+            >
+              {DEMO_ROUTES.map((route) => (
+                <option key={route.id} value={route.id}>
+                  {route.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        }
+      />
 
       {showDemoBanner && (
         <DataStatusBanner
@@ -104,27 +125,9 @@ export default function OperatorDashboard() {
         />
       )}
 
-      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-        <label htmlFor="route-select" className="text-sm font-medium text-slate-600 dark:text-slate-300">
-          Forecast route
-        </label>
-        <select
-          id="route-select"
-          value={routeId}
-          onChange={(e) => setRouteId(e.target.value)}
-          className={`${glassStyles.input} text-sm max-w-xs`}
-        >
-          {DEMO_ROUTES.map((route) => (
-            <option key={route.id} value={route.id}>
-              {route.label}
-            </option>
-          ))}
-        </select>
-      </div>
-
       {isForecastLoading || isFleetLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
             <div key={i} className={`${glassStyles.statCard} animate-pulse motion-reduce:animate-none`}>
               <div className="w-8 h-8 rounded-lg bg-slate-200 dark:bg-slate-700" />
               <div className="space-y-2 flex-1">
@@ -135,7 +138,7 @@ export default function OperatorDashboard() {
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <StatCard
             icon={Bus}
             label="Active Buses"
@@ -154,10 +157,16 @@ export default function OperatorDashboard() {
             value={avgSurge}
             iconClassName="text-amber-500"
           />
+          <StatCard
+            icon={AlertTriangle}
+            label="High Surge Days"
+            value={String(highSurgeDays)}
+            iconClassName="text-red-500"
+          />
         </div>
       )}
 
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-4 xl:gap-6">
         <SurgeForecastChart
           predictions={predictions}
           loading={isForecastLoading}

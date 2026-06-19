@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Bus, Home, Users, BusFront } from "lucide-react";
+import { BarChart3, Bus, Home, Users } from "lucide-react";
+import BrandLogo from "@/components/BrandLogo";
 import { glassStyles } from "@/lib/design-system";
 
 const NAV_ITEMS = [
@@ -27,11 +28,13 @@ export function OperatorShell({ children }: { children: React.ReactNode }) {
         <div className="p-6">
           <Link
             href="/operator"
-            className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2"
+            className="inline-flex"
             aria-label="IQueue Ops — Operator Dashboard"
           >
-            <BusFront className="w-7 h-7 text-brand-blue" aria-hidden />
-            <span>IQueue Ops</span>
+            <BrandLogo
+              label="IQueue Ops"
+              textClassName="text-2xl font-bold tracking-tight text-slate-900 dark:text-white"
+            />
           </Link>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 ml-9">
             Operator Dashboard

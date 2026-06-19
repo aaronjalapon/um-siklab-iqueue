@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter
 
-from app.api.v1 import bookings, buses, chatbot, forecasts, passengers, seats
+from app.api.v1 import bookings, buses, chatbot, forecasts, health, passengers, seats
 
 api_router = APIRouter()
 
@@ -34,6 +34,11 @@ api_router.include_router(
     passengers.router,
     prefix="/passengers",
     tags=["passengers"],
+)
+api_router.include_router(
+    health.router,
+    prefix="/health",
+    tags=["health"],
 )
 
 # Health check endpoint at the v1 level

@@ -3,6 +3,8 @@
 :root {
   --background: #FCFCFD; /* gray-25 */
   --foreground: #111827;
+  --app-font-sans: Arial, Helvetica, sans-serif;
+  --app-font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   
   /* Glassmorphism Tokens - Light */
   --glass-bg: rgba(255, 255, 255, 0.6);
@@ -12,8 +14,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--app-font-sans);
+  --font-mono: var(--app-font-mono);
   
   /* City Trans Reference Colors */
   --color-brand-blue: #1A73E8;
@@ -49,7 +51,7 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans);
+  font-family: var(--app-font-sans);
 }
 
 html,

@@ -5,13 +5,10 @@
 # Lightweight Node image for hot reload (not the production runner).
 # =============================================================================
 
-FROM node:24-alpine
+FROM node:24-bookworm-slim
 WORKDIR /app
-
-COPY package.json package-lock.json* ./
-RUN --mount=type=cache,target=/root/.npm npm ci --legacy-peer-deps
 
 EXPOSE 3000
 
-# Bind-mount source at runtime; node_modules preserved via compose volume.
+# Bind-mount source and host node_modules at runtime for fast local dev.
 CMD ["npm", "run", "dev:docker"]

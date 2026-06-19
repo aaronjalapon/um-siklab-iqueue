@@ -6,15 +6,15 @@ via deterministic UUID v5 slugs.
 
 Architecture:
     Prophet (baseline trend + holiday regressors)
-    + LSTM (residual correction, seq_len=7, 3 features)
+    + LSTM (passenger correction, 14-day lookback, 9 features)
     → final passenger volume → surge probability (0–1)
 """
 
 from __future__ import annotations
 
-import pickle
 import uuid
 import json
+import math
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -24,7 +24,7 @@ import torch
 
 from app.core.config import get_settings
 from app.schemas.forecast import SurgePrediction
-from .model import SurgeLSTM
+from .model import ArtifactLSTMForecaster, SurgeLSTM
 
 
 # ---------------------------------------------------------------------------
@@ -70,9 +70,9 @@ class ForecastingService:
     Falls back to a heuristic when models are unavailable for a given route.
     """
 
-    # LSTM expects this many days of history for the lag window
-    LSTM_SEQ_LEN = 7
-    LSTM_INPUT_SIZE = 3  # volume_norm, day_of_week, is_holiday
+    # Matches the final notebook configuration used for deployed checkpoints.
+    LSTM_SEQ_LEN = 14
+    LSTM_INPUT_SIZE = 9
 
     def __init__(self) -> None:
         self._loaded = False
@@ -83,6 +83,8 @@ class ForecastingService:
         self._lstm_configs: dict[str, dict] = {}      # slug → checkpoint metadata
         self._scalers: dict[str, object] = {}         # slug → MinMaxScaler
         self._route_medians: dict[str, float] = {}    # slug → median daily volume
+        self._surge_classifier: object | None = None
+        self._surge_feature_names: list[str] = []
         self._metrics_summary: dict | None = None
         self._artifact_version: str | None = None
 
@@ -130,8 +132,26 @@ class ForecastingService:
         for slug in _KNOWN_SLUGS:
             self._load_route_models(slug, artifacts_dir)
 
+        self._load_surge_classifier(artifacts_dir)
         self._load_metrics_summary(artifacts_dir)
         self._loaded = True
+
+    def _load_surge_classifier(self, artifacts_dir: Path) -> None:
+        """Load the global LightGBM surge classifier and feature schema."""
+
+        classifier_path = artifacts_dir / "surge_clf_global.pkl"
+        features_path = artifacts_dir / "surge_clf_features.pkl"
+        if not classifier_path.exists() or not features_path.exists():
+            return
+
+        try:
+            import joblib
+
+            self._surge_classifier = joblib.load(classifier_path)
+            self._surge_feature_names = list(joblib.load(features_path))
+        except Exception:
+            self._surge_classifier = None
+            self._surge_feature_names = []
 
     def _load_metrics_summary(self, artifacts_dir: Path) -> None:
         """Load optional metrics metadata from the artifact directory."""
@@ -173,8 +193,12 @@ class ForecastingService:
         prophet_path = artifacts_dir / f"prophet_{slug}.pkl"
         if prophet_path.exists():
             try:
-                with open(prophet_path, "rb") as f:
-                    self._prophets[slug] = pickle.load(f)
+                import joblib
+
+                payload = joblib.load(prophet_path)
+                self._prophets[slug] = (
+                    payload.get("model") if isinstance(payload, dict) else payload
+                )
             except Exception as exc:
                 logger.warning("Failed to load Prophet for %s: %s", slug, exc)
 
@@ -182,18 +206,22 @@ class ForecastingService:
         lstm_path = artifacts_dir / f"lstm_{slug}_best.pt"
         if lstm_path.exists():
             try:
-                import sys
-                ml_path = str(Path(__file__).resolve().parents[4] / "ml" / "forecasting")
-                if ml_path not in sys.path:
-                    sys.path.insert(0, ml_path)
-                from model import SurgeLSTM
-
                 checkpoint = torch.load(lstm_path, map_location="cpu", weights_only=False)
-                model = SurgeLSTM(
-                    input_size=checkpoint.get("input_size", self.LSTM_INPUT_SIZE),
-                    hidden_size=checkpoint.get("hidden_size", 64),
-                    num_layers=checkpoint.get("num_layers", 2),
-                )
+                state_dict = checkpoint["model_state_dict"]
+                if "fc.weight" in state_dict:
+                    model = ArtifactLSTMForecaster(
+                        input_size=checkpoint.get("input_size", 9),
+                        hidden_size=checkpoint.get("hidden_size", 64),
+                        num_layers=checkpoint.get("num_layers", 1),
+                    )
+                else:
+                    model = SurgeLSTM(
+                        input_size=checkpoint.get(
+                            "input_size", self.LSTM_INPUT_SIZE
+                        ),
+                        hidden_size=checkpoint.get("hidden_size", 64),
+                        num_layers=checkpoint.get("num_layers", 2),
+                    )
                 model.load_state_dict(checkpoint["model_state_dict"])
                 model.eval()
                 self._lstms[slug] = model
@@ -253,8 +281,16 @@ class ForecastingService:
             # 3. Combined volume
             predicted_volume = max(0, int(prophet_val + lstm_correction))
 
-            # 4. Surge probability
-            surge_prob = self._compute_surge_prob(slug, d, predicted_volume)
+            # 4. Surge probability and LightGBM decision boost
+            surge_prob = self._classifier_surge_probability(
+                slug, d, predicted_volume
+            )
+            if surge_prob is None:
+                surge_prob = self._compute_surge_prob(
+                    slug, d, predicted_volume
+                )
+            elif surge_prob >= 0.55:
+                predicted_volume = int(predicted_volume * 2.0)
 
             # 5. Confidence interval (±15%)
             margin = max(5, int(predicted_volume * 0.15))
@@ -289,18 +325,23 @@ class ForecastingService:
 
         try:
             future_df = pd.DataFrame({"ds": [pd.Timestamp(d)]})
-            # Add holiday regressors that the Prophet model expects
-            for col in ["is_eid", "is_tet", "is_xmas"]:
-                future_df[col] = 0
-            # Check and set holiday flags
             is_holiday, holiday_name = self._check_holiday(d)
-            if holiday_name:
-                if "eid" in holiday_name.lower():
-                    future_df["is_eid"] = 1
-                if "tết" in holiday_name.lower() or "tet" in holiday_name.lower():
-                    future_df["is_tet"] = 1
-                if "christmas" in holiday_name.lower():
-                    future_df["is_xmas"] = 1
+            expected_regressors = getattr(prophet, "extra_regressors", {})
+            for column in expected_regressors:
+                value = 0
+                if column == "is_holiday":
+                    value = int(is_holiday)
+                elif holiday_name:
+                    normalized_name = holiday_name.lower()
+                    if column == "is_eid":
+                        value = int("eid" in normalized_name)
+                    elif column == "is_tet":
+                        value = int(
+                            "tết" in normalized_name or "tet" in normalized_name
+                        )
+                    elif column == "is_xmas":
+                        value = int("christmas" in normalized_name)
+                future_df[column] = value
 
             result = prophet.predict(future_df)["yhat"].iloc[0]
             return float(max(0, result))
@@ -332,7 +373,12 @@ class ForecastingService:
             # Build a synthetic 7-day lag window
             median_vol = self._route_medians.get(slug, prophet_val)
 
-            seq = []
+            seq: list[list[float]] = []
+            input_size = int(
+                self._lstm_configs.get(slug, {}).get(
+                    "input_size", self.LSTM_INPUT_SIZE
+                )
+            )
             for lag in range(self.LSTM_SEQ_LEN, 0, -1):
                 past_date = d - timedelta(days=lag)
                 past_is_weekend = 1.0 if past_date.weekday() >= 5 else 0.0
@@ -341,19 +387,49 @@ class ForecastingService:
                 # Use a blend of median and Prophet for synthetic history
                 past_vol = median_vol * 0.7 + prophet_val * 0.3
 
-                # Normalize volume using scaler
-                # MinMaxScaler: X_scaled = (X - min) / (max - min)
-                vol_norm = (past_vol - scaler.data_min_[0]) / (
-                    scaler.data_max_[0] - scaler.data_min_[0] + 1e-8
+                if input_size >= 9 and getattr(scaler, "n_features_in_", 0) >= 8:
+                    raw_features = np.array(
+                        [
+                            [
+                                past_vol,
+                                float(past_is_holiday),
+                                math.sin(2 * math.pi * past_date.weekday() / 7),
+                                math.cos(2 * math.pi * past_date.weekday() / 7),
+                                past_is_weekend,
+                                math.sin(2 * math.pi * past_date.month / 12),
+                                math.cos(2 * math.pi * past_date.month / 12),
+                                (past_date.day - 1) / 30.0,
+                            ]
+                        ],
+                        dtype=np.float32,
+                    )
+                    scaled = scaler.transform(raw_features)[0].tolist()
+                    prophet_scaled = (
+                        prophet_val - scaler.data_min_[0]
+                    ) / (scaler.data_range_[0] + 1e-8)
+                    seq.append((scaled + [float(prophet_scaled)])[:input_size])
+                else:
+                    vol_norm = (past_vol - scaler.data_min_[0]) / (
+                        scaler.data_max_[0] - scaler.data_min_[0] + 1e-8
+                    )
+                    seq.append(
+                        [
+                            vol_norm,
+                            past_date.weekday() / 6.0,
+                            float(past_is_holiday),
+                        ][:input_size]
+                    )
+
+            x = torch.tensor([seq], dtype=torch.float32)
+            model_output = lstm.predict(x).item()
+            if input_size >= 8:
+                predicted_count = (
+                    model_output * scaler.data_range_[0]
+                    + scaler.data_min_[0]
                 )
-
-                dow_norm = past_date.weekday() / 6.0
-                holiday_flag = 1.0 if past_is_holiday else 0.0
-
-                seq.append([vol_norm, dow_norm, holiday_flag])
-
-            x = torch.tensor([seq], dtype=torch.float32)  # (1, 7, 3)
-            residual = lstm.predict(x).item()
+                residual = predicted_count - prophet_val
+            else:
+                residual = model_output
 
             # Clip residual to reasonable range
             max_residual = median_vol * 0.5 if median_vol > 0 else 100
@@ -363,6 +439,53 @@ class ForecastingService:
 
         except Exception:
             return self._estimate_lstm_correction(d)
+
+    def _classifier_surge_probability(
+        self,
+        slug: str | None,
+        d: date,
+        predicted_volume: int,
+    ) -> float | None:
+        """Estimate surge probability with the global LightGBM classifier."""
+
+        if (
+            slug is None
+            or self._surge_classifier is None
+            or not self._surge_feature_names
+        ):
+            return None
+
+        try:
+            median = self._route_medians.get(slug, float(predicted_volume))
+            current_date = d - timedelta(days=1)
+            current_holiday, _ = self._check_holiday(current_date)
+            values = {
+                "passenger_count": median,
+                "is_holiday": float(current_holiday),
+                "pax_lag1": median,
+                "pax_lag7": median,
+                "pax_lag14": median,
+                "pax_roll_mean_7": median,
+                "pax_roll_std_7": abs(predicted_volume - median) * 0.15,
+                "pax_wow_change": (predicted_volume - median)
+                / (median + 1.0),
+                "dow_sin_t1": math.sin(2 * math.pi * d.weekday() / 7),
+                "dow_cos_t1": math.cos(2 * math.pi * d.weekday() / 7),
+                "is_weekend_t1": float(d.weekday() >= 5),
+                "month_sin_t1": math.sin(2 * math.pi * d.month / 12),
+                "month_cos_t1": math.cos(2 * math.pi * d.month / 12),
+                "day_of_month_t1": min(d.day / 30.0, 1.0),
+                "route_cat": float(_KNOWN_SLUGS.index(slug)),
+            }
+            features = np.array(
+                [[values[name] for name in self._surge_feature_names]],
+                dtype=np.float32,
+            )
+            return float(
+                self._surge_classifier.predict_proba(features)[0, 1]
+            )
+        except Exception:
+            return None
 
     # ------------------------------------------------------------------
     # Surge probability

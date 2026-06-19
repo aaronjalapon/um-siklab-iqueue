@@ -1,0 +1,15 @@
+# Full local ML inference override.
+# Usage:
+#   docker-compose -f docker-compose.yml -f docker-compose.ml.yml up -d --build backend
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.ml.local
+      target: runtime-ml-local
+    environment:
+      - DEBUG=true
+      - FORECASTING_ARTIFACTS_DIR=/app/app/services/forecasting/artifacts
+    volumes:
+      - ./iqueue_artifacts/artifacts:/app/app/services/forecasting/artifacts:ro

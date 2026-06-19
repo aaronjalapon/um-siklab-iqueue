@@ -8,7 +8,12 @@ import type {
   BusListResponse,
   ChatbotRequest,
   ChatbotResponse,
+  ForecastActionCreate,
+  ForecastActionResponse,
   ForecastResponse,
+  LearningLogSummary,
+  OperationalOutcomeCreate,
+  OperationalOutcomeResponse,
   SeatMapResponse,
   SessionCreateResponse,
 } from "./types";
@@ -110,6 +115,36 @@ export async function getForecast(
   routeId: string
 ): Promise<ForecastResponse> {
   const { data } = await api.get<ForecastResponse>(`/forecasts/${routeId}`);
+  return data;
+}
+
+export async function recordForecastAction(
+  payload: ForecastActionCreate
+): Promise<ForecastActionResponse> {
+  const { data } = await api.post<ForecastActionResponse>(
+    "/forecast-actions",
+    payload
+  );
+  return data;
+}
+
+export async function getLearningLogSummary(
+  tenantId: string,
+  routeId?: string
+): Promise<LearningLogSummary> {
+  const { data } = await api.get<LearningLogSummary>("/forecast-actions/summary", {
+    params: { tenant_id: tenantId, route_id: routeId },
+  });
+  return data;
+}
+
+export async function recordOperationalOutcome(
+  payload: OperationalOutcomeCreate
+): Promise<OperationalOutcomeResponse> {
+  const { data } = await api.post<OperationalOutcomeResponse>(
+    "/operations/outcomes",
+    payload
+  );
   return data;
 }
 

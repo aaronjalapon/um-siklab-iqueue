@@ -12,6 +12,7 @@ export interface Bus {
   accessibility_seat_count: number;
   accessibility_available_count: number;
   surge_probability: number | null;
+  surge_3day: { date: string; surge: number }[];
 }
 
 export interface BusListResponse {
@@ -74,6 +75,7 @@ export interface BookingDetail extends BookingResponse {
 }
 
 export interface SurgePrediction {
+  forecast_snapshot_id: string | null;
   forecast_date: string;
   surge_probability: number;
   predicted_volume: number;
@@ -81,6 +83,9 @@ export interface SurgePrediction {
   confidence_upper: number | null;
   is_holiday: boolean;
   holiday_name: string | null;
+  risk_level: "low" | "moderate" | "high" | "critical";
+  recommended_action: string;
+  model_confidence: number | null;
 }
 
 export interface ForecastResponse {
@@ -88,7 +93,66 @@ export interface ForecastResponse {
   route_origin: string;
   route_destination: string;
   generated_at: string;
+  model_source: "ml_bundle" | "heuristic";
+  model_version: string | null;
+  metrics_summary: Record<string, unknown> | null;
   predictions: SurgePrediction[];
+}
+
+export interface ForecastActionCreate {
+  tenant_id: string;
+  forecast_snapshot_id: string;
+  action_taken: "accepted" | "modified" | "rejected";
+  override_type?: string;
+  override_reason?: string;
+  notes?: string;
+  operator_id?: string;
+  final_action?: string;
+}
+
+export interface ForecastActionResponse {
+  id: string;
+  tenant_id: string;
+  route_id: string;
+  forecast_snapshot_id: string;
+  action_taken: string;
+  override_type: string | null;
+  override_reason: string | null;
+  notes: string | null;
+  operator_id: string | null;
+  final_action: string | null;
+  decided_at: string;
+}
+
+export interface LearningLogSummary {
+  tenant_id: string;
+  route_id: string | null;
+  forecast_snapshots: number;
+  operator_actions: number;
+  operational_outcomes: number;
+  ground_truth_ready_rows: number;
+  latest_outcome_date: string | null;
+}
+
+export interface OperationalOutcomeCreate {
+  tenant_id: string;
+  route_id: string;
+  service_date: string;
+  actual_passenger_count: number;
+  peak_queue_length?: number | null;
+  average_wait_time_minutes?: number | null;
+  wait_time_p95_minutes?: number | null;
+  extra_buses_dispatched?: number;
+  lanes_opened?: number;
+  missed_boardings?: number;
+  overcrowding_incident?: boolean;
+  recorded_by?: string;
+  notes?: string;
+}
+
+export interface OperationalOutcomeResponse extends OperationalOutcomeCreate {
+  id: string;
+  created_at: string;
 }
 
 export interface ChatbotRequest {

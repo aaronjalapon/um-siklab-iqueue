@@ -32,6 +32,7 @@ class BusResponse(BaseModel):
     accessibility_seat_count: int = 0
     accessibility_available_count: int = 0
     surge_probability: float | None = None
+    surge_3day: list[dict[str, str | float]] = Field(default_factory=list)
 
     model_config = {"from_attributes": True}
 

@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import pickle
 import uuid
+import json
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -82,6 +83,8 @@ class ForecastingService:
         self._lstm_configs: dict[str, dict] = {}      # slug → checkpoint metadata
         self._scalers: dict[str, object] = {}         # slug → MinMaxScaler
         self._route_medians: dict[str, float] = {}    # slug → median daily volume
+        self._metrics_summary: dict | None = None
+        self._artifact_version: str | None = None
 
         self._ensure_loaded()
 
@@ -90,6 +93,18 @@ class ForecastingService:
         """Return whether forecasting has completed startup initialization."""
 
         return self._loaded
+
+    @property
+    def artifact_version(self) -> str | None:
+        """Return the active model bundle version when known."""
+
+        return self._artifact_version
+
+    @property
+    def metrics_summary(self) -> dict | None:
+        """Return compact metrics for the active bundle when available."""
+
+        return self._metrics_summary
 
     def warmup(self) -> None:
         """Load forecasting artifacts so startup readiness can report status."""
@@ -115,7 +130,39 @@ class ForecastingService:
         for slug in _KNOWN_SLUGS:
             self._load_route_models(slug, artifacts_dir)
 
+        self._load_metrics_summary(artifacts_dir)
         self._loaded = True
+
+    def _load_metrics_summary(self, artifacts_dir: Path) -> None:
+        """Load optional metrics metadata from the artifact directory."""
+
+        metrics_path = artifacts_dir / "eval_summary.json"
+        if not metrics_path.exists():
+            self._artifact_version = "v1-hackathon-rules"
+            return
+
+        try:
+            with open(metrics_path, encoding="utf-8") as f:
+                metrics = json.load(f)
+            route_metrics = [v for v in metrics.values() if isinstance(v, dict)]
+            if route_metrics:
+                self._metrics_summary = {
+                    "avg_mae": round(
+                        sum(float(m.get("mae", 0)) for m in route_metrics)
+                        / len(route_metrics),
+                        2,
+                    ),
+                    "avg_surge_f1": round(
+                        sum(float(m.get("surge_f1", 0)) for m in route_metrics)
+                        / len(route_metrics),
+                        3,
+                    ),
+                    "routes_evaluated": len(route_metrics),
+                    "overall_passed": bool(metrics.get("overall_passed")),
+                }
+            self._artifact_version = "v1-hackathon"
+        except Exception:
+            self._artifact_version = "v1-hackathon-rules"
 
     def _load_route_models(self, slug: str, artifacts_dir: Path) -> None:
         """Load Prophet, LSTM, and scaler for a single route slug."""

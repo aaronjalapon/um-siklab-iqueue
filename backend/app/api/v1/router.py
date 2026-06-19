@@ -2,7 +2,17 @@
 
 from fastapi import APIRouter
 
-from app.api.v1 import bookings, buses, chatbot, forecasts, health, passengers, seats
+from app.api.v1 import (
+    bookings,
+    buses,
+    chatbot,
+    forecast_actions,
+    forecasts,
+    health,
+    operations,
+    passengers,
+    seats,
+)
 
 api_router = APIRouter()
 
@@ -20,6 +30,16 @@ api_router.include_router(
     forecasts.router,
     prefix="/forecasts",
     tags=["forecasts"],
+)
+api_router.include_router(
+    forecast_actions.router,
+    prefix="/forecast-actions",
+    tags=["forecast-actions"],
+)
+api_router.include_router(
+    operations.router,
+    prefix="/operations",
+    tags=["operations"],
 )
 api_router.include_router(
     chatbot.router,

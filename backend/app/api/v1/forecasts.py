@@ -14,6 +14,7 @@ from app.core.deps import get_db
 from app.models.booking import Booking, BookingStatus
 from app.models.bus import Bus
 from app.models.bus_route import BusRoute
+from app.models.forecast_learning import ForecastSnapshot
 from app.schemas.forecast import ForecastResponse, SurgePrediction
 
 logger = logging.getLogger(__name__)
@@ -105,6 +106,78 @@ def _heuristic_forecast(
     return predictions
 
 
+def _risk_action_from_probability(surge_probability: float) -> tuple[str, str]:
+    """Translate surge probability into an operator-facing action."""
+
+    if surge_probability >= 0.85:
+        return (
+            "critical",
+            "Prepare standby bus and activate crowd-control plan",
+        )
+    if surge_probability >= 0.70:
+        return "high", "Open extra boarding lane and notify dispatcher"
+    if surge_probability >= 0.40:
+        return "moderate", "Stage extra staff and monitor queue growth"
+    return "low", "Continue normal boarding operations"
+
+
+def _confidence_from_interval(prediction: SurgePrediction) -> float | None:
+    """Estimate confidence from interval width when bounds are available."""
+
+    if prediction.confidence_lower is None or prediction.confidence_upper is None:
+        return None
+    if prediction.predicted_volume <= 0:
+        return 0.5
+    interval_width = prediction.confidence_upper - prediction.confidence_lower
+    relative_width = interval_width / max(prediction.predicted_volume, 1)
+    return round(max(0.05, min(0.95, 1.0 - relative_width / 2.0)), 4)
+
+
+async def _persist_forecast_snapshots(
+    db: AsyncSession,
+    route: BusRoute,
+    predictions: list[SurgePrediction],
+    *,
+    model_source: str,
+    model_version: str | None,
+) -> list[SurgePrediction]:
+    """Persist forecast snapshots and attach their IDs to response rows."""
+
+    enriched: list[SurgePrediction] = []
+    for prediction in predictions:
+        risk_level, recommended_action = _risk_action_from_probability(
+            prediction.surge_probability
+        )
+        prediction.risk_level = risk_level
+        prediction.recommended_action = recommended_action
+        prediction.model_confidence = _confidence_from_interval(prediction)
+
+        snapshot = ForecastSnapshot(
+            tenant_id=route.tenant_id,
+            route_id=route.id,
+            forecast_date=prediction.forecast_date,
+            predicted_volume=prediction.predicted_volume,
+            surge_probability=prediction.surge_probability,
+            risk_level=risk_level,
+            recommended_action=recommended_action,
+            model_version=model_version,
+            model_source=model_source,
+            model_confidence=prediction.model_confidence,
+            confidence_lower=prediction.confidence_lower,
+            confidence_upper=prediction.confidence_upper,
+            input_features={
+                "is_holiday": prediction.is_holiday,
+                "holiday_name": prediction.holiday_name,
+            },
+        )
+        db.add(snapshot)
+        await db.flush()
+        prediction.forecast_snapshot_id = snapshot.id
+        enriched.append(prediction)
+
+    return enriched
+
+
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
@@ -132,53 +205,66 @@ async def get_forecast(
             detail=f"Route {route_id} not found",
         )
 
+    predictions: list[SurgePrediction] | None = None
+    model_source = "heuristic"
+    model_version: str | None = "heuristic-v1"
+    metrics_summary: dict | None = None
+
     # Try to use the ML forecasting service first
     try:
         from app.services.forecasting.predictor import ForecastingService
         service = ForecastingService()
-        predictions = service.predict(route_id, horizon_days=7)
+        ml_predictions = service.predict(route_id, horizon_days=7)
 
         # If ML model returns all-zero surge (untrained / cold start), fall back
-        max_surge = max((p.surge_probability for p in predictions), default=0)
+        max_surge = max((p.surge_probability for p in ml_predictions), default=0)
         if max_surge > 0.01:
             logger.info("Forecast for route %s: using ML model (max surge=%.2f)", route_id, max_surge)
-            return {
-                "route_id": route_id,
-                "route_origin": route.origin,
-                "route_destination": route.destination,
-                "generated_at": predictions[0].forecast_date if predictions else None,
-                "predictions": predictions,
-            }
-        logger.info("Forecast for route %s: ML model returned flat surges — using heuristic", route_id)
+            predictions = ml_predictions
+            model_source = "ml_bundle"
+            model_version = service.artifact_version or "v1-hackathon"
+            metrics_summary = service.metrics_summary
+        else:
+            logger.info("Forecast for route %s: ML model returned flat surges — using heuristic", route_id)
     except (ImportError, FileNotFoundError) as e:
         logger.warning("ML forecast unavailable for route %s: %s — using heuristic", route_id, e)
 
     # Fallback: deterministic heuristic from real booking data
     # Count total bookings on this route (all-time, for baseline)
-    booking_count_result = await db.execute(
-        select(func.count(Booking.id))
-        .join(Bus, Booking.bus_id == Bus.id)
-        .where(
-            Bus.route_id == route_id,
-            Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.BOARDED]),
+    if predictions is None:
+        # Count total bookings on this route (all-time, for baseline)
+        booking_count_result = await db.execute(
+            select(func.count(Booking.id))
+            .join(Bus, Booking.bus_id == Bus.id)
+            .where(
+                Bus.route_id == route_id,
+                Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.BOARDED]),
+            )
         )
-    )
-    total_bookings = booking_count_result.scalar() or 0
+        total_bookings = booking_count_result.scalar() or 0
 
-    # Get total capacity across all buses on this route
-    capacity_result = await db.execute(
-        select(func.sum(Bus.capacity))
-        .where(Bus.route_id == route_id)
-    )
-    total_capacity = capacity_result.scalar() or 50
+        # Get total capacity across all buses on this route
+        capacity_result = await db.execute(
+            select(func.sum(Bus.capacity))
+            .where(Bus.route_id == route_id)
+        )
+        total_capacity = capacity_result.scalar() or 50
 
-    # Estimate average daily bookings (assume bookings span ~90 days)
-    avg_daily = total_bookings / max(90, 1)
+        # Estimate average daily bookings (assume bookings span ~90 days)
+        avg_daily = total_bookings / max(90, 1)
 
-    predictions = _heuristic_forecast(route, avg_daily, total_capacity)
-    logger.info(
-        "Forecast for route %s: heuristic (total_bookings=%d, avg_daily=%.1f, capacity=%d)",
-        route_id, total_bookings, avg_daily, total_capacity,
+        predictions = _heuristic_forecast(route, avg_daily, total_capacity)
+        logger.info(
+            "Forecast for route %s: heuristic (total_bookings=%d, avg_daily=%.1f, capacity=%d)",
+            route_id, total_bookings, avg_daily, total_capacity,
+        )
+
+    predictions = await _persist_forecast_snapshots(
+        db,
+        route,
+        predictions,
+        model_source=model_source,
+        model_version=model_version,
     )
 
     return {
@@ -186,5 +272,8 @@ async def get_forecast(
         "route_origin": route.origin,
         "route_destination": route.destination,
         "generated_at": date.today(),
+        "model_source": model_source,
+        "model_version": model_version,
+        "metrics_summary": metrics_summary,
         "predictions": predictions,
     }

@@ -131,9 +131,6 @@ async def list_buses(
                 # Use tomorrow's surge (index 0 = tomorrow) as the badge value
                 # — more actionable than a 7-day average
                 tomorrow_surge = predictions[0].surge_probability
-                # Also compute 3-day peak for operator awareness
-                near_term = [p.surge_probability for p in predictions[:3]]
-                peak_3day = max(near_term)
 
                 for br in bus_responses:
                     br["surge_probability"] = round(tomorrow_surge, 4)

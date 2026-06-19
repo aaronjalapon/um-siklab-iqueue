@@ -82,6 +82,7 @@ export interface MockFleetBus {
   accessibility_seat_count: number;
   accessibility_available_count: number;
   surge_probability: number | null;
+  surge_3day: { date: string; surge: number }[];
 }
 
 export function mockFleetFromCapacity(): MockFleetBus[] {
@@ -105,6 +106,7 @@ export function mockFleetFromCapacity(): MockFleetBus[] {
         : bus.booked / bus.capacity > 0.7
           ? 0.55
           : 0.28,
+    surge_3day: [],
   }));
 }
 
@@ -216,14 +218,34 @@ export function generateMockForecast(routeId: string): SurgePrediction[] {
     const d = new Date();
     d.setDate(d.getDate() + i);
     const surgeBase = 0.25 + ((seed * i * 7) % 50) / 100;
+    const surgeProbability = Math.min(0.95, surgeBase + (i % 3) * 0.12);
+    const riskLevel =
+      surgeProbability >= 0.85
+        ? "critical"
+        : surgeProbability >= 0.7
+          ? "high"
+          : surgeProbability >= 0.4
+            ? "moderate"
+            : "low";
     sample.push({
+      forecast_snapshot_id: null,
       forecast_date: d.toISOString().split("T")[0],
-      surge_probability: Math.min(0.95, surgeBase + (i % 3) * 0.12),
+      surge_probability: surgeProbability,
       predicted_volume: Math.floor(80 + seed * 15 + i * 12),
       confidence_lower: 60,
       confidence_upper: 160,
       is_holiday: i === 3 && seed === 1,
       holiday_name: i === 3 && seed === 1 ? "Demo Holiday" : null,
+      risk_level: riskLevel,
+      recommended_action:
+        riskLevel === "critical"
+          ? "Prepare standby bus and activate crowd-control plan"
+          : riskLevel === "high"
+            ? "Open extra boarding lane and notify dispatcher"
+            : riskLevel === "moderate"
+              ? "Stage extra staff and monitor queue growth"
+              : "Continue normal boarding operations",
+      model_confidence: 0.72,
     });
   }
 

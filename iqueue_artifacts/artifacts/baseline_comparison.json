@@ -1,0 +1,79 @@
+[
+  {
+    "model":"Yesterday baseline",
+    "mae":89.83,
+    "rmse":139.72,
+    "mape":28.49,
+    "surge_precision":0.544,
+    "surge_recall":0.544,
+    "surge_f1":0.544,
+    "false_alarm_rate":0.031,
+    "source":"computed"
+  },
+  {
+    "model":"7-day moving average",
+    "mae":101.54,
+    "rmse":159.71,
+    "mape":32.87,
+    "surge_precision":0.455,
+    "surge_recall":0.333,
+    "surge_f1":0.38,
+    "false_alarm_rate":0.029,
+    "source":"computed"
+  },
+  {
+    "model":"Prophet-only",
+    "mae":71.25,
+    "rmse":100.88,
+    "mape":25.41,
+    "surge_precision":0.746,
+    "surge_recall":0.758,
+    "surge_f1":0.751,
+    "false_alarm_rate":0.018,
+    "source":"artifact_eval"
+  },
+  {
+    "model":"Prophet+LSTM hybrid",
+    "mae":74.68,
+    "rmse":145.2,
+    "mape":17.6,
+    "surge_precision":0.0,
+    "surge_recall":0.0,
+    "surge_f1":0.0,
+    "false_alarm_rate":null,
+    "source":"saved_metrics"
+  },
+  {
+    "model":"LSTM-only",
+    "mae":null,
+    "rmse":null,
+    "mape":null,
+    "surge_precision":null,
+    "surge_recall":null,
+    "surge_f1":null,
+    "false_alarm_rate":null,
+    "source":"not_available_separate_checkpoint"
+  },
+  {
+    "model":"LightGBM surge classifier",
+    "mae":null,
+    "rmse":null,
+    "mape":null,
+    "surge_precision":0.626,
+    "surge_recall":0.892,
+    "surge_f1":0.732,
+    "false_alarm_rate":null,
+    "source":"saved_metrics"
+  },
+  {
+    "model":"Prophet+LSTM+LightGBM decision model",
+    "mae":61.33,
+    "rmse":99.07,
+    "mape":15.93,
+    "surge_precision":0.845,
+    "surge_recall":0.798,
+    "surge_f1":0.817,
+    "false_alarm_rate":null,
+    "source":"saved_metrics"
+  }
+]

@@ -42,10 +42,11 @@ services:
       dockerfile: Dockerfile.dev
     command: >
       sh -c "find /app/.next -mindepth 1 -maxdepth 1 -exec rm -rf {} + 2>/dev/null || true;
-             npm run dev:webpack"
+             exec npm run dev:webpack"
+    stdin_open: true
+    tty: true
     volumes:
       - ./frontend:/app
-      - /app/node_modules  # anonymous volume to preserve node_modules
       - /app/.next  # isolate Next dev output from the source bind mount
       # Keep .next on a container-only volume so webpack doesn't watch its own output.
     environment:

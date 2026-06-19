@@ -19,13 +19,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.base.txt requirements.ml.txt requirements.txt ./
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --prefix=/install -r requirements.base.txt
-
-FROM base-deps AS ml-deps
-
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --prefix=/install -r requirements.ml.txt
+RUN pip install --prefix=/install -r requirements.base.txt
 
 FROM python:3.14-slim-bookworm AS runtime-base
 
@@ -51,6 +45,10 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/api/v1/health/readiness || exit 1
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+FROM base-deps AS ml-deps
+
+RUN pip install --prefix=/install -r requirements.ml.txt
 
 FROM python:3.14-slim-bookworm AS runtime-ml
 

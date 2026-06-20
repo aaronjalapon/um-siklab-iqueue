@@ -25,6 +25,10 @@ class BookingCreate(BaseModel):
         None,
         description="Preferred seat type: 'window', 'aisle', or None for any",
     )
+    requested_seat_label: str | None = Field(
+        None,
+        description="Exact recommended or manually selected seat label, e.g. '1A'",
+    )
     travel_group: list[UUID] = Field(
         default_factory=list,
         description="List of passenger IDs traveling together for group seating",

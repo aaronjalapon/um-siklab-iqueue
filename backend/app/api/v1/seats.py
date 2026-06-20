@@ -25,6 +25,48 @@ from app.services.seat_assignment.scorer import PassengerContext
 router = APIRouter(prefix="/seats", tags=["Seat Assignment"])
 
 
+def _passenger_context(body: SeatAssignRequest) -> PassengerContext:
+    """Translate the request schema into the service-layer context."""
+    return PassengerContext(
+        booking_id=body.passenger.booking_id,
+        passenger_name=body.passenger.passenger_name,
+        group_id=body.passenger.group_id,
+        language_preference=body.passenger.language_preference,
+        travel_habit=body.passenger.travel_habit,
+        lifestyle_interest=body.passenger.lifestyle_interest,
+        needs_accessibility=body.passenger.needs_accessibility,
+        preferred_seat_type=body.passenger.preferred_seat_type,
+        preferred_side=body.passenger.preferred_side,
+    )
+
+
+async def _allocate_seat(
+    body: SeatAssignRequest,
+    session: AsyncSession,
+    *,
+    reserve: bool,
+) -> dict:
+    """Run the allocator and map its domain errors to API responses."""
+    allocator = SeatAllocator(session)
+
+    try:
+        return await allocator.assign(
+            body.bus_id,
+            _passenger_context(body),
+            reserve=reserve,
+        )
+    except BusNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Bus {body.bus_id} not found",
+        ) from exc
+    except SeatUnavailableError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="No available seats on this bus",
+        ) from exc
+
+
 @router.post(
     "/assign",
     response_model=SeatAssignmentResult,
@@ -37,41 +79,27 @@ async def assign_seat(
 ) -> dict:
     """Assign the best available seat based on passenger preferences.
 
-    Called during the booking transaction. Uses the rule-based
-    SeatAllocator to score every available seat and return the winner.
+    Persists a reservation for operator and direct API workflows.
 
     Returns 201 with seat assignment details.
     Raises 409 if no seats available.
     Raises 404 if bus not found.
     """
-    allocator = SeatAllocator(session)
+    return await _allocate_seat(body, session, reserve=True)
 
-    passenger = PassengerContext(
-        booking_id=body.passenger.booking_id,
-        passenger_name=body.passenger.passenger_name,
-        group_id=body.passenger.group_id,
-        language_preference=body.passenger.language_preference,
-        travel_habit=body.passenger.travel_habit,
-        lifestyle_interest=body.passenger.lifestyle_interest,
-        needs_accessibility=body.passenger.needs_accessibility,
-        preferred_seat_type=body.passenger.preferred_seat_type,
-        preferred_side=body.passenger.preferred_side,
-    )
 
-    try:
-        result = await allocator.assign(body.bus_id, passenger)
-    except BusNotFoundError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Bus {body.bus_id} not found",
-        )
-    except SeatUnavailableError:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="No available seats on this bus",
-        )
-
-    return result
+@router.post(
+    "/recommend",
+    response_model=SeatAssignmentResult,
+    status_code=status.HTTP_200_OK,
+    summary="Recommend a seat without reserving it",
+)
+async def recommend_seat(
+    body: SeatAssignRequest,
+    session: AsyncSession = Depends(get_db),
+) -> dict:
+    """Preview the best seat without consuming it before confirmation."""
+    return await _allocate_seat(body, session, reserve=False)
 
 
 @router.get(

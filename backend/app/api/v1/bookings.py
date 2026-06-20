@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
@@ -37,7 +37,7 @@ async def create_booking(
     - Generates a QR boarding pass token
     - Persists the booking and returns it with the QR token
     """
-    from datetime import datetime, timezone, timedelta
+    from datetime import datetime, timedelta, timezone
 
     # Validate passenger exists
     passenger = await db.get(Passenger, payload.passenger_id)
@@ -65,7 +65,8 @@ async def create_booking(
         await db.execute(
             select(Booking).where(
                 Booking.bus_id == payload.bus_id,
-                Booking.departure_date >= payload.departure_date.replace(hour=0, minute=0),
+                Booking.departure_date
+                >= payload.departure_date.replace(hour=0, minute=0),
                 Booking.departure_date
                 < payload.departure_date.replace(hour=0, minute=0) + timedelta(days=1),
             )
@@ -78,38 +79,48 @@ async def create_booking(
             detail="Bus is fully booked for this departure",
         )
 
-    # Try the new SeatAllocator first; fall back to simple assignment
-    assigned_seat_label: str | None = None
-    assigned_affinity_score: float = 0.0
+    # Reserve the exact seat shown in the recommendation UI when provided.
+    assigned_seat_label: str
     boarding_window_start = payload.departure_date
     boarding_window_end = payload.departure_date + timedelta(minutes=15)
+    booking_id = uuid4()
 
     try:
-        from app.services.seat_assignment.engine import SeatAllocator
+        from app.services.seat_assignment.engine import (
+            BusNotFoundError,
+            SeatAllocator,
+            SeatUnavailableError,
+        )
         from app.services.seat_assignment.scorer import PassengerContext
 
         allocator = SeatAllocator(db)
         pax_name = payload.passenger_name or passenger.name
         pax_ctx = PassengerContext(
-            booking_id="temp",  # Will be replaced after Booking is created
+            booking_id=str(booking_id),
             passenger_name=pax_name,
             group_id=payload.group_id,
             language_preference=payload.language_preference or passenger.language_pref,
             travel_habit=payload.travel_habit or passenger.travel_habits,
-            lifestyle_interest=payload.lifestyle_interest or passenger.lifestyle_interests,
-            needs_accessibility=payload.needs_accessibility or passenger.accessibility_needs,
+            lifestyle_interest=(
+                payload.lifestyle_interest or passenger.lifestyle_interests
+            ),
+            needs_accessibility=(
+                payload.needs_accessibility or passenger.accessibility_needs
+            ),
             preferred_seat_type=payload.seat_preference,
             preferred_side=payload.preferred_side,
         )
 
-        result = await allocator.assign(str(payload.bus_id), pax_ctx)
+        result = await allocator.assign(
+            payload.bus_id,
+            pax_ctx,
+            requested_seat_label=payload.requested_seat_label,
+        )
         assigned_seat_label = result["seat_label"]
-        assigned_affinity_score = result["affinity_score"]
 
         # Parse boarding window from HH:MM–HH:MM format
         bw = result.get("boarding_window", "")
         if "–" in bw:
-            from datetime import date
             parts = bw.split("–")
             today = payload.departure_date.date()
             t1_parts = parts[0].split(":")
@@ -124,27 +135,25 @@ async def create_booking(
                 int(t2_parts[0]), int(t2_parts[1]),
                 tzinfo=timezone.utc,
             )
-    except Exception:
-        # Fallback: simple seat assignment
-        taken_seats = {b.seat_number for b in existing_bookings}
-        assigned_seat_label = None
-        for seat_num in range(1, bus.capacity + 1):
-            if str(seat_num) not in taken_seats:
-                assigned_seat_label = str(seat_num)
-                break
-
-        if assigned_seat_label is None:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="No available seats",
-            )
-
-        row = (int(assigned_seat_label) - 1) // 4 + 1
-        boarding_window_start = payload.departure_date + timedelta(minutes=row * 3)
-        boarding_window_end = boarding_window_start + timedelta(minutes=15)
+    except SeatUnavailableError as exc:
+        detail = (
+            "No accessible seat is available for this bus"
+            if payload.needs_accessibility or passenger.accessibility_needs
+            else "The selected seat is no longer available"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=detail,
+        ) from exc
+    except BusNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Bus {payload.bus_id} not found",
+        ) from exc
 
     # Create the booking
     booking = Booking(
+        id=booking_id,
         passenger_id=payload.passenger_id,
         bus_id=payload.bus_id,
         seat_number=assigned_seat_label,
@@ -156,28 +165,6 @@ async def create_booking(
 
     db.add(booking)
     await db.flush()
-
-    # Link the pending SeatReservation (created during seat assignment) to this booking
-    try:
-        from app.models.seat import Seat, SeatReservation
-
-        # Find the reservation for this passenger on this bus with no booking linked yet
-        res_result = await db.execute(
-            select(SeatReservation)
-            .join(Seat, SeatReservation.seat_id == Seat.id)
-            .where(
-                Seat.bus_id == payload.bus_id,
-                SeatReservation.passenger_name == (payload.passenger_name or passenger.name),
-            )
-            .order_by(SeatReservation.created_at.desc())
-            .limit(1)
-        )
-        pending_res = res_result.scalars().first()
-        if pending_res:
-            pending_res.booking_id = booking.id
-            await db.flush()
-    except Exception:
-        pass  # Non-critical — booking succeeded even if link fails
 
     # Generate QR token with route context
     try:

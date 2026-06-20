@@ -45,6 +45,7 @@ export interface BookingCreate {
   bus_id: string;
   departure_date: string;
   seat_preference?: string;
+  requested_seat_label?: string;
   travel_group?: string[];
   passenger_name?: string;
   group_id?: string;

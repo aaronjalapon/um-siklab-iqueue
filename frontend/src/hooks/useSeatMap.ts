@@ -6,7 +6,7 @@ import type {
   SeatAssignmentResult,
   PassengerContext,
 } from "@/types/seat";
-import { getBusSeatMap, assignSeat as apiAssignSeat } from "@/lib/api";
+import { getBusSeatMap, recommendSeat } from "@/lib/api";
 
 export function useSeatMap(busId: string) {
   const [seats, setSeats] = useState<SeatMapEntry[]>([]);
@@ -34,7 +34,7 @@ export function useSeatMap(busId: string) {
 
   const assignSeat = useCallback(
     async (passenger: PassengerContext): Promise<SeatAssignmentResult> => {
-      const result = await apiAssignSeat({
+      const result = await recommendSeat({
         bus_id: busId,
         passenger,
       });

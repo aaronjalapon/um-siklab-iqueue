@@ -211,6 +211,16 @@ export async function assignSeat(
   return data;
 }
 
+export async function recommendSeat(
+  payload: SeatAssignRequest
+): Promise<SeatAssignmentResult> {
+  const { data } = await api.post<SeatAssignmentResult>(
+    "/seats/recommend",
+    payload
+  );
+  return data;
+}
+
 export async function releaseSeat(bookingId: string): Promise<void> {
   await api.delete(`/seats/release/${bookingId}`);
 }

@@ -52,6 +52,7 @@ services:
     tty: true
     volumes:
       - ./frontend:/app
+      - /app/node_modules  # keep Linux native dependencies out of the host bind mount
       - /app/.next  # isolate Next dev output from the source bind mount
       # Keep .next on a container-only volume so webpack doesn't watch its own output.
     environment:

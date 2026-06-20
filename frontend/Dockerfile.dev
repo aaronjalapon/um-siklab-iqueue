@@ -8,7 +8,13 @@
 FROM node:24-bookworm-slim
 WORKDIR /app
 
+# Install dependencies for the container's Linux platform. The source bind
+# mount is paired with a container-only /app/node_modules volume in Compose so
+# host-native packages (for example, macOS Lightning CSS) cannot shadow these.
+COPY package.json package-lock.json ./
+RUN npm ci --legacy-peer-deps
+
 EXPOSE 3000
 
-# Bind-mount source and host node_modules at runtime for fast local dev.
+# Bind-mount the source at runtime for fast local development.
 CMD ["npm", "run", "dev:docker"]

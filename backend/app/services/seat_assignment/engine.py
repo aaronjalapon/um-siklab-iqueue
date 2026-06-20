@@ -327,7 +327,14 @@ class SeatAllocator:
         )
         seats = result.scalars().all()
         if not seats:
-            seats = await generate_seats_for_bus(bus, self.session)
+            await generate_seats_for_bus(bus, self.session)
+            result = await self.session.execute(
+                select(Seat)
+                .where(Seat.bus_id == bus_id)
+                .options(selectinload(Seat.reservation))
+                .order_by(Seat.row_number, Seat.col_number)
+            )
+            seats = result.scalars().all()
 
         entries: list[dict] = []
         for seat in seats:

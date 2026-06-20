@@ -122,6 +122,7 @@ export function BusSeatGrid({
                         seat={seat}
                         state={getCellState(seat)}
                         onClick={readOnly ? undefined : onSeatSelect}
+                        disabled={needsAccessibility && !seat.is_accessibility}
                       />
                     ))}
                 </div>
@@ -137,6 +138,7 @@ export function BusSeatGrid({
                         seat={seat}
                         state={getCellState(seat)}
                         onClick={readOnly ? undefined : onSeatSelect}
+                        disabled={needsAccessibility && !seat.is_accessibility}
                       />
                     ))}
                 </div>

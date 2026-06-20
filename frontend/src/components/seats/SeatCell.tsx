@@ -15,6 +15,7 @@ interface SeatCellProps {
   state: SeatCellState;
   onClick?: (seat: SeatMapEntry) => void;
   size?: "sm" | "md";
+  disabled?: boolean;
 }
 
 const STATE_STYLES: Record<SeatCellState, string> = {
@@ -46,9 +47,13 @@ export function SeatCell({
   state,
   onClick,
   size = "md",
+  disabled = false,
 }: SeatCellProps) {
   const isInteractive =
-    state === "available" || state === "auto_assigned" || state === "accessibility";
+    !disabled &&
+    (state === "available" ||
+      state === "auto_assigned" ||
+      state === "accessibility");
 
   const baseClasses =
     "rounded font-medium transition-all duration-200 flex items-center justify-center relative border";
@@ -67,11 +72,14 @@ export function SeatCell({
   return (
     <Component
       type={isInteractive ? "button" : undefined}
-      className={`${baseClasses} ${stateClasses} ${sizeClasses}`}
+      className={`${baseClasses} ${stateClasses} ${sizeClasses} ${
+        disabled ? "cursor-not-allowed opacity-35" : ""
+      }`}
       onClick={isInteractive ? handleClick : undefined}
-      disabled={!isInteractive}
-      title={`Seat ${seat.seat_label} · ${seat.seat_type} · ${seat.side}${seat.is_accessibility ? " · accessibility-priority" : ""}${state === "auto_assigned" ? " (AI Recommended)" : ""}`}
-      aria-label={`Seat ${seat.seat_label}, ${state.replace("_", " ")}${seat.is_accessibility ? ", accessibility priority" : ""}`}
+      disabled={Component === "button" ? !isInteractive : undefined}
+      aria-disabled={!isInteractive || undefined}
+      title={`Seat ${seat.seat_label} · ${seat.seat_type} · ${seat.side}${seat.is_accessibility ? " · accessibility-priority" : ""}${state === "auto_assigned" ? " (AI Recommended)" : ""}${disabled ? " · unavailable for accessibility request" : ""}`}
+      aria-label={`Seat ${seat.seat_label}, ${state.replace("_", " ")}${seat.is_accessibility ? ", accessibility priority" : ""}${disabled ? ", unavailable for accessibility request" : ""}`}
     >
       {seat.seat_label}
       {Icon && (

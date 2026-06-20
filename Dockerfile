@@ -39,19 +39,18 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
     curl \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --create-home --shell /bin/bash app
 
 COPY --from=builder /opt/venv /opt/venv
-COPY backend ./backend
-COPY evidence ./evidence
-COPY scripts/validate_forecast_bundle.py ./scripts/validate_forecast_bundle.py
-COPY iqueue_artifacts/artifacts ./backend/app/services/forecasting/artifacts
-COPY deployments/xlm-roberta-iqueue ./backend/app/services/chatbot/artifacts/xlm-roberta-iqueue
+COPY --chown=app:app backend ./backend
+COPY --chown=app:app evidence ./evidence
+COPY --chown=app:app scripts/validate_forecast_bundle.py ./scripts/validate_forecast_bundle.py
+COPY --chown=app:app iqueue_artifacts/artifacts ./backend/app/services/forecasting/artifacts
+COPY --chown=app:app deployments/xlm-roberta-iqueue ./backend/app/services/chatbot/artifacts/xlm-roberta-iqueue
 
 RUN python scripts/validate_forecast_bundle.py \
-      --artifacts backend/app/services/forecasting/artifacts \
-    && useradd --create-home --shell /bin/bash app \
-    && chown -R app:app /app
+      --artifacts backend/app/services/forecasting/artifacts
 
 USER app
 

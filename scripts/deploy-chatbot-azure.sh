@@ -151,7 +151,7 @@ ensure_database_url() {
       --query fullyQualifiedDomainName \
       -o tsv
   )"
-  database_url="postgresql+asyncpg://${AZURE_POSTGRES_ADMIN}:${AZURE_POSTGRES_PASSWORD}@${postgres_fqdn}:5432/${AZURE_POSTGRES_DB}?sslmode=require"
+  database_url="postgresql+asyncpg://${AZURE_POSTGRES_ADMIN}:${AZURE_POSTGRES_PASSWORD}@${postgres_fqdn}:5432/${AZURE_POSTGRES_DB}?ssl=require"
 }
 
 build_and_push_image() {

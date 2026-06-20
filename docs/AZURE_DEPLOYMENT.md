@@ -35,7 +35,7 @@ The script prints a recommended `DATABASE_URL` and `AZURE_STORAGE_CONNECTION_STR
 
 Use the printed values to update `.env`:
 
-- `DATABASE_URL=postgresql+asyncpg://...?...sslmode=require`
+- `DATABASE_URL=postgresql+asyncpg://...?ssl=require`
 - `AZURE_STORAGE_CONNECTION_STRING=...`
 
 Notes:

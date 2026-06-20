@@ -183,7 +183,7 @@ PostgreSQL database: ${AZURE_POSTGRES_DB}
 PostgreSQL tier:     ${AZURE_POSTGRES_TIER}
 
 Recommended .env values:
-DATABASE_URL=postgresql+asyncpg://${AZURE_POSTGRES_ADMIN}:${AZURE_POSTGRES_PASSWORD}@${postgres_fqdn}:5432/${AZURE_POSTGRES_DB}?sslmode=require
+DATABASE_URL=postgresql+asyncpg://${AZURE_POSTGRES_ADMIN}:${AZURE_POSTGRES_PASSWORD}@${postgres_fqdn}:5432/${AZURE_POSTGRES_DB}?ssl=require
 AZURE_STORAGE_CONNECTION_STRING=${storage_conn}
 
 Next steps:

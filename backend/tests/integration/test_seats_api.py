@@ -99,28 +99,8 @@ async def test_assign_seat_with_preferences(client: AsyncClient, bus):
 
 
 @pytest.mark.asyncio
-async def test_assign_seat_accessibility(client: AsyncClient, bus):
-    """Accessibility passenger must get a front-row, near-exit seat."""
-    from app.services.seat_assignment.bus_layout import generate_seats_for_bus
-    from app.models.bus_layout import BusLayout
-    from app.db.session import _get_session_factory
-
-    session_factory = _get_session_factory()
-    async with session_factory() as session:
-        layout = BusLayout(
-            id=uuid.uuid4(),
-            name="Test Standard 56",
-            total_rows=14,
-            seats_per_row=4,
-            aisle_after_col=2,
-            total_capacity=56,
-        )
-        session.add(layout)
-        await session.flush()
-        bus.layout_id = layout.id
-        await generate_seats_for_bus(bus, session)
-        await session.commit()
-
+async def test_recommend_seat_accessibility(client: AsyncClient, bus):
+    """Accessibility preview returns a priority seat without consuming it."""
     payload = {
         "bus_id": str(bus.id),
         "passenger": {
@@ -130,10 +110,19 @@ async def test_assign_seat_accessibility(client: AsyncClient, bus):
         },
     }
 
-    response = await client.post("/api/v1/seats/assign", json=payload)
-    assert response.status_code == 201
+    response = await client.post("/api/v1/seats/recommend", json=payload)
+    assert response.status_code == 200
     data = response.json()
     assert data["row_number"] <= 2, f"Expected front row, got {data['row_number']}"
+    assert data["is_accessibility"] is True
+
+    seat_map_response = await client.get(f"/api/v1/seats/bus/{bus.id}")
+    recommended = next(
+        seat
+        for seat in seat_map_response.json()
+        if seat["seat_id"] == data["seat_id"]
+    )
+    assert recommended["status"] == "available"
 
 
 @pytest.mark.asyncio

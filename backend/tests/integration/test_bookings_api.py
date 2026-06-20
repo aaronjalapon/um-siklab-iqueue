@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import pytest
 from httpx import AsyncClient
+from sqlalchemy import select
+
+from app.models.seat import Seat, SeatReservation
 
 
 @pytest.mark.asyncio
@@ -27,6 +30,66 @@ async def test_create_booking_returns_201(
     assert data["bus_id"] == str(bus.id)
     assert data["seat_number"] is not None
     assert data["status"] == "confirmed"
+
+
+@pytest.mark.asyncio
+async def test_accessibility_recommendation_is_reserved_on_confirmation(
+    client: AsyncClient,
+    db_session,
+    passenger,
+    bus,
+):
+    """Confirmation must reserve the same accessible seat shown in preview."""
+    from datetime import datetime, timedelta, timezone
+
+    preview_response = await client.post(
+        "/api/v1/seats/recommend",
+        json={
+            "bus_id": str(bus.id),
+            "passenger": {
+                "booking_id": "temp",
+                "passenger_name": passenger.name,
+                "needs_accessibility": True,
+            },
+        },
+    )
+    assert preview_response.status_code == 200
+    recommendation = preview_response.json()
+    assert recommendation["is_accessibility"] is True
+
+    departure = (datetime.now(timezone.utc) + timedelta(days=7)).isoformat()
+    booking_response = await client.post(
+        "/api/v1/bookings",
+        json={
+            "passenger_id": str(passenger.id),
+            "bus_id": str(bus.id),
+            "departure_date": departure,
+            "requested_seat_label": recommendation["seat_label"],
+            "passenger_name": passenger.name,
+            "needs_accessibility": True,
+        },
+    )
+
+    assert booking_response.status_code == 201, booking_response.text
+    booking = booking_response.json()
+    assert booking["seat_number"] == recommendation["seat_label"]
+
+    seat_map_response = await client.get(f"/api/v1/seats/bus/{bus.id}")
+    reserved = next(
+        seat
+        for seat in seat_map_response.json()
+        if seat["seat_label"] == recommendation["seat_label"]
+    )
+    assert reserved["status"] == "occupied"
+    assert reserved["needs_accessibility"] is True
+
+    reservation_result = await db_session.execute(
+        select(SeatReservation)
+        .join(Seat, SeatReservation.seat_id == Seat.id)
+        .where(Seat.bus_id == bus.id)
+    )
+    reservation = reservation_result.scalars().one()
+    assert str(reservation.booking_id) == booking["id"]
 
 
 @pytest.mark.asyncio

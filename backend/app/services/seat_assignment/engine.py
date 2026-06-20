@@ -97,6 +97,9 @@ class SeatAllocator:
         self,
         bus_id: str | UUID,
         passenger: PassengerContext,
+        *,
+        requested_seat_label: str | None = None,
+        reserve: bool = True,
     ) -> dict:
         """Assign the best available seat to a passenger.
 
@@ -106,7 +109,7 @@ class SeatAllocator:
           3. For each available seat, call scorer.score_seat().
           4. Select the seat with the highest score.
              Tiebreak: lower row_number, then lower col_number.
-          5. Within a DB transaction:
+          5. When ``reserve`` is true, within a DB transaction:
              a. Set seat.status = OCCUPIED
              b. Set seat.affinity_score = winning score
              c. Create SeatReservation row
@@ -115,6 +118,9 @@ class SeatAllocator:
         Args:
             bus_id: UUID of the target bus.
             passenger: Passenger context with preferences and constraints.
+            requested_seat_label: Exact seat selected from a prior
+                recommendation.
+            reserve: Persist the winner when true; preview it when false.
 
         Returns:
             Dict with seat_id, seat_label, seat_type, side, row_number,
@@ -174,6 +180,12 @@ class SeatAllocator:
             available_seats = [
                 seat for seat in available_seats if not seat.is_accessibility
             ]
+        if requested_seat_label:
+            available_seats = [
+                seat
+                for seat in available_seats
+                if seat.seat_label == requested_seat_label
+            ]
 
         for seat in available_seats:
             if seat.status != SeatStatus.AVAILABLE:
@@ -205,47 +217,45 @@ class SeatAllocator:
         window_start = now + timedelta(minutes=row * 3)
         window_end = window_start + timedelta(minutes=15)
 
-        # Create reservation within a nested transaction
-        async with self.session.begin_nested():
-            # Update seat
-            winner.seat.status = SeatStatus.OCCUPIED
-            winner.seat.affinity_score = winner.score
+        bw_str = (
+            f"{window_start.strftime('%H:%M')}–"
+            f"{window_end.strftime('%H:%M')}"
+        )
 
-            # Build boarding window string
-            bw_str = (
-                f"{window_start.strftime('%H:%M')}–"
-                f"{window_end.strftime('%H:%M')}"
-            )
+        if reserve:
+            # Create reservation within a nested transaction
+            async with self.session.begin_nested():
+                winner.seat.status = SeatStatus.OCCUPIED
+                winner.seat.affinity_score = winner.score
 
-            # Create reservation
-            # booking_id may be a placeholder — generate a real UUID if invalid
-            try:
-                b_id = UUID(passenger.booking_id)
-            except (ValueError, AttributeError):
-                b_id = uuid.uuid4()
-
-            g_id = None
-            if passenger.group_id:
+                # booking_id may be a placeholder — generate a real UUID if invalid
                 try:
-                    g_id = UUID(passenger.group_id)
+                    b_id = UUID(passenger.booking_id)
                 except (ValueError, AttributeError):
-                    g_id = None
+                    b_id = uuid.uuid4()
 
-            reservation = SeatReservation(
-                seat_id=winner.seat.id,
-                booking_id=b_id,
-                passenger_name=passenger.passenger_name,
-                group_id=g_id,
-                language_preference=passenger.language_preference,
-                travel_habit=passenger.travel_habit,
-                lifestyle_interest=passenger.lifestyle_interest,
-                needs_accessibility=passenger.needs_accessibility,
-                preferred_seat_type=passenger.preferred_seat_type,
-                preferred_side=passenger.preferred_side,
-                computed_affinity_score=winner.score,
-                boarding_window=bw_str,
-            )
-            self.session.add(reservation)
+                g_id = None
+                if passenger.group_id:
+                    try:
+                        g_id = UUID(passenger.group_id)
+                    except (ValueError, AttributeError):
+                        g_id = None
+
+                reservation = SeatReservation(
+                    seat_id=winner.seat.id,
+                    booking_id=b_id,
+                    passenger_name=passenger.passenger_name,
+                    group_id=g_id,
+                    language_preference=passenger.language_preference,
+                    travel_habit=passenger.travel_habit,
+                    lifestyle_interest=passenger.lifestyle_interest,
+                    needs_accessibility=passenger.needs_accessibility,
+                    preferred_seat_type=passenger.preferred_seat_type,
+                    preferred_side=passenger.preferred_side,
+                    computed_affinity_score=winner.score,
+                    boarding_window=bw_str,
+                )
+                self.session.add(reservation)
 
         return {
             "seat_id": str(winner.seat.id),
@@ -320,7 +330,14 @@ class SeatAllocator:
         )
         seats = result.scalars().all()
         if not seats:
-            seats = await generate_seats_for_bus(bus, self.session)
+            await generate_seats_for_bus(bus, self.session)
+            result = await self.session.execute(
+                select(Seat)
+                .where(Seat.bus_id == bus_id)
+                .options(selectinload(Seat.reservation))
+                .order_by(Seat.row_number, Seat.col_number)
+            )
+            seats = result.scalars().all()
 
         entries: list[dict] = []
         for seat in seats:

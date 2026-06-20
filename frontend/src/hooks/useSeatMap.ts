@@ -8,16 +8,16 @@ import type {
 } from "@/types/seat";
 import { getBusSeatMap, assignSeat as apiAssignSeat } from "@/lib/api";
 
-export function useSeatMap(busId: string) {
+export function useSeatMap(busId: string, travelDate?: string) {
   const [seats, setSeats] = useState<SeatMapEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchSeats = useCallback(() => {
-    if (!busId) return;
+  const fetchSeats = useCallback((): Promise<void> => {
+    if (!busId) return Promise.resolve();
     setLoading(true);
     setError(null);
-    getBusSeatMap(busId)
+    return getBusSeatMap(busId, travelDate)
       .then((data) => {
         setSeats(data);
         setLoading(false);
@@ -26,23 +26,25 @@ export function useSeatMap(busId: string) {
         setError(e.message);
         setLoading(false);
       });
-  }, [busId]);
+  }, [busId, travelDate]);
 
   useEffect(() => {
     queueMicrotask(fetchSeats);
   }, [fetchSeats]);
 
   const assignSeat = useCallback(
-    async (passenger: PassengerContext): Promise<SeatAssignmentResult> => {
+    async (passenger: PassengerContext, seatLabel?: string): Promise<SeatAssignmentResult> => {
       const result = await apiAssignSeat({
         bus_id: busId,
         passenger,
+        ...(travelDate ? { travel_date: travelDate } : {}),
+        ...(seatLabel ? { seat_label: seatLabel } : {}),
       });
       // Refresh seat map after assignment
       await fetchSeats();
       return result;
     },
-    [busId, fetchSeats]
+    [busId, fetchSeats, travelDate]
   );
 
   const refreshSeats = useCallback(() => {

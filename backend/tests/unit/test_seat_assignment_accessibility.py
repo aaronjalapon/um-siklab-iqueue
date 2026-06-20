@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.services.seat_assignment.engine import SeatAllocator
+from app.services.seat_assignment.engine import SeatAllocator, SeatUnavailableError
 from app.services.seat_assignment.scorer import PassengerContext
 
 
@@ -33,6 +33,10 @@ async def test_standard_passenger_skips_accessibility_seats_when_possible(
     priority_seats = [seat for seat in seats if seat["is_accessibility"]]
     assert priority_seats
     assert all(seat["status"] == "available" for seat in priority_seats)
+    assigned = next(
+        seat for seat in seats if seat["seat_id"] == result["seat_id"]
+    )
+    assert assigned["status"] == "occupied"
 
 
 @pytest.mark.asyncio
@@ -54,3 +58,50 @@ async def test_accessibility_passenger_gets_priority_seat(
 
     assert result["row_number"] <= 2
     assert result["is_accessibility"] is True
+
+
+@pytest.mark.asyncio
+async def test_accessibility_preview_does_not_consume_priority_seat(
+    db_session: AsyncSession,
+    bus,
+):
+    """Previewing a recommendation must leave its seat available."""
+    allocator = SeatAllocator(db_session)
+
+    result = await allocator.assign(
+        bus.id,
+        PassengerContext(
+            booking_id="temp",
+            passenger_name="Accessibility Passenger",
+            needs_accessibility=True,
+        ),
+        reserve=False,
+    )
+
+    seats = await allocator.get_seat_map(bus.id)
+    recommended = next(
+        seat for seat in seats if seat["seat_id"] == result["seat_id"]
+    )
+    assert recommended["status"] == "available"
+
+
+@pytest.mark.asyncio
+async def test_accessibility_passenger_cannot_reserve_standard_seat(
+    db_session: AsyncSession,
+    bus,
+):
+    """An exact manual choice cannot bypass the accessibility constraint."""
+    allocator = SeatAllocator(db_session)
+    seats = await allocator.get_seat_map(bus.id)
+    standard_seat = next(seat for seat in seats if not seat["is_accessibility"])
+
+    with pytest.raises(SeatUnavailableError):
+        await allocator.assign(
+            bus.id,
+            PassengerContext(
+                booking_id="temp",
+                passenger_name="Accessibility Passenger",
+                needs_accessibility=True,
+            ),
+            seat_label=standard_seat["seat_label"],
+        )

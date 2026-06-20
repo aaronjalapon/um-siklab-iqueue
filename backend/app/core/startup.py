@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import importlib
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 import logging
 from typing import TYPE_CHECKING
@@ -22,6 +22,11 @@ class RuntimeReadiness:
 
     chatbot_ready: bool = False
     forecasting_ready: bool = False
+    forecast_bundle_ready: bool = False
+    forecast_bundle_status: str = "unavailable"
+    loaded_routes: list[str] = field(default_factory=list)
+    model_version: str | None = None
+    classifier_ready: bool = False
     database_ready: bool = False
     initialized_at: datetime | None = None
     last_error: str | None = None
@@ -91,6 +96,13 @@ async def warm_application() -> RuntimeReadiness:
         else:
             forecasting_service.warmup()
             state.forecasting_ready = forecasting_service.is_ready
+            state.forecast_bundle_ready = (
+                forecasting_service.bundle_status == "complete"
+            )
+            state.forecast_bundle_status = forecasting_service.bundle_status
+            state.loaded_routes = forecasting_service.loaded_routes
+            state.model_version = forecasting_service.artifact_version
+            state.classifier_ready = forecasting_service.classifier_loaded
     except Exception as exc:
         state.last_error = f"forecasting: {exc}"
         logger.exception("Failed to warm forecasting service")
@@ -104,6 +116,35 @@ def get_runtime_state() -> RuntimeReadiness:
     """Return the latest cached runtime readiness snapshot."""
 
     return _runtime_state
+
+
+def reload_forecasting_service() -> ForecastingService | None:
+    """Reset the forecasting singleton and re-initialize from disk.
+
+    Called after a successful model promotion so the live service picks up
+    the new champion artifacts without requiring a server restart.
+    """
+
+    global _forecasting_service, _runtime_state
+
+    logger.info("Hot-reloading ForecastingService from disk...")
+    _forecasting_service = None  # clear singleton
+
+    service = get_forecasting_service()  # re-initialize
+    if service is not None:
+        service.warmup()
+        _runtime_state.forecasting_ready = service.is_ready
+        _runtime_state.forecast_bundle_ready = service.bundle_status == "complete"
+        _runtime_state.forecast_bundle_status = service.bundle_status
+        _runtime_state.loaded_routes = service.loaded_routes
+        _runtime_state.model_version = service.artifact_version
+        _runtime_state.classifier_ready = service.classifier_loaded
+        logger.info(
+            "ForecastingService reloaded — version=%s routes=%s",
+            service.artifact_version,
+            service.loaded_routes,
+        )
+    return service
 
 
 def runtime_snapshot() -> dict[str, object]:

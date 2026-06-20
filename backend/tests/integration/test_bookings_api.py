@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import uuid
+from datetime import datetime, timedelta, timezone
+
 import pytest
 from httpx import AsyncClient
 
@@ -27,6 +30,93 @@ async def test_create_booking_returns_201(
     assert data["bus_id"] == str(bus.id)
     assert data["seat_number"] is not None
     assert data["status"] == "confirmed"
+
+
+@pytest.mark.asyncio
+async def test_create_booking_reserves_confirmed_selected_seat(
+    client: AsyncClient,
+    db_session,
+    passenger,
+    bus,
+):
+    """The final booking must retain the exact seat confirmed by the user."""
+
+    from datetime import datetime, timedelta, timezone
+
+    from app.services.seat_assignment.bus_layout import generate_seats_for_bus
+
+    await generate_seats_for_bus(bus, db_session)
+    await db_session.flush()
+    departure = (datetime.now(timezone.utc) + timedelta(days=8)).isoformat()
+    response = await client.post(
+        "/api/v1/bookings",
+        json={
+            "passenger_id": str(passenger.id),
+            "bus_id": str(bus.id),
+            "departure_date": departure,
+            "selected_seat": "3A",
+            "seat_preference": "window",
+            "passenger_name": passenger.name,
+        },
+    )
+
+    assert response.status_code == 201, response.text
+    assert response.json()["seat_number"] == "3A"
+
+
+@pytest.mark.asyncio
+async def test_create_booking_selected_seat_is_date_scoped(
+    client: AsyncClient,
+    db_session,
+    passenger,
+    bus,
+):
+    """The same seat can be booked on a different service day."""
+    from app.models.booking import Booking, BookingStatus
+    from app.services.seat_assignment.bus_layout import generate_seats_for_bus
+
+    await generate_seats_for_bus(bus, db_session)
+    await db_session.flush()
+
+    day_one = datetime.now(timezone.utc) + timedelta(days=9)
+    day_two = day_one + timedelta(days=1)
+    db_session.add(
+        Booking(
+            id=uuid.uuid4(),
+            passenger_id=passenger.id,
+            bus_id=bus.id,
+            seat_number="4A",
+            boarding_window_start=day_one,
+            boarding_window_end=day_one + timedelta(minutes=15),
+            status=BookingStatus.CONFIRMED,
+            departure_date=day_one,
+        )
+    )
+    await db_session.flush()
+
+    second_passenger = await client.post(
+        "/api/v1/passengers",
+        json={
+            "tenant_id": str(passenger.tenant_id),
+            "name": "Maria Santos",
+            "phone": "+63 912 000 1111",
+        },
+    )
+    assert second_passenger.status_code == 201, second_passenger.text
+
+    response = await client.post(
+        "/api/v1/bookings",
+        json={
+            "passenger_id": second_passenger.json()["id"],
+            "bus_id": str(bus.id),
+            "departure_date": day_two.isoformat(),
+            "selected_seat": "4A",
+            "passenger_name": "Maria Santos",
+        },
+    )
+
+    assert response.status_code == 201, response.text
+    assert response.json()["seat_number"] == "4A"
 
 
 @pytest.mark.asyncio
@@ -75,16 +165,6 @@ async def test_create_booking_fully_booked_bus(
     client: AsyncClient, passenger, bus
 ):
     """POST /api/v1/bookings should return 409 when bus is full."""
-    from datetime import datetime, timedelta, timezone
-    from app.models.booking import Booking, BookingStatus
-    from sqlalchemy.ext.asyncio import AsyncSession
-
-    departure = datetime.now(timezone.utc) + timedelta(days=7)
-
-    # Manually book all seats via DB
-    db = client._transport.app.dependency_overrides.get(
-        __import__("app.core.deps", fromlist=["get_db"]).get_db
-    )
     # We need to access the db session — use the test fixture approach
     # Since we can't easily do this in integration tests without fixtures,
     # we'll test with a bus that has very few seats

@@ -25,15 +25,20 @@ services:
       - ./backend:/app
       - ./data:/app/data
       - ./ml:/app/ml
+      # Trained champion/candidate bundles — persisted on the host filesystem
+      - ./iqueue_artifacts:/app/iqueue_artifacts
     environment:
       - DEBUG=true
       - HOST=0.0.0.0
       - PORT=8000
+      # Point to the container-internal path that maps to ./iqueue_artifacts/artifacts on the host
+      - FORECASTING_ARTIFACTS_DIR=/app/iqueue_artifacts/artifacts
     command: >
       sh -c "(alembic upgrade head || true) &&
              uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
     ports:
       - "8000:8000"
+
 
   # --- Next.js Frontend (dev: hot reload, volume mounts) ---
   frontend:
@@ -42,15 +47,18 @@ services:
       dockerfile: Dockerfile.dev
     command: >
       sh -c "find /app/.next -mindepth 1 -maxdepth 1 -exec rm -rf {} + 2>/dev/null || true;
-             npm run dev:webpack"
+             exec npm run dev:webpack"
+    stdin_open: true
+    tty: true
     volumes:
       - ./frontend:/app
-      - /app/node_modules  # anonymous volume to preserve node_modules
       - /app/.next  # isolate Next dev output from the source bind mount
       # Keep .next on a container-only volume so webpack doesn't watch its own output.
     environment:
       - DOCKER=1
       - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+      # Opt in to the PWA runtime so the hero install button can be tested locally.
+      - NEXT_PUBLIC_ENABLE_SW=true
       - WATCHPACK_POLLING=true  # for macOS file watching inside Docker
     ports:
       - "3000:3000"

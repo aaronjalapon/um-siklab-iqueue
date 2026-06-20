@@ -10,7 +10,7 @@ import base64
 import hashlib
 import hmac
 import secrets
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 
 def generate_secret_key() -> str:
@@ -116,3 +116,35 @@ def verify_qr_token(token: str, secret: str) -> tuple[bool, dict | None]:
         "boarding_window": fields[4],
         "signed_at": fields[5],
     }
+
+
+def validate_qr_timing(
+    payload: dict,
+    *,
+    now: datetime | None = None,
+    early_minutes: int = 120,
+    expiry_hours: int = 6,
+) -> tuple[bool, str]:
+    """Validate a signed token's boarding window for offline scanners."""
+
+    try:
+        boarding_time = datetime.fromisoformat(str(payload["boarding_window"]))
+        signed_at = datetime.fromisoformat(str(payload["signed_at"]))
+    except (KeyError, TypeError, ValueError):
+        return False, "malformed_timestamp"
+
+    if boarding_time.tzinfo is None:
+        boarding_time = boarding_time.replace(tzinfo=timezone.utc)
+    if signed_at.tzinfo is None:
+        signed_at = signed_at.replace(tzinfo=timezone.utc)
+    current = now or datetime.now(timezone.utc)
+    if current.tzinfo is None:
+        current = current.replace(tzinfo=timezone.utc)
+
+    if signed_at > current + timedelta(minutes=5):
+        return False, "signed_in_future"
+    if current < boarding_time - timedelta(minutes=early_minutes):
+        return False, "not_yet_valid"
+    if current > boarding_time + timedelta(hours=expiry_hours):
+        return False, "expired"
+    return True, "ready"

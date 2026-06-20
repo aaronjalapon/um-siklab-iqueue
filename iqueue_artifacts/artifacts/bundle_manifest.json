@@ -1,0 +1,95 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-06-19T22:20:04.262057+00:00",
+  "bundle_version": "legacy-hackathon-bundle",
+  "evaluation_protocol": "legacy_validation_metrics",
+  "synthetic_data": true,
+  "route_count": 6,
+  "total_bytes": 1240099,
+  "files": {
+    "prophet_cagayan-iligan.pkl": {
+      "sha256": "09fbff3dbd164a394be6958179c04fd5a20af178c4f12a5376dd0a6d26886e7b",
+      "bytes": 115999
+    },
+    "lstm_cagayan-iligan_best.pt": {
+      "sha256": "4dc78c7a995c825402f9736c4b389db1fc0368ddc773b1f51778fcdaac4e1ed1",
+      "bytes": 81210
+    },
+    "cagayan-iligan_scaler.pkl": {
+      "sha256": "e4f09856ece48a931e2a415222e2c60386134e2c5b2d5f5ef3d5e55e793cf360",
+      "bytes": 823
+    },
+    "prophet_cotabato-zambo.pkl": {
+      "sha256": "4146daab9cf317283ae7ce409ae4da46716dde16ea5a723a6b4629c1399ccd48",
+      "bytes": 115999
+    },
+    "lstm_cotabato-zambo_best.pt": {
+      "sha256": "f7673a0ad227a523b62ebb42b58c8aec0be686cf4361eb1f32fff5287c4172d2",
+      "bytes": 80954
+    },
+    "cotabato-zambo_scaler.pkl": {
+      "sha256": "0a28be1348d7639566dc5d269b3e81a212f58b4991c634dd523f0a0564045dc1",
+      "bytes": 823
+    },
+    "prophet_davao-butuan.pkl": {
+      "sha256": "e64214e15bba9d1cc73b6fb374eedc936478baef72166c771ea07fc8fb4015d0",
+      "bytes": 116013
+    },
+    "lstm_davao-butuan_best.pt": {
+      "sha256": "21669743bfaa582e22e422de1e401aabd30fbea8b8bf1ae1f39445dd49e4507f",
+      "bytes": 81576
+    },
+    "davao-butuan_scaler.pkl": {
+      "sha256": "db8c866d3eef802160e5fc4776c573acb86db379fdc53758ff475aade4de13f1",
+      "bytes": 823
+    },
+    "prophet_davao-cagayan.pkl": {
+      "sha256": "58dbcef721bb56dbede131bae2583f4bdb0f608394dafeba9396f2b7e8e93077",
+      "bytes": 116014
+    },
+    "lstm_davao-cagayan_best.pt": {
+      "sha256": "d0c082b248e8a93989dd19d09e0da83033628f014ab68a80dd7f5c752018061b",
+      "bytes": 80817
+    },
+    "davao-cagayan_scaler.pkl": {
+      "sha256": "9239bcf12f712a00ebf4ff20780451e6886b2055867edff7cf71a1b2a7307184",
+      "bytes": 823
+    },
+    "prophet_davao-cotabato.pkl": {
+      "sha256": "ece7bc87d99c9a812a30953bc0a9e51a513585e8ae4f1ad45a6924ab02f2c737",
+      "bytes": 115807
+    },
+    "lstm_davao-cotabato_best.pt": {
+      "sha256": "1575bd92347e0cda2f4562e31642f460789d6aac04d518812b8b0b05fa0a72dc",
+      "bytes": 81018
+    },
+    "davao-cotabato_scaler.pkl": {
+      "sha256": "76898bae8c492335e5187b8d22b371ddc5eba427a1e1a3f37b053d4b3c3f828d",
+      "bytes": 823
+    },
+    "prophet_davao-general-santos.pkl": {
+      "sha256": "72aa587eb6cd6fc6ac334affab9e89777c4886d36ce0aede0a8d69fd504be746",
+      "bytes": 116005
+    },
+    "lstm_davao-general-santos_best.pt": {
+      "sha256": "2351a6b5999e74ec5cf2adf082fc5050ef07d83034094c9db034c33d60515a98",
+      "bytes": 80752
+    },
+    "davao-general-santos_scaler.pkl": {
+      "sha256": "7df151d00b46157ae49ae9e53db69ed779a54c5386906c8b510688830824829e",
+      "bytes": 823
+    },
+    "surge_clf_global.pkl": {
+      "sha256": "874a935599035d60e6c8ef5603df1c421ead15d0f9e7eff9806d9782876f6f20",
+      "bytes": 51044
+    },
+    "surge_clf_features.pkl": {
+      "sha256": "8210b0e26ad3ea8014f9ffa090abff2a6e46eb113fb6a785d7e02ddf4c906a9c",
+      "bytes": 235
+    },
+    "baseline_comparison.json": {
+      "sha256": "91c2606b286bef004f2031a3096fea3891566a8032cfaa3cc8bed3f4f52c2d5c",
+      "bytes": 1718
+    }
+  }
+}

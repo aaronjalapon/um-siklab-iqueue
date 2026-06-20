@@ -23,7 +23,13 @@ class BookingCreate(BaseModel):
     departure_date: datetime = Field(..., description="Desired departure date/time")
     seat_preference: str | None = Field(
         None,
+        pattern="^(window|aisle)$",
         description="Preferred seat type: 'window', 'aisle', or None for any",
+    )
+    selected_seat: str | None = Field(
+        None,
+        max_length=10,
+        description="Exact seat label confirmed during seat selection",
     )
     travel_group: list[UUID] = Field(
         default_factory=list,
@@ -50,6 +56,10 @@ class BookingCreate(BaseModel):
     )
     preferred_side: str | None = Field(
         None, description="'left' | 'right' | None"
+    )
+    affinity_opt_in: bool = Field(
+        False,
+        description="Explicit consent to seatmate affinity matching",
     )
 
 

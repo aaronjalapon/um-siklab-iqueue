@@ -5,10 +5,20 @@ import type {
   BookingCreate,
   BookingDetail,
   BookingResponse,
+  BoardingVerifyResponse,
   BusListResponse,
   ChatbotRequest,
   ChatbotResponse,
+  ForecastActionCreate,
+  ForecastActionResponse,
   ForecastResponse,
+  EvidenceSummary,
+  LearningLogSummary,
+  OperationalOutcomeCreate,
+  OperationalOutcomeResponse,
+  RetrainingReplay,
+  RetrainJob,
+  RetrainJobQueued,
   SeatMapResponse,
   SessionCreateResponse,
 } from "./types";
@@ -104,12 +114,102 @@ export async function getBookingQR(bookingId: string): Promise<Blob> {
   return data;
 }
 
+export async function verifyBoardingPass(
+  token: string
+): Promise<BoardingVerifyResponse> {
+  const { data } = await api.post<BoardingVerifyResponse>("/boarding/verify", {
+    token,
+  });
+  return data;
+}
+
 // --- Forecasts ---
 
 export async function getForecast(
   routeId: string
 ): Promise<ForecastResponse> {
   const { data } = await api.get<ForecastResponse>(`/forecasts/${routeId}`);
+  return data;
+}
+
+export async function recordForecastAction(
+  payload: ForecastActionCreate
+): Promise<ForecastActionResponse> {
+  const { data } = await api.post<ForecastActionResponse>(
+    "/forecast-actions",
+    payload
+  );
+  return data;
+}
+
+export async function getLearningLogSummary(
+  tenantId: string,
+  routeId?: string
+): Promise<LearningLogSummary> {
+  const { data } = await api.get<LearningLogSummary>("/forecast-actions/summary", {
+    params: { tenant_id: tenantId, route_id: routeId },
+  });
+  return data;
+}
+
+export async function recordOperationalOutcome(
+  payload: OperationalOutcomeCreate
+): Promise<OperationalOutcomeResponse> {
+  const { data } = await api.post<OperationalOutcomeResponse>(
+    "/operations/outcomes",
+    payload
+  );
+  return data;
+}
+
+export async function getEvidenceSummary(): Promise<EvidenceSummary> {
+  const { data } = await api.get<EvidenceSummary>("/evidence/summary");
+  return data;
+}
+
+export async function replayRetraining(): Promise<RetrainingReplay> {
+  const { data } = await api.post<RetrainingReplay>("/demo/retraining-replay");
+  return data;
+}
+
+// --- Model Admin ---
+
+export async function triggerRetrain(
+  epochs: number = 80,
+  minNewRows: number = 30
+): Promise<RetrainJobQueued> {
+  const { data } = await api.post<RetrainJobQueued>("/forecasts/model/retrain", {
+    epochs,
+    min_new_rows: minNewRows,
+  });
+  return data;
+}
+
+export async function getRetrainStatus(
+  jobId?: string
+): Promise<RetrainJob> {
+  const { data } = await api.get<RetrainJob>("/forecasts/model/retrain/status", {
+    params: jobId ? { job_id: jobId } : {},
+  });
+  return data;
+}
+
+export async function listRetrainJobs(
+  limit: number = 10
+): Promise<RetrainJob[]> {
+  const { data } = await api.get<RetrainJob[]>("/forecasts/model/retrain/jobs", {
+    params: { limit },
+  });
+  return data;
+}
+
+export async function reloadModel(): Promise<{
+  message: string;
+  model_version: string | null;
+  bundle_status: string;
+  loaded_routes: string[];
+}> {
+  const { data } = await api.post("/forecasts/model/reload");
   return data;
 }
 
@@ -156,9 +256,12 @@ import type {
 } from "@/types/seat";
 
 export async function getBusSeatMap(
-  busId: string
+  busId: string,
+  travelDate?: string
 ): Promise<SeatMapEntry[]> {
-  const { data } = await api.get<SeatMapEntry[]>(`/seats/bus/${busId}`);
+  const { data } = await api.get<SeatMapEntry[]>(`/seats/bus/${busId}`, {
+    params: travelDate ? { travel_date: travelDate } : {},
+  });
   return data;
 }
 
@@ -173,6 +276,16 @@ export async function assignSeat(
   payload: SeatAssignRequest
 ): Promise<SeatAssignmentResult> {
   const { data } = await api.post<SeatAssignmentResult>("/seats/assign", payload);
+  return data;
+}
+
+export async function recommendSeat(
+  payload: SeatAssignRequest
+): Promise<SeatAssignmentResult> {
+  const { data } = await api.post<SeatAssignmentResult>(
+    "/seats/recommend",
+    payload
+  );
   return data;
 }
 

@@ -1,0 +1,5 @@
+# Full local ML dependencies. Production containers install the CPU-only
+# PyTorch wheel explicitly before installing requirements.ml.txt.
+
+-r requirements.ml.txt
+torch==2.12.0

@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+from datetime import date
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_db
@@ -19,6 +20,10 @@ from app.services.seat_assignment.engine import (
     BusNotFoundError,
     SeatAllocator,
     SeatUnavailableError,
+)
+from app.services.seat_assignment.date_aware import (
+    assign_for_travel_date,
+    get_travel_date_seat_map,
 )
 from app.services.seat_assignment.scorer import PassengerContext
 
@@ -56,10 +61,25 @@ async def assign_seat(
         needs_accessibility=body.passenger.needs_accessibility,
         preferred_seat_type=body.passenger.preferred_seat_type,
         preferred_side=body.passenger.preferred_side,
+        affinity_opt_in=body.passenger.affinity_opt_in,
     )
 
     try:
-        result = await allocator.assign(body.bus_id, passenger)
+        if body.travel_date is not None:
+            result = await assign_for_travel_date(
+                session,
+                body.bus_id,
+                passenger,
+                body.travel_date,
+                seat_label=body.seat_label,
+            )
+        else:
+            result = await allocator.assign(
+                body.bus_id,
+                passenger,
+                reserve=body.passenger.booking_id != "temp",
+                seat_label=body.seat_label,
+            )
     except BusNotFoundError:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -81,6 +101,10 @@ async def assign_seat(
 )
 async def get_seat_map(
     bus_id: UUID,
+    travel_date: date | None = Query(
+        None,
+        description="Optional service day for passenger-facing availability",
+    ),
     session: AsyncSession = Depends(get_db),
 ) -> list[dict]:
     """Return the complete seat map for a bus with status and passenger info.
@@ -91,6 +115,8 @@ async def get_seat_map(
     """
     allocator = SeatAllocator(session)
     try:
+        if travel_date is not None:
+            return await get_travel_date_seat_map(session, bus_id, travel_date)
         return await allocator.get_seat_map(bus_id)
     except Exception:
         raise HTTPException(
@@ -106,12 +132,19 @@ async def get_seat_map(
 )
 async def get_seat_map_summary(
     bus_id: UUID,
+    travel_date: date | None = Query(
+        None,
+        description="Optional service day for passenger-facing availability",
+    ),
     session: AsyncSession = Depends(get_db),
 ) -> dict:
     """Return the seat map with occupancy summary counts."""
     allocator = SeatAllocator(session)
     try:
-        seats = await allocator.get_seat_map(bus_id)
+        if travel_date is not None:
+            seats = await get_travel_date_seat_map(session, bus_id, travel_date)
+        else:
+            seats = await allocator.get_seat_map(bus_id)
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

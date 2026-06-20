@@ -1,4 +1,3 @@
-import path from "path";
 import type { NextConfig } from "next";
 
 // In Docker, avoid the default .next path because older containers may have
@@ -9,7 +8,7 @@ const distDir =
 const nextConfig: NextConfig = {
 	distDir,
 	turbopack: {
-		root: path.join(__dirname),
+		root: process.cwd(),
 	},
 	async headers() {
 		return [

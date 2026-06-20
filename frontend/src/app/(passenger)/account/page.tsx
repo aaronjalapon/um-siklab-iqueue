@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import {
   ChevronRight,
   CreditCard,
@@ -52,6 +53,12 @@ const MENU_ITEMS = [
 ];
 
 export default function AccountPage() {
+  const router = useRouter();
+
+  function handleLogout() {
+    router.replace("/");
+  }
+
   return (
     <div className={`${glassStyles.pageContainer} max-w-4xl`}>
       <PageHeader
@@ -114,6 +121,7 @@ export default function AccountPage() {
 
       <button
         type="button"
+        onClick={handleLogout}
         className="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-red-200 bg-red-50 font-bold text-red-600 transition hover:bg-red-100 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200"
       >
         <LogOut className="h-5 w-5" aria-hidden />

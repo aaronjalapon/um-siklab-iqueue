@@ -8,10 +8,12 @@
 # --- Stage 1: Build ---
 FROM node:24-alpine AS builder
 WORKDIR /app
+ARG NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
 COPY package.json package-lock.json* ./
-RUN --mount=type=cache,target=/root/.npm npm ci --legacy-peer-deps
+RUN npm ci --legacy-peer-deps
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 RUN npm run build
 
 # --- Stage 2: Runtime ---

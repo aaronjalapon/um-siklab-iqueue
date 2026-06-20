@@ -11,6 +11,9 @@ from pydantic import BaseModel, Field
 class SurgePrediction(BaseModel):
     """A single day's surge forecast for a route."""
 
+    forecast_snapshot_id: UUID | None = Field(
+        None, description="Stored snapshot ID for operator feedback"
+    )
     forecast_date: date = Field(..., description="The forecasted date")
     surge_probability: float = Field(
         ..., ge=0.0, le=1.0, description="Probability of a surge event (0-1)"
@@ -30,6 +33,16 @@ class SurgePrediction(BaseModel):
     holiday_name: str | None = Field(
         None, description="Name of the holiday if applicable"
     )
+    risk_level: str = Field(
+        "low", description="Operational risk level: low, moderate, high, critical"
+    )
+    recommended_action: str = Field(
+        "Continue normal boarding operations",
+        description="Recommended terminal action for this forecast",
+    )
+    model_confidence: float | None = Field(
+        None, ge=0.0, le=1.0, description="Heuristic confidence score for this output"
+    )
 
 
 class ForecastResponse(BaseModel):
@@ -39,6 +52,15 @@ class ForecastResponse(BaseModel):
     route_origin: str = ""
     route_destination: str = ""
     generated_at: date = Field(..., description="Date when the forecast was generated")
+    model_source: str = Field(
+        "heuristic", description="Forecast source: ml_bundle or heuristic"
+    )
+    model_version: str | None = Field(
+        None, description="Model bundle or ruleset version used for this response"
+    )
+    metrics_summary: dict | None = Field(
+        None, description="Optional model metrics summary from the active bundle"
+    )
     predictions: list[SurgePrediction] = Field(
         ..., description="Daily predictions for the next 7 days"
     )

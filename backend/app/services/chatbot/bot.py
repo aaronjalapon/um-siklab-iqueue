@@ -18,7 +18,6 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-import os
 import uuid
 from pathlib import Path
 from typing import Any
@@ -256,6 +255,29 @@ _chatbot_service: "ChatbotService | None" = None
 _singleton_load_attempted: bool = False
 
 
+def decode_model_label(
+    label: str | int,
+    id_to_label: dict[int, str],
+) -> str:
+    """Normalize Transformers labels into an IQueue intent name.
+
+    Fine-tuned checkpoints may emit semantic labels (``surge_info``), while
+    older checkpoints emit numeric labels (``LABEL_3`` or ``3``). Supporting
+    both formats prevents a healthy classifier from silently degrading to the
+    keyword fallback.
+    """
+
+    value = str(label)
+    if value in id_to_label.values():
+        return value
+    if value.startswith("LABEL_"):
+        value = value.removeprefix("LABEL_")
+    try:
+        return id_to_label.get(int(value), "fallback")
+    except ValueError:
+        return "fallback"
+
+
 def get_chatbot_service() -> "ChatbotService | None":
     """Return the module-level chatbot service singleton.
 
@@ -363,13 +385,7 @@ class ChatbotService:
                 results = self._classifier(text)[0]
                 best = max(results, key=lambda x: x["score"])
 
-                label_str = best["label"]
-                if label_str.startswith("LABEL_"):
-                    label_idx = int(label_str.split("_")[1])
-                else:
-                    label_idx = int(label_str)
-
-                intent = self._id_to_label.get(label_idx, "fallback")
+                intent = decode_model_label(best["label"], self._id_to_label)
                 confidence = round(best["score"], 4)
 
                 # Per-language confidence threshold
@@ -380,12 +396,7 @@ class ChatbotService:
 
                 all_scores = {}
                 for r in results:
-                    rl = r["label"]
-                    if rl.startswith("LABEL_"):
-                        ri = int(rl.split("_")[1])
-                    else:
-                        ri = int(rl)
-                    r_intent = self._id_to_label.get(ri, "fallback")
+                    r_intent = decode_model_label(r["label"], self._id_to_label)
                     all_scores[r_intent] = round(r["score"], 4)
 
                 return {
@@ -792,7 +803,6 @@ class ChatbotService:
         try:
             from app.services.forecasting.predictor import (
                 ForecastingService,
-                _route_slug_from_id,
             )
 
             # Determine route from context or entities
@@ -854,10 +864,10 @@ class ChatbotService:
             response_map = {
                 "en": f"Surge forecast for {route.origin} → {route.destination} this week:\n"
                       + "\n".join(f"• {d}" for d in day_strs)
-                      + f"\n\nI recommend booking early for the high-surge days.",
+                      + "\n\nI recommend booking early for the high-surge days.",
                 "fil": f"Surge forecast para sa {route.origin} → {route.destination} ngayong linggo:\n"
                        + "\n".join(f"• {d}" for d in day_strs)
-                       + f"\n\nInirerekomenda kong mag-book nang maaga para sa mga araw na mataas ang surge.",
+                       + "\n\nInirerekomenda kong mag-book nang maaga para sa mga araw na mataas ang surge.",
             }
             return degradation, response_map.get(language, response_map["en"])
 
@@ -939,10 +949,10 @@ class ChatbotService:
             response_map = {
                 "en": f"Buses on {routes[0].origin} → {routes[0].destination}:\n"
                       + "\n".join(f"• {b}" for b in bus_lines)
-                      + f"\n\nWould you like to book a specific bus?",
+                      + "\n\nWould you like to book a specific bus?",
                 "fil": f"Mga bus sa {routes[0].origin} → {routes[0].destination}:\n"
                        + "\n".join(f"• {b}" for b in bus_lines)
-                       + f"\n\nGusto mo bang mag-book ng partikular na bus?",
+                       + "\n\nGusto mo bang mag-book ng partikular na bus?",
             }
             return degradation, response_map.get(language, response_map["en"])
 

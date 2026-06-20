@@ -1,0 +1,18 @@
+{
+  "decided_at": "2026-06-20T01:31:14.829708+00:00",
+  "passed": false,
+  "reasons": [],
+  "ground_truth_rows": 60,
+  "champion_metrics": {
+    "avg_mae": 86.93219400643672,
+    "avg_surge_f1": 0.6887179487179488,
+    "avg_surge_recall": 0.6810911310911312,
+    "routes_evaluated": 6
+  },
+  "candidate_metrics": {
+    "avg_mae": 86.93219400643672,
+    "avg_surge_f1": 0.6887179487179488,
+    "avg_surge_recall": 0.6810911310911312,
+    "routes_evaluated": 6
+  }
+}

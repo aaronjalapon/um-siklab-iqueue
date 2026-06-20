@@ -2,7 +2,17 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, Clock, MapPin, QrCode, TrendingUp, Zap } from "lucide-react";
+import {
+  ArrowRight,
+  CheckCircle2,
+  Clock,
+  Download,
+  MapPin,
+  QrCode,
+  TrendingUp,
+  Zap,
+} from "lucide-react";
+import { PWA_INSTALL_REQUEST_EVENT } from "@/lib/pwa-runtime";
 
 const EASE_OUT = [0.16, 1, 0.3, 1] as const;
 const EASE_IN_OUT = [0.42, 0, 0.58, 1] as const;
@@ -13,6 +23,10 @@ const floatingCard = {
 };
 
 export default function HeroSection() {
+  function handleInstallApp() {
+    window.dispatchEvent(new Event(PWA_INSTALL_REQUEST_EVENT));
+  }
+
   return (
     <section className="relative flex min-h-[100svh] flex-col items-center justify-center overflow-hidden bg-slate-950 px-4 pb-14 pt-20 sm:pt-24 md:pb-16">
       {/* Grid overlay */}
@@ -63,7 +77,7 @@ export default function HeroSection() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="flex flex-col justify-center gap-3 sm:flex-row sm:gap-4 lg:justify-start"
+            className="flex flex-col justify-center gap-3 sm:flex-row sm:flex-wrap sm:gap-4 lg:justify-start"
           >
             <Link
               id="hero-book-now"
@@ -73,6 +87,15 @@ export default function HeroSection() {
               Book Your Seat
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
+            <button
+              id="hero-install-app"
+              type="button"
+              onClick={handleInstallApp}
+              className="group inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-brand-orange px-6 py-3.5 text-base font-bold text-white shadow-xl shadow-brand-orange/25 transition-all hover:bg-orange-600 hover:shadow-brand-orange/40 active:scale-95 sm:px-7 sm:py-4"
+            >
+              <Download className="h-5 w-5 transition-transform group-hover:translate-y-0.5" />
+              Install the App
+            </button>
             <Link
               id="hero-operator-login"
               href="/operator"

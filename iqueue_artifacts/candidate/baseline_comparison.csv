@@ -1,0 +1,8 @@
+model,mae,rmse,mape,surge_precision,surge_recall,surge_f1,false_alarm_rate,mae_ci95_lower,mae_ci95_upper,surge_f1_ci95_lower,surge_f1_ci95_upper,source
+Yesterday baseline,94.1744,150.7383,28.3644,0.5841,0.5841,0.5841,0.0351,72.4268,115.922,0.5242,0.6439,untouched_test
+7-day moving average,108.8807,174.6537,33.1665,0.4554,0.366,0.4014,0.0395,81.1218,137.2962,0.365,0.4349,untouched_test
+Prophet-only,78.7703,112.6814,25.2663,0.8333,0.7925,0.8086,0.0135,57.7863,98.8522,0.7493,0.8691,untouched_test
+LSTM-only,85.9927,140.3408,25.6153,0.6799,0.5167,0.5641,0.0203,61.1731,113.2711,0.4488,0.6689,untouched_test
+Prophet+LSTM hybrid,87.6846,141.7854,26.3339,0.6995,0.6009,0.6387,0.0214,63.1197,112.2495,0.5805,0.7078,untouched_test
+Prophet+LSTM+LightGBM decision model,86.9322,143.2837,27.0548,0.7061,0.6811,0.6887,0.0236,64.6584,109.0774,0.6429,0.738,untouched_test
+LightGBM surge classifier,,,,0.7682,0.6516,0.7017,0.0169,,,0.6581,0.7524,untouched_test

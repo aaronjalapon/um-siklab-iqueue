@@ -120,7 +120,16 @@ synthetic history, and never mutates the deployed champion.
 The deployment uses a unified Linux Azure App Service container with CPU-only
 PyTorch. Use an Azure B2 plan or larger; the deployment script defaults to B2.
 
-Use `scripts/deploy-chatbot-azure.sh` as the Azure bootstrap script. The filename is legacy; the script now provisions and updates the App Service deployment.
+Use the Azure runbook in [docs/AZURE_DEPLOYMENT.md](docs/AZURE_DEPLOYMENT.md).
+
+Deployment flow:
+
+1. Run `./scripts/bootstrap-azure-hackathon.sh` once to provision the hackathon
+   resource group, ACR, App Service plan, Blob storage, and PostgreSQL.
+2. Save the printed `DATABASE_URL` and `AZURE_STORAGE_CONNECTION_STRING` into
+   your local `.env`.
+3. Run `./scripts/deploy-chatbot-azure.sh` for each manual backend release.
+4. Set `NEXT_PUBLIC_API_URL` in Vercel after the backend is live.
 
 Required Azure variables live in `.env.example`:
 
@@ -130,6 +139,11 @@ Required Azure variables live in `.env.example`:
 - `AZURE_APP_SERVICE_PLAN`
 - `AZURE_WEBAPP_NAME`
 - `AZURE_SUBSCRIPTION_ID`
+- `AZURE_STORAGE_ACCOUNT`
+- `AZURE_STORAGE_CONTAINER`
+- `AZURE_POSTGRES_SERVER`
+- `AZURE_POSTGRES_DB`
+- `AZURE_POSTGRES_ADMIN`
 
 The deployment health endpoints are:
 

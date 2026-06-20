@@ -15,6 +15,9 @@ from app.models.booking import Booking, BookingStatus
 from app.models.bus import Bus
 from app.models.passenger import Passenger
 from app.schemas.booking import BookingCreate, BookingDetailResponse, BookingResponse
+from app.services.seat_assignment.date_aware import assign_for_travel_date
+from app.services.seat_assignment.engine import SeatUnavailableError
+from app.services.seat_assignment.scorer import PassengerContext
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -89,13 +92,9 @@ async def create_booking(
     boarding_window_end = payload.departure_date + timedelta(minutes=15)
 
     try:
-        from app.services.seat_assignment.engine import SeatAllocator
-        from app.services.seat_assignment.scorer import PassengerContext
-
-        allocator = SeatAllocator(db)
         pax_name = payload.passenger_name or passenger.name
         pax_ctx = PassengerContext(
-            booking_id="temp",  # Will be replaced after Booking is created
+            booking_id="temp",
             passenger_name=pax_name,
             group_id=payload.group_id,
             language_preference=payload.language_preference or passenger.language_pref,
@@ -107,10 +106,13 @@ async def create_booking(
             affinity_opt_in=payload.affinity_opt_in,
         )
 
-        result = await allocator.assign(
-            str(payload.bus_id),
+        result = await assign_for_travel_date(
+            db,
+            payload.bus_id,
             pax_ctx,
+            payload.departure_date,
             seat_label=payload.selected_seat,
+            departure_datetime=payload.departure_date,
         )
         assigned_seat_label = result["seat_label"]
 
@@ -131,7 +133,7 @@ async def create_booking(
                 int(t2_parts[0]), int(t2_parts[1]),
                 tzinfo=timezone.utc,
             )
-    except Exception as exc:
+    except SeatUnavailableError as exc:
         if payload.selected_seat:
             logger.info(
                 "Selected seat %s could not be reserved: %s",
@@ -143,6 +145,29 @@ async def create_booking(
                 detail=f"Selected seat {payload.selected_seat} is no longer available",
             )
         # Fallback: simple seat assignment
+        taken_seats = {b.seat_number for b in existing_bookings}
+        assigned_seat_label = None
+        for seat_num in range(1, bus.capacity + 1):
+            if str(seat_num) not in taken_seats:
+                assigned_seat_label = str(seat_num)
+                break
+
+        if assigned_seat_label is None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="No available seats",
+            )
+
+        row = (int(assigned_seat_label) - 1) // 4 + 1
+        boarding_window_start = payload.departure_date + timedelta(minutes=row * 3)
+        boarding_window_end = boarding_window_start + timedelta(minutes=15)
+    except Exception as exc:
+        logger.warning("Date-aware seat assignment failed; using fallback: %s", exc)
+        if payload.selected_seat:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Selected seat {payload.selected_seat} is no longer available",
+            )
         taken_seats = {b.seat_number for b in existing_bookings}
         assigned_seat_label = None
         for seat_num in range(1, bus.capacity + 1):

@@ -34,7 +34,7 @@ export default function SeatSelectionPage() {
   const preferredSeatType = params.get("preferred_seat_type") || "";
   const preferredSide = params.get("preferred_side") || "";
 
-  const { seats, loading, error, assignSeat } = useSeatMap(busId);
+  const { seats, loading, error, assignSeat } = useSeatMap(busId, date);
 
   const [autoAssigned, setAutoAssigned] = useState<SeatAssignmentResult | null>(null);
   const [autoAssigning, setAutoAssigning] = useState(false);

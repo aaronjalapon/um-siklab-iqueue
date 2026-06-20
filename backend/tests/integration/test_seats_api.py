@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from httpx import AsyncClient
@@ -126,6 +127,105 @@ async def test_preview_assignment_does_not_reserve_seat(
     )
     assert seat.status == SeatStatus.AVAILABLE
     assert reservation_count == 0
+
+
+@pytest.mark.asyncio
+async def test_get_seat_map_scopes_occupancy_by_travel_date(
+    client: AsyncClient,
+    db_session,
+    passenger,
+    bus,
+):
+    """A seat booked on one departure must remain available on other dates."""
+    from app.models.booking import Booking, BookingStatus
+    from app.services.seat_assignment.bus_layout import generate_seats_for_bus
+
+    await generate_seats_for_bus(bus, db_session)
+    await db_session.flush()
+
+    day_one = datetime.now(timezone.utc) + timedelta(days=6)
+    day_two = day_one + timedelta(days=1)
+    db_session.add(
+        Booking(
+            id=uuid.uuid4(),
+            passenger_id=passenger.id,
+            bus_id=bus.id,
+            seat_number="1A",
+            boarding_window_start=day_one,
+            boarding_window_end=day_one + timedelta(minutes=15),
+            status=BookingStatus.CONFIRMED,
+            departure_date=day_one,
+        )
+    )
+    await db_session.flush()
+
+    day_one_response = await client.get(
+        f"/api/v1/seats/bus/{bus.id}",
+        params={"travel_date": day_one.date().isoformat()},
+    )
+    day_two_response = await client.get(
+        f"/api/v1/seats/bus/{bus.id}",
+        params={"travel_date": day_two.date().isoformat()},
+    )
+
+    assert day_one_response.status_code == 200
+    assert day_two_response.status_code == 200
+
+    day_one_seat = next(
+        seat for seat in day_one_response.json() if seat["seat_label"] == "1A"
+    )
+    day_two_seat = next(
+        seat for seat in day_two_response.json() if seat["seat_label"] == "1A"
+    )
+    assert day_one_seat["status"] == "occupied"
+    assert day_two_seat["status"] == "available"
+
+
+@pytest.mark.asyncio
+async def test_assign_seat_uses_requested_travel_date(
+    client: AsyncClient,
+    db_session,
+    passenger,
+    bus,
+):
+    """Passenger preview assignment should ignore bookings on other dates."""
+    from app.models.booking import Booking, BookingStatus
+    from app.services.seat_assignment.bus_layout import generate_seats_for_bus
+
+    await generate_seats_for_bus(bus, db_session)
+    await db_session.flush()
+
+    day_one = datetime.now(timezone.utc) + timedelta(days=7)
+    day_two = day_one + timedelta(days=1)
+    db_session.add(
+        Booking(
+            id=uuid.uuid4(),
+            passenger_id=passenger.id,
+            bus_id=bus.id,
+            seat_number="3A",
+            boarding_window_start=day_one,
+            boarding_window_end=day_one + timedelta(minutes=15),
+            status=BookingStatus.CONFIRMED,
+            departure_date=day_one,
+        )
+    )
+    await db_session.flush()
+
+    response = await client.post(
+        "/api/v1/seats/assign",
+        json={
+            "bus_id": str(bus.id),
+            "travel_date": day_two.date().isoformat(),
+            "seat_label": "3A",
+            "passenger": {
+                "booking_id": "temp",
+                "passenger_name": "Preview Passenger",
+            },
+        },
+    )
+
+    assert response.status_code == 201, response.text
+    assert response.json()["seat_label"] == "3A"
 
 
 @pytest.mark.asyncio

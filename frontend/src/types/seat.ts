@@ -64,6 +64,7 @@ export interface SeatAssignmentResult {
 export interface SeatAssignRequest {
   bus_id: string;
   passenger: PassengerContext;
+  travel_date?: string;
   seat_label?: string;
 }
 

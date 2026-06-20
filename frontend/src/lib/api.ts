@@ -256,9 +256,12 @@ import type {
 } from "@/types/seat";
 
 export async function getBusSeatMap(
-  busId: string
+  busId: string,
+  travelDate?: string
 ): Promise<SeatMapEntry[]> {
-  const { data } = await api.get<SeatMapEntry[]>(`/seats/bus/${busId}`);
+  const { data } = await api.get<SeatMapEntry[]>(`/seats/bus/${busId}`, {
+    params: travelDate ? { travel_date: travelDate } : {},
+  });
   return data;
 }
 

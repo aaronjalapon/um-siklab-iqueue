@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import date
 from typing import Optional
 from uuid import UUID
 
@@ -89,6 +90,10 @@ class SeatAssignRequest(BaseModel):
 
     bus_id: str = Field(..., description="UUID of the bus")
     passenger: PassengerContext
+    travel_date: date | None = Field(
+        None,
+        description="Service day used for passenger-facing seat availability",
+    )
     seat_label: Optional[str] = Field(
         None, description="Specific seat label to lock (e.g. '3B'). If set, only that seat is scored."
     )

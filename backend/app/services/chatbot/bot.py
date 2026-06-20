@@ -18,7 +18,6 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-import os
 import uuid
 from pathlib import Path
 from typing import Any
@@ -804,7 +803,6 @@ class ChatbotService:
         try:
             from app.services.forecasting.predictor import (
                 ForecastingService,
-                _route_slug_from_id,
             )
 
             # Determine route from context or entities
@@ -866,10 +864,10 @@ class ChatbotService:
             response_map = {
                 "en": f"Surge forecast for {route.origin} → {route.destination} this week:\n"
                       + "\n".join(f"• {d}" for d in day_strs)
-                      + f"\n\nI recommend booking early for the high-surge days.",
+                      + "\n\nI recommend booking early for the high-surge days.",
                 "fil": f"Surge forecast para sa {route.origin} → {route.destination} ngayong linggo:\n"
                        + "\n".join(f"• {d}" for d in day_strs)
-                       + f"\n\nInirerekomenda kong mag-book nang maaga para sa mga araw na mataas ang surge.",
+                       + "\n\nInirerekomenda kong mag-book nang maaga para sa mga araw na mataas ang surge.",
             }
             return degradation, response_map.get(language, response_map["en"])
 
@@ -951,10 +949,10 @@ class ChatbotService:
             response_map = {
                 "en": f"Buses on {routes[0].origin} → {routes[0].destination}:\n"
                       + "\n".join(f"• {b}" for b in bus_lines)
-                      + f"\n\nWould you like to book a specific bus?",
+                      + "\n\nWould you like to book a specific bus?",
                 "fil": f"Mga bus sa {routes[0].origin} → {routes[0].destination}:\n"
                        + "\n".join(f"• {b}" for b in bus_lines)
-                       + f"\n\nGusto mo bang mag-book ng partikular na bus?",
+                       + "\n\nGusto mo bang mag-book ng partikular na bus?",
             }
             return degradation, response_map.get(language, response_map["en"])
 

@@ -5,7 +5,6 @@ import {
   Activity,
   AlertTriangle,
   ArrowUpCircle,
-  BrainCircuit,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
@@ -82,14 +81,12 @@ function MetricsCompare({
   label,
   champion,
   candidate,
-  field,
   higherBetter,
   format,
 }: {
   label: string;
   champion: number;
   candidate: number;
-  field: string;
   higherBetter: boolean;
   format: (v: number) => string;
 }) {
@@ -142,6 +139,7 @@ export default function ModelRetrainingPage() {
     try {
       const data = await listRetrainJobs(10);
       setJobs(data);
+      setActiveJob(data[0] ?? null);
       setJobsLoading(false);
     } catch {
       setJobsLoading(false);
@@ -164,7 +162,10 @@ export default function ModelRetrainingPage() {
   }, [fetchJobs]);
 
   useEffect(() => {
-    void fetchJobs();
+    const timeout = setTimeout(() => {
+      void fetchJobs();
+    }, 0);
+    return () => clearTimeout(timeout);
   }, [fetchJobs]);
 
   // Start polling if the latest job is still active
@@ -172,12 +173,9 @@ export default function ModelRetrainingPage() {
     if (jobs.length === 0) return;
     const latest = jobs[0];
     if (ACTIVE_STATUSES.includes(latest.status)) {
-      setActiveJob(latest);
       if (!pollRef.current) {
         pollRef.current = setInterval(() => void pollActive(), 3000);
       }
-    } else {
-      setActiveJob(latest);
     }
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
@@ -404,7 +402,6 @@ export default function ModelRetrainingPage() {
                   label="Avg Surge F1"
                   champion={activeJob.decision.champion_metrics.avg_surge_f1}
                   candidate={activeJob.decision.candidate_metrics.avg_surge_f1}
-                  field="avg_surge_f1"
                   higherBetter
                   format={(v) => v.toFixed(3)}
                 />
@@ -412,7 +409,6 @@ export default function ModelRetrainingPage() {
                   label="Avg Surge Recall"
                   champion={activeJob.decision.champion_metrics.avg_surge_recall}
                   candidate={activeJob.decision.candidate_metrics.avg_surge_recall}
-                  field="avg_surge_recall"
                   higherBetter
                   format={(v) => v.toFixed(3)}
                 />
@@ -420,7 +416,6 @@ export default function ModelRetrainingPage() {
                   label="Avg MAE (passengers)"
                   champion={activeJob.decision.champion_metrics.avg_mae}
                   candidate={activeJob.decision.candidate_metrics.avg_mae}
-                  field="avg_mae"
                   higherBetter={false}
                   format={(v) => v.toFixed(1)}
                 />

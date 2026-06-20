@@ -28,7 +28,7 @@ import pandas as pd
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from ml.forecasting.splits import ChronologicalSplit, chronological_split
+from ml.forecasting.splits import ChronologicalSplit, chronological_split  # noqa: E402
 
 RAW_CANDIDATES = [
     PROJECT_ROOT / "ml/forecasting/data/raw/ridership_synthetic.csv",

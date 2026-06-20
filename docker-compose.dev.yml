@@ -57,6 +57,8 @@ services:
     environment:
       - DOCKER=1
       - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+      # Opt in to the PWA runtime so the hero install button can be tested locally.
+      - NEXT_PUBLIC_ENABLE_SW=true
       - WATCHPACK_POLLING=true  # for macOS file watching inside Docker
     ports:
       - "3000:3000"

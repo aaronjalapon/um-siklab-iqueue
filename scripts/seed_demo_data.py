@@ -18,7 +18,7 @@ import asyncio
 import os
 import sys
 import uuid
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 # Project root for .env loading and backend imports
@@ -33,7 +33,7 @@ try:
 except ImportError:
     pass
 
-from sqlalchemy import func, select, text
+from sqlalchemy import delete, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import selectinload
 from sqlalchemy.orm import sessionmaker
@@ -129,7 +129,12 @@ def build_engine():
     return create_async_engine(database_url, echo=False)
 
 
-async def seed(engine, dry_run: bool = False) -> None:
+async def seed(
+    engine,
+    dry_run: bool = False,
+    with_learning_history: bool = False,
+    reset_learning_history: bool = False,
+) -> None:
     # Import all models so they register with Base.metadata
     import app.models  # noqa: F401 — triggers ORM registration
     from app.db.base import Base
@@ -273,6 +278,138 @@ async def seed(engine, dry_run: bool = False) -> None:
                 )
                 print(f"+ Created passenger: {PASSENGER['name']}")
 
+        # --- Continuous-learning demonstration history ---
+        if with_learning_history:
+            from app.models.forecast_learning import (
+                ForecastAction,
+                ForecastSnapshot,
+                OperationalOutcome,
+                OperatorOverride,
+            )
+
+            if reset_learning_history:
+                if dry_run:
+                    print("  Would reset simulated continuous-learning history")
+                else:
+                    await session.execute(
+                        delete(OperatorOverride).where(
+                            OperatorOverride.tenant_id == TENANT_ID
+                        )
+                    )
+                    await session.execute(
+                        delete(OperationalOutcome).where(
+                            OperationalOutcome.tenant_id == TENANT_ID
+                        )
+                    )
+                    await session.execute(
+                        delete(ForecastSnapshot).where(
+                            ForecastSnapshot.tenant_id == TENANT_ID
+                        )
+                    )
+                    await session.flush()
+                    print("- Reset simulated continuous-learning history")
+
+            demo_route_id = route_ids["davao-cagayan"]
+            created_rows = 0
+            for offset in range(36, 0, -1):
+                service_date = date.today() - timedelta(days=offset)
+                snapshot_id = uuid.uuid5(
+                    _ROUTE_NAMESPACE,
+                    f"iqueue.demo.snapshot.{demo_route_id}.{service_date}",
+                )
+                if await session.get(ForecastSnapshot, snapshot_id) is not None:
+                    continue
+
+                surge_day = offset % 9 == 0
+                actual = 780 if surge_day else 390 + (offset % 7) * 9
+                predicted = actual + ((offset % 5) - 2) * 12
+                action = (
+                    "Open extra boarding lane and notify dispatcher"
+                    if surge_day
+                    else "Continue normal boarding operations"
+                )
+                session.add(
+                    ForecastSnapshot(
+                        id=snapshot_id,
+                        tenant_id=TENANT_ID,
+                        route_id=demo_route_id,
+                        forecast_date=service_date,
+                        predicted_volume=predicted,
+                        surge_probability=0.82 if surge_day else 0.24,
+                        risk_level="high" if surge_day else "low",
+                        recommended_action=action,
+                        model_version="v1-hackathon",
+                        model_source="ml_bundle",
+                        model_confidence=0.84,
+                        confidence_lower=max(0, predicted - 65),
+                        confidence_upper=predicted + 65,
+                        input_features={"simulated": True, "demo_seed": "v1"},
+                    )
+                )
+
+                modified = offset % 7 == 0
+                session.add(
+                    OperatorOverride(
+                        id=uuid.uuid5(
+                            _ROUTE_NAMESPACE,
+                            f"iqueue.demo.override.{snapshot_id}",
+                        ),
+                        tenant_id=TENANT_ID,
+                        route_id=demo_route_id,
+                        forecast_snapshot_id=snapshot_id,
+                        action_taken=(
+                            ForecastAction.MODIFIED
+                            if modified
+                            else ForecastAction.ACCEPTED
+                        ),
+                        override_type="local_event" if modified else None,
+                        override_reason=(
+                            "Simulated terminal event" if modified else None
+                        ),
+                        notes="SIMULATED DEMO DATA",
+                        operator_id="demo-admin",
+                        final_action=(
+                            "Open two lanes and stage one standby bus"
+                            if modified
+                            else action
+                        ),
+                        decided_at=datetime.combine(
+                            service_date,
+                            datetime.min.time(),
+                            tzinfo=timezone.utc,
+                        ),
+                    )
+                )
+                session.add(
+                    OperationalOutcome(
+                        id=uuid.uuid5(
+                            _ROUTE_NAMESPACE,
+                            f"iqueue.demo.outcome.{demo_route_id}.{service_date}",
+                        ),
+                        tenant_id=TENANT_ID,
+                        route_id=demo_route_id,
+                        service_date=service_date,
+                        actual_passenger_count=actual,
+                        peak_queue_length=58 if surge_day else 22,
+                        average_wait_time_minutes=9.5 if surge_day else 4.2,
+                        wait_time_p95_minutes=17.0 if surge_day else 7.5,
+                        extra_buses_dispatched=1 if surge_day else 0,
+                        lanes_opened=2 if surge_day else 1,
+                        missed_boardings=2 if surge_day else 0,
+                        overcrowding_incident=False,
+                        recorded_by="demo-admin",
+                        notes="SIMULATED DEMO DATA",
+                    )
+                )
+                created_rows += 1
+
+            message = (
+                "Would create 36 simulated route-day learning records"
+                if dry_run
+                else f"Created {created_rows} simulated route-day learning records"
+            )
+            print(f"+ {message}")
+
         if not dry_run:
             await session.commit()
 
@@ -289,10 +426,19 @@ async def seed(engine, dry_run: bool = False) -> None:
         print(f"\nDone. Seeded {len(ROUTES)} routes, {len(BUSES)} buses, 1 passenger.")
 
 
-async def _main_async(dry_run: bool) -> None:
+async def _main_async(
+    dry_run: bool,
+    with_learning_history: bool,
+    reset_learning_history: bool,
+) -> None:
     engine = build_engine()
     try:
-        await seed(engine, dry_run=dry_run)
+        await seed(
+            engine,
+            dry_run=dry_run,
+            with_learning_history=with_learning_history,
+            reset_learning_history=reset_learning_history,
+        )
     finally:
         await engine.dispose()
 
@@ -300,9 +446,27 @@ async def _main_async(dry_run: bool) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Seed IQueue database with Mindanao demo data")
     parser.add_argument("--check", action="store_true", help="Dry run — print what would be created")
+    parser.add_argument(
+        "--with-learning-history",
+        action="store_true",
+        help="Add 36 clearly labeled synthetic route-day feedback records",
+    )
+    parser.add_argument(
+        "--reset-learning-history",
+        action="store_true",
+        help="Delete and recreate only the synthetic demo learning history",
+    )
     args = parser.parse_args()
 
-    asyncio.run(_main_async(dry_run=args.check))
+    asyncio.run(
+        _main_async(
+            dry_run=args.check,
+            with_learning_history=(
+                args.with_learning_history or args.reset_learning_history
+            ),
+            reset_learning_history=args.reset_learning_history,
+        )
+    )
 
 
 if __name__ == "__main__":

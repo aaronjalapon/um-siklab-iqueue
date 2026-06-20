@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, BrainCircuit, Bus, Check, Pencil, TrendingUp, Users, X } from "lucide-react";
+import { AlertTriangle, BrainCircuit, Bus, Check, ClipboardCheck, Pencil, RotateCcw, TrendingUp, Users, X } from "lucide-react";
 import { BusCapacityList } from "@/components/operator/BusCapacityList";
 import { DataStatusBanner } from "@/components/operator/DataStatusBanner";
 import { StatCard } from "@/components/operator/StatCard";
@@ -9,17 +9,16 @@ import { SurgeForecastChart } from "@/components/operator/SurgeForecastChart";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { useForecast } from "@/hooks/useForecast";
 import { useOperatorFleet, todayIsoDate } from "@/hooks/useOperatorFleet";
-import { getLearningLogSummary, recordForecastAction } from "@/lib/api";
+import { getLearningLogSummary, recordForecastAction, recordOperationalOutcome, replayRetraining } from "@/lib/api";
 import { glassStyles } from "@/lib/design-system";
+import { DEMO_TENANT_ID } from "@/lib/demo-config";
 import {
   DEMO_ROUTES,
   MOCK_BUS_CAPACITY,
   OPERATOR_STATS,
 } from "@/lib/operator-mock";
 import type { BusCapacityEntry } from "@/lib/operator-mock";
-import type { LearningLogSummary, SurgePrediction } from "@/lib/types";
-
-const DEMO_TENANT_ID = "393bdde0-dde3-5955-bd01-8009b614a2b4";
+import type { LearningLogSummary, RetrainingReplay, SurgePrediction } from "@/lib/types";
 
 export default function OperatorDashboard() {
   const [routeId, setRouteId] = useState(DEMO_ROUTES[0].id);
@@ -35,6 +34,21 @@ export default function OperatorDashboard() {
   const [overrideReason, setOverrideReason] = useState("");
   const [overrideNotes, setOverrideNotes] = useState("");
   const [finalAction, setFinalAction] = useState("");
+  const [learningRefresh, setLearningRefresh] = useState(0);
+  const [outcomeOpen, setOutcomeOpen] = useState(false);
+  const [outcomeState, setOutcomeState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [outcomeForm, setOutcomeForm] = useState({
+    actualPassengerCount: "",
+    peakQueueLength: "",
+    averageWaitTime: "",
+    waitTimeP95: "",
+    extraBuses: "0",
+    lanesOpened: "1",
+    missedBoardings: "0",
+    overcrowdingIncident: false,
+  });
+  const [replay, setReplay] = useState<RetrainingReplay | null>(null);
+  const [replayState, setReplayState] = useState<"idle" | "loading" | "error">("idle");
   const selectedRoute =
     DEMO_ROUTES.find((r) => r.id === routeId) ?? DEMO_ROUTES[0];
 
@@ -132,7 +146,7 @@ export default function OperatorDashboard() {
     return () => {
       cancelled = true;
     };
-  }, [routeId, actionState]);
+  }, [routeId, actionState, learningRefresh]);
 
   async function submitForecastAction(
     prediction: SurgePrediction,
@@ -195,6 +209,53 @@ export default function OperatorDashboard() {
       overrideNotes,
       finalAction,
     });
+  }
+
+  function openOutcomeForm() {
+    setOutcomeForm((current) => ({
+      ...current,
+      actualPassengerCount: String(primaryPrediction?.predicted_volume ?? ""),
+    }));
+    setOutcomeState("idle");
+    setOutcomeOpen(true);
+  }
+
+  async function submitOutcome(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!primaryPrediction) return;
+    setOutcomeState("saving");
+    try {
+      await recordOperationalOutcome({
+        tenant_id: DEMO_TENANT_ID,
+        route_id: routeId,
+        service_date: primaryPrediction.forecast_date,
+        actual_passenger_count: Number(outcomeForm.actualPassengerCount),
+        peak_queue_length: outcomeForm.peakQueueLength ? Number(outcomeForm.peakQueueLength) : null,
+        average_wait_time_minutes: outcomeForm.averageWaitTime ? Number(outcomeForm.averageWaitTime) : null,
+        wait_time_p95_minutes: outcomeForm.waitTimeP95 ? Number(outcomeForm.waitTimeP95) : null,
+        extra_buses_dispatched: Number(outcomeForm.extraBuses),
+        lanes_opened: Number(outcomeForm.lanesOpened),
+        missed_boardings: Number(outcomeForm.missedBoardings),
+        overcrowding_incident: outcomeForm.overcrowdingIncident,
+        recorded_by: "demo-admin",
+        notes: "Operator-entered prototype outcome",
+      });
+      setOutcomeState("saved");
+      setLearningRefresh((value) => value + 1);
+      setOutcomeOpen(false);
+    } catch {
+      setOutcomeState("error");
+    }
+  }
+
+  async function runReplay() {
+    setReplayState("loading");
+    try {
+      setReplay(await replayRetraining());
+      setReplayState("idle");
+    } catch {
+      setReplayState("error");
+    }
   }
 
   return (
@@ -384,8 +445,94 @@ export default function OperatorDashboard() {
               Active model avg Surge F1: {String(metricsSummary.avg_surge_f1)}
             </p>
           )}
+          <div className="mt-4 grid gap-2">
+            <button
+              type="button"
+              onClick={openOutcomeForm}
+              disabled={!primaryPrediction}
+              className="inline-flex items-center justify-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold disabled:opacity-50 dark:border-slate-700"
+            >
+              <ClipboardCheck className="h-4 w-4" /> Record Outcome
+            </button>
+            <button
+              type="button"
+              onClick={() => void runReplay()}
+              disabled={replayState === "loading"}
+              className="inline-flex items-center justify-center gap-2 rounded-md bg-brand-blue px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
+            >
+              <RotateCcw className="h-4 w-4" />
+              {replayState === "loading" ? "Replaying" : "Replay Learning Cycle"}
+            </button>
+          </div>
+          {replay && (
+            <div className="mt-4 rounded-md border border-blue-200 bg-blue-50 p-3 text-xs text-blue-950">
+              <p className="font-semibold capitalize">Decision: {replay.decision.replaceAll("_", " ")}</p>
+              <p className="mt-1">Candidate F1: {replay.candidate_metrics.avg_surge_f1} · MAE: {replay.candidate_metrics.avg_mae}</p>
+              <p className="mt-2 text-blue-800">{replay.disclosure}</p>
+            </div>
+          )}
+          {replayState === "error" && (
+            <p className="mt-3 text-xs text-red-600">Demo replay is disabled or unavailable.</p>
+          )}
         </section>
       </div>
+
+      {outcomeOpen && primaryPrediction && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">
+          <form onSubmit={submitOutcome} className={`${glassStyles.panel} max-h-[90vh] w-full max-w-xl overflow-y-auto p-5`}>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className={glassStyles.sectionTitle}>Record Route Outcome</h2>
+                <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                  {primaryPrediction.forecast_date} · Synthetic prototype data only
+                </p>
+              </div>
+              <button type="button" onClick={() => setOutcomeOpen(false)} className="rounded-md p-2" aria-label="Close">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              {[
+                ["Actual passengers", "actualPassengerCount"],
+                ["Peak queue length", "peakQueueLength"],
+                ["Average wait minutes", "averageWaitTime"],
+                ["P95 wait minutes", "waitTimeP95"],
+                ["Extra buses", "extraBuses"],
+                ["Lanes opened", "lanesOpened"],
+                ["Missed boardings", "missedBoardings"],
+              ].map(([label, key]) => (
+                <label key={key} className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                  {label}
+                  <input
+                    type="number"
+                    min="0"
+                    step={key === "waitTimeP95" || key === "averageWaitTime" ? "0.1" : "1"}
+                    required={key === "actualPassengerCount"}
+                    value={outcomeForm[key as keyof typeof outcomeForm] as string}
+                    onChange={(event) => setOutcomeForm((current) => ({ ...current, [key]: event.target.value }))}
+                    className={`${glassStyles.input} mt-1`}
+                  />
+                </label>
+              ))}
+            </div>
+            <label className="mt-4 flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={outcomeForm.overcrowdingIncident}
+                onChange={(event) => setOutcomeForm((current) => ({ ...current, overcrowdingIncident: event.target.checked }))}
+              />
+              Overcrowding incident occurred
+            </label>
+            {outcomeState === "error" && <p className="mt-3 text-sm text-red-600">Could not save the outcome.</p>}
+            <div className="mt-5 flex justify-end gap-2">
+              <button type="button" onClick={() => setOutcomeOpen(false)} className="rounded-md border px-4 py-2 text-sm font-semibold">Cancel</button>
+              <button type="submit" disabled={outcomeState === "saving"} className="rounded-md bg-brand-blue px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
+                {outcomeState === "saving" ? "Saving" : "Save Outcome"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {overrideMode && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">

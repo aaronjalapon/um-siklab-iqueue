@@ -248,6 +248,16 @@ class TestChatbotServiceInit:
         }
         assert 0.0 <= result["confidence"] <= 1.0
 
+    def test_semantic_model_labels_are_not_treated_as_errors(self):
+        """Current Transformers checkpoints emit semantic intent labels."""
+        from app.services.chatbot.bot import decode_model_label
+
+        labels = {0: "check_booking", 3: "surge_info", 4: "fallback"}
+        assert decode_model_label("surge_info", labels) == "surge_info"
+        assert decode_model_label("LABEL_3", labels) == "surge_info"
+        assert decode_model_label("3", labels) == "surge_info"
+        assert decode_model_label("unknown", labels) == "fallback"
+
     def test_classify_with_context_no_context(self):
         """classify_with_context with no context should work like classify."""
         from app.services.chatbot.bot import ChatbotService

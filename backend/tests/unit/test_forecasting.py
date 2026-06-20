@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+import json
 
 import pytest
 
@@ -77,3 +78,22 @@ class TestForecastingService:
             avg_normal = sum(p.surge_probability for p in non_holiday_preds) / len(non_holiday_preds)
             # Not asserting since it depends on dates; just verifying we can compute it
             assert isinstance(avg_holiday, float)
+
+    def test_metadata_controls_classifier_gate(self, tmp_path):
+        """Runtime threshold and route multiplier should come from metadata."""
+
+        metadata = {
+            "version": "candidate-test",
+            "classifier_threshold": 0.63,
+            "routes": {
+                "davao-cagayan": {"surge_multiplier": 1.7},
+            },
+        }
+        (tmp_path / "model_metadata.json").write_text(json.dumps(metadata))
+        service = ForecastingService()
+
+        service._load_metrics_summary(tmp_path)
+
+        assert service.artifact_version == "candidate-test"
+        assert service._classifier_threshold == pytest.approx(0.63)
+        assert service._surge_multipliers["davao-cagayan"] == pytest.approx(1.7)

@@ -1,0 +1,15 @@
+# Local full-ML runtime layered on the existing production-like image.
+FROM iqueueacr.azurecr.io/iqueue-backend:6ade1cf AS runtime-ml-local
+
+USER root
+
+RUN pip install --no-cache-dir \
+    joblib==1.5.3 \
+    scikit-learn==1.8.0 \
+    lightgbm==4.6.0
+
+COPY --chown=app:app . /app
+
+USER app
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

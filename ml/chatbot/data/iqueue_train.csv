@@ -842,6 +842,42 @@ anong oras na sa maynila,get_departure_info,fil,massive
 bạn có thể gửi tôi đường từ mcdonalds bến thành đến nhà tôi không,get_departure_info,vi,massive
 vui lòng đặt một vé tàu hỏa giúp tôi,request_requeue,vi,massive
 What's the extra surge cost?,surge_info,en,synthetic
+Marami ba ang tao sa terminal ngayon?,surge_info,fil,curated_training
+Matao ba sa biyahe papuntang Davao?,surge_info,fil,curated_training
+May dagsa ba ng pasahero ngayong araw?,surge_info,fil,curated_training
+Puno na ba ang mga bus mamaya?,surge_info,fil,curated_training
+Gaano karami ang inaasahang pasahero?,surge_info,fil,curated_training
+May mataas bang demand sa holiday?,surge_info,fil,curated_training
+Mahaba ba ang pila sa pagsakay?,surge_info,fil,curated_training
+Anong oras pinakamatao ang terminal?,surge_info,fil,curated_training
+May crowd alert ba para sa bus ko?,surge_info,fil,curated_training
+Siksikan ba sa terminal ngayong hapon?,surge_info,fil,curated_training
+Kailangan bang maghanda para sa maraming tao?,surge_info,fil,curated_training
+Mataas ba ang surge probability ng ruta?,surge_info,fil,curated_training
+Apakah terminal ramai sekarang?,surge_info,id,curated_training
+Apakah perjalanan ke Davao sedang padat?,surge_info,id,curated_training
+Apakah ada lonjakan penumpang hari ini?,surge_info,id,curated_training
+Apakah bus nanti akan penuh?,surge_info,id,curated_training
+Berapa banyak penumpang yang diperkirakan?,surge_info,id,curated_training
+Apakah permintaan tinggi saat liburan?,surge_info,id,curated_training
+Apakah antrean naik bus panjang?,surge_info,id,curated_training
+Jam berapa terminal paling ramai?,surge_info,id,curated_training
+Apakah ada peringatan keramaian untuk bus saya?,surge_info,id,curated_training
+Apakah terminal padat sore ini?,surge_info,id,curated_training
+Haruskah petugas bersiap untuk banyak orang?,surge_info,id,curated_training
+Berapa probabilitas lonjakan rute ini?,surge_info,id,curated_training
+Bến xe hiện tại có đông không?,surge_info,vi,curated_training
+Chuyến đi đến Davao có đông khách không?,surge_info,vi,curated_training
+Hôm nay có tăng đột biến hành khách không?,surge_info,vi,curated_training
+Xe buýt lát nữa có đầy không?,surge_info,vi,curated_training
+Dự kiến có bao nhiêu hành khách?,surge_info,vi,curated_training
+Nhu cầu đi lại ngày lễ có cao không?,surge_info,vi,curated_training
+Hàng đợi lên xe có dài không?,surge_info,vi,curated_training
+Mấy giờ bến xe đông nhất?,surge_info,vi,curated_training
+Có cảnh báo đông người cho xe của tôi không?,surge_info,vi,curated_training
+Bến xe chiều nay có chật không?,surge_info,vi,curated_training
+Nhân viên có cần chuẩn bị cho nhiều người không?,surge_info,vi,curated_training
+Xác suất tăng khách của tuyến này là bao nhiêu?,surge_info,vi,curated_training
 cuộc hẹn tiếp theo của tôi là khi nào và tôi phải liên hệ với ai để đặt lại lịch,check_booking,vi,massive
 mở ứng dụng đặt vé tàu hỏa,request_requeue,vi,massive
 tìm kiếm sở thích của anh ấy,fallback,vi,massive

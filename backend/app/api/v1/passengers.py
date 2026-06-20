@@ -31,9 +31,21 @@ async def create_or_find_passenger(
     is updated with the latest preferences and returned (upsert).
     Otherwise a new Passenger record is created.
     """
-    # Try to find existing passenger by phone
+    from app.models.tenant import Tenant
+
+    tenant = await db.get(Tenant, payload.tenant_id)
+    if not tenant:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Tenant {payload.tenant_id} not found",
+        )
+
+    # Phone numbers are unique only within a tenant boundary.
     result = await db.execute(
-        select(Passenger).where(Passenger.phone == payload.phone)
+        select(Passenger).where(
+            Passenger.tenant_id == payload.tenant_id,
+            Passenger.phone == payload.phone,
+        )
     )
     existing = result.scalars().first()
 
@@ -49,19 +61,6 @@ async def create_or_find_passenger(
         await db.flush()
         await db.refresh(existing)
         return existing
-
-    # Resolve tenant — use existing tenant if the provided one doesn't exist
-    from app.models.tenant import Tenant
-    tenant = await db.get(Tenant, payload.tenant_id)
-    if not tenant:
-        # Fall back to the first available tenant (demo/dev mode)
-        result = await db.execute(select(Tenant).limit(1))
-        tenant = result.scalars().first()
-        if not tenant:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No tenants configured",
-            )
 
     # Create new passenger
     passenger = Passenger(

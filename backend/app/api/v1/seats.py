@@ -56,10 +56,16 @@ async def assign_seat(
         needs_accessibility=body.passenger.needs_accessibility,
         preferred_seat_type=body.passenger.preferred_seat_type,
         preferred_side=body.passenger.preferred_side,
+        affinity_opt_in=body.passenger.affinity_opt_in,
     )
 
     try:
-        result = await allocator.assign(body.bus_id, passenger)
+        result = await allocator.assign(
+            body.bus_id,
+            passenger,
+            reserve=body.passenger.booking_id != "temp",
+            seat_label=body.seat_label,
+        )
     except BusNotFoundError:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

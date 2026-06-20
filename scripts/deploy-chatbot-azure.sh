@@ -20,6 +20,14 @@ fi
 : "${AZURE_ACR_NAME:?Set AZURE_ACR_NAME}"
 : "${AZURE_APP_SERVICE_PLAN:?Set AZURE_APP_SERVICE_PLAN}"
 : "${AZURE_WEBAPP_NAME:?Set AZURE_WEBAPP_NAME}"
+: "${DATABASE_URL:?Set DATABASE_URL to the production PostgreSQL URL}"
+: "${QR_HMAC_SECRET:?Set QR_HMAC_SECRET}"
+: "${SECRET_KEY:?Set SECRET_KEY}"
+
+AZURE_APP_SERVICE_SKU="${AZURE_APP_SERVICE_SKU:-B2}"
+
+python3 "$repo_root/scripts/validate_forecast_bundle.py" \
+  --artifacts "$repo_root/iqueue_artifacts/artifacts"
 
 az config set extension.use_dynamic_install=yes_without_prompt >/dev/null
 
@@ -49,7 +57,12 @@ if ! az appservice plan show --name "$AZURE_APP_SERVICE_PLAN" --resource-group "
     --resource-group "$AZURE_RESOURCE_GROUP" \
     --location "$AZURE_LOCATION" \
     --is-linux \
-    --sku B1 >/dev/null
+    --sku "$AZURE_APP_SERVICE_SKU" >/dev/null
+else
+  az appservice plan update \
+    --name "$AZURE_APP_SERVICE_PLAN" \
+    --resource-group "$AZURE_RESOURCE_GROUP" \
+    --sku "$AZURE_APP_SERVICE_SKU" >/dev/null
 fi
 
 IMAGE_NAME="${AZURE_IMAGE_NAME:-iqueue-backend}"
@@ -58,7 +71,7 @@ ACR_LOGIN_SERVER="$(az acr show --name "$AZURE_ACR_NAME" --resource-group "$AZUR
 IMAGE_REF="${ACR_LOGIN_SERVER}/${IMAGE_NAME}:${IMAGE_TAG}"
 
 echo "Building ${IMAGE_REF}"
-docker build -f Dockerfile -t "$IMAGE_REF" "$repo_root"
+docker build -f "$repo_root/Dockerfile" -t "$IMAGE_REF" "$repo_root"
 
 echo "Pushing ${IMAGE_REF}"
 az acr login --name "$AZURE_ACR_NAME"
@@ -93,9 +106,14 @@ az webapp config appsettings set \
     PORT=8000 \
     WEBSITES_PORT=8000 \
     WEBSITES_CONTAINER_START_TIME_LIMIT=1800 \
-    PROPHET_MODEL_PATH=/app/backend/app/services/forecasting/artifacts/prophet_model.pkl \
-    LSTM_MODEL_PATH=/app/backend/app/services/forecasting/artifacts/lstm_model.pt \
+    DATABASE_URL="$DATABASE_URL" \
+    QR_HMAC_SECRET="$QR_HMAC_SECRET" \
+    SECRET_KEY="$SECRET_KEY" \
+    ALLOWED_ORIGINS="${ALLOWED_ORIGINS:-https://iqueue-frontend.vercel.app}" \
+    FORECASTING_ARTIFACTS_DIR=/app/backend/app/services/forecasting/artifacts \
     CHATBOT_MODEL_PATH=/app/backend/app/services/chatbot/artifacts/xlm-roberta-iqueue \
+    DEMO_MODE=true \
+    REQUIRE_FORECAST_MODELS=true \
     DEBUG=false >/dev/null
 
 az webapp config set \
@@ -126,6 +144,9 @@ for attempt in $(seq 1 30); do
 
   sleep 10
 done
+
+python3 "$repo_root/scripts/smoke_demo.py" \
+  --base-url "https://${APP_HOST}/api/v1"
 
 echo "Deployment complete"
 echo "Base URL: https://${APP_HOST}"

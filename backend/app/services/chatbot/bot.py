@@ -256,6 +256,29 @@ _chatbot_service: "ChatbotService | None" = None
 _singleton_load_attempted: bool = False
 
 
+def decode_model_label(
+    label: str | int,
+    id_to_label: dict[int, str],
+) -> str:
+    """Normalize Transformers labels into an IQueue intent name.
+
+    Fine-tuned checkpoints may emit semantic labels (``surge_info``), while
+    older checkpoints emit numeric labels (``LABEL_3`` or ``3``). Supporting
+    both formats prevents a healthy classifier from silently degrading to the
+    keyword fallback.
+    """
+
+    value = str(label)
+    if value in id_to_label.values():
+        return value
+    if value.startswith("LABEL_"):
+        value = value.removeprefix("LABEL_")
+    try:
+        return id_to_label.get(int(value), "fallback")
+    except ValueError:
+        return "fallback"
+
+
 def get_chatbot_service() -> "ChatbotService | None":
     """Return the module-level chatbot service singleton.
 
@@ -363,13 +386,7 @@ class ChatbotService:
                 results = self._classifier(text)[0]
                 best = max(results, key=lambda x: x["score"])
 
-                label_str = best["label"]
-                if label_str.startswith("LABEL_"):
-                    label_idx = int(label_str.split("_")[1])
-                else:
-                    label_idx = int(label_str)
-
-                intent = self._id_to_label.get(label_idx, "fallback")
+                intent = decode_model_label(best["label"], self._id_to_label)
                 confidence = round(best["score"], 4)
 
                 # Per-language confidence threshold
@@ -380,12 +397,7 @@ class ChatbotService:
 
                 all_scores = {}
                 for r in results:
-                    rl = r["label"]
-                    if rl.startswith("LABEL_"):
-                        ri = int(rl.split("_")[1])
-                    else:
-                        ri = int(rl)
-                    r_intent = self._id_to_label.get(ri, "fallback")
+                    r_intent = decode_model_label(r["label"], self._id_to_label)
                     all_scores[r_intent] = round(r["score"], 4)
 
                 return {

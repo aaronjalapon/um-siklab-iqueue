@@ -9,12 +9,14 @@
 
 **IQueue** is an AI-powered smart boarding platform for inter-provincial bus terminals across ASEAN. It solves congestion, seat hoarding, and boarding disputes through four integrated subsystems:
 
+> **Evidence disclosure:** the current operational and forecasting datasets are synthetic, and IQueue has not completed a field pilot. The Evidence view separates deterministic simulations, legacy validation metrics, and untouched-test metrics. Run the canonical retraining pipeline before presenting the latter.
+
 | Subsystem | Description |
 |---|---|
 | **📊 Demand Forecasting** | Prophet + LSTM hybrid predicting passenger surges 7 days ahead |
-| **🪑 Smart Seat Allocator** | Rule-based engine with passenger affinity scoring for seatmate pairing |
+| **🪑 Smart Seat Allocator** | Explainable constrained optimization; affinity is explicitly opt-in |
 | **📱 QR Boarding Pass** | HMAC-SHA256 signed token, offline-scannable at terminal gates |
-| **💬 Multilingual Chatbot** | NLP chatbot supporting Filipino, Bahasa, Vietnamese, English |
+| **💬 Multilingual Chatbot** | Fine-tuned intent classifier supporting Filipino, Bahasa, Vietnamese, English |
 
 ---
 
@@ -30,8 +32,8 @@
 
 ### Prerequisites
 
-- Python 3.11+
-- Node.js 20+
+- Python 3.14+
+- Node.js 24+
 - Docker & Docker Compose
 - PostgreSQL 15 (or use Docker)
 
@@ -47,45 +49,76 @@ python scripts/generate_qr_keys.py
 ### 2. Start with Docker (Recommended)
 
 ```bash
-COMPOSE_BAKE=true docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
 ```
 
 This starts:
-- PostgreSQL 15 on port 5432
+- PostgreSQL 18 on port 5432
 - FastAPI backend on port 8000 (with hot reload and the lightweight base image)
 - Next.js frontend on port 3000
 
-For a production-like backend image with forecasting and chatbot ML dependencies
-installed, use the base compose file:
+For production-like full ML inference, use the CPU-only ML override and the
+checksum-validated route bundle:
 
 ```bash
-COMPOSE_BAKE=true docker compose up --build
+python scripts/validate_forecast_bundle.py \
+  --artifacts iqueue_artifacts/artifacts
+docker-compose -f docker-compose.yml -f docker-compose.ml.yml up -d --build
 ```
+
+Modern Docker installations can use `docker compose` in place of
+`docker-compose`. The repository Dockerfiles do not require BuildKit.
 
 ### 3. Generate Demo Data
 
 ```bash
-python -m data.pipeline.synthetic_data
-python data/pipeline/clean.py --source synthetic
+PYTHONPATH=backend .venv/bin/alembic -c backend/alembic.ini upgrade head
+DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/iqueue \
+  .venv/bin/python scripts/seed_demo_data.py \
+  --with-learning-history --reset-learning-history
 ```
 
 ### 4. Train Forecasting Models
 
 ```bash
-python ml/forecasting/train.py
+python ml/forecasting/train.py --validate-only
+# Run once on Kaggle/Colab GPU with scikit-learn 1.8:
+python ml/forecasting/train.py --epochs 80
 python ml/forecasting/evaluate.py
-# Target: Surge Recall ≥ 70%
+python scripts/validate_forecast_bundle.py \
+  --artifacts iqueue_artifacts/artifacts --write-manifest
+python scripts/validate_forecast_bundle.py \
+  --artifacts iqueue_artifacts/artifacts
 ```
 
 ### 5. Open the App
 
 - **Passenger UI:** http://localhost:3000
 - **Operator Dashboard:** http://localhost:3000/operator
+- **Evidence View:** http://localhost:3000/operator/evidence
+- **Boarding Scanner:** http://localhost:3000/operator/scanner
 - **API Docs:** http://localhost:8000/docs
+
+### Continuous learning replay
+
+Every shown forecast is stored as a snapshot. Accept, modify, and reject
+actions are joined to end-of-day outcomes by tenant, route, and service date.
+The shared ground-truth builder creates one leakage-safe route-day row, and the
+promotion gate accepts a candidate only when surge F1 or recall improves while
+MAE increases by no more than 5%.
+
+```bash
+curl -X POST http://localhost:8000/api/v1/demo/retraining-replay
+curl http://localhost:8000/api/v1/evidence/summary
+```
+
+The replay is enabled only with `DEMO_MODE=true`, uses clearly labeled
+synthetic history, and never mutates the deployed champion.
 
 ### Azure deployment
 
-The current deployment direction is a unified Linux Azure App Service container that runs the backend API plus the chatbot and forecasting models together.
+The deployment uses a unified Linux Azure App Service container with CPU-only
+PyTorch. Use an Azure B2 plan or larger; the deployment script defaults to B2.
 
 Use `scripts/deploy-chatbot-azure.sh` as the Azure bootstrap script. The filename is legacy; the script now provisions and updates the App Service deployment.
 
@@ -133,7 +166,7 @@ iqueue/
 │   │   └── services/          # Business logic (forecasting, seats, QR, chatbot)
 │   ├── alembic/               # Database migrations
 │   └── tests/                 # Unit + integration tests
-├── frontend/                   # Next.js 14 (App Router)
+├── frontend/                   # Next.js 16 (App Router)
 │   └── src/
 │       ├── app/               # (passenger) + (operator) route groups
 │       ├── components/        # Shared UI components
@@ -170,13 +203,13 @@ iqueue/
 
 ```bash
 # Backend tests
-cd backend && pytest tests/ -v --cov=app
+DEBUG=true .venv/bin/python -m pytest backend/tests ml/forecasting/tests -q
 
 # Load testing
 cd backend && locust -f tests/load/locustfile.py
 
 # Frontend
-cd frontend && npm run lint && npx tsc --noEmit
+cd frontend && npm run lint && npx tsc --noEmit && npm run build
 ```
 
 ---

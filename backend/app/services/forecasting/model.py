@@ -78,3 +78,37 @@ class SurgeLSTM(nn.Module):
         self.eval()
         with torch.no_grad():
             return self.forward(x).squeeze(-1)
+
+
+class ArtifactLSTMForecaster(nn.Module):
+    """Compatibility model for LSTM checkpoints exported by the notebook."""
+
+    def __init__(
+        self,
+        input_size: int,
+        hidden_size: int = 64,
+        num_layers: int = 1,
+        dropout: float = 0.2,
+    ) -> None:
+        super().__init__()
+        self.lstm = nn.LSTM(
+            input_size,
+            hidden_size,
+            num_layers,
+            batch_first=True,
+            dropout=dropout if num_layers > 1 else 0.0,
+        )
+        self.fc = nn.Linear(hidden_size, 1)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Predict the scaled passenger count for the final sequence step."""
+
+        output, _ = self.lstm(x)
+        return self.fc(output[:, -1, :]).squeeze(-1)
+
+    def predict(self, x: torch.Tensor) -> torch.Tensor:
+        """Run inference without gradient tracking."""
+
+        self.eval()
+        with torch.no_grad():
+            return self.forward(x)

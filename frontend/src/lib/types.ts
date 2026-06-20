@@ -45,6 +45,7 @@ export interface BookingCreate {
   bus_id: string;
   departure_date: string;
   seat_preference?: string;
+  selected_seat?: string;
   travel_group?: string[];
   passenger_name?: string;
   group_id?: string;
@@ -53,6 +54,7 @@ export interface BookingCreate {
   lifestyle_interest?: string;
   needs_accessibility?: boolean;
   preferred_side?: string;
+  affinity_opt_in?: boolean;
 }
 
 export interface BookingResponse {
@@ -155,6 +157,95 @@ export interface OperationalOutcomeResponse extends OperationalOutcomeCreate {
   created_at: string;
 }
 
+export interface BoardingVerifyResponse {
+  valid: boolean;
+  reason: string;
+  signature_valid: boolean;
+  boarding_status: string;
+  booking_id: string | null;
+  passenger_id: string | null;
+  route_id: string | null;
+  bus_id: string | null;
+  seat: string | null;
+  boarding_window: string | null;
+}
+
+export interface EvidenceSummary {
+  generated_at: string;
+  data_disclosure: {
+    data_type: "synthetic";
+    field_pilot_completed: boolean;
+    statement: string;
+  };
+  active_bundle: {
+    version: string | null;
+    status: "complete" | "partial" | "unavailable";
+    loaded_routes: string[];
+    classifier_loaded: boolean;
+    metadata: Record<string, unknown>;
+  };
+  model_comparison: Array<Record<string, string | number | null>>;
+  subsystems: Record<string, Record<string, unknown>>;
+}
+
+export interface RetrainingReplay {
+  simulated: true;
+  mutated_champion: false;
+  replayed_at: string;
+  stages: Array<Record<string, string | number>>;
+  champion_metrics: Record<string, number>;
+  candidate_metrics: Record<string, number>;
+  decision: "promote" | "retain_champion";
+  reasons: string[];
+  disclosure: string;
+}
+
+export type RetrainJobStatus =
+  | "queued"
+  | "checking_data"
+  | "training"
+  | "evaluating"
+  | "promoting"
+  | "promoted"
+  | "rejected"
+  | "skipped"
+  | "failed";
+
+export interface RetrainMetrics {
+  avg_mae: number;
+  avg_surge_f1: number;
+  avg_surge_recall: number;
+  routes_evaluated: number;
+}
+
+export interface RetrainDecision {
+  decided_at: string;
+  passed: boolean;
+  reasons: string[];
+  ground_truth_rows: number;
+  champion_metrics: RetrainMetrics;
+  candidate_metrics: RetrainMetrics;
+}
+
+export interface RetrainJob {
+  job_id: string;
+  status: RetrainJobStatus;
+  started_at: string | null;
+  finished_at: string | null;
+  ground_truth_rows: number | null;
+  decision: RetrainDecision | null;
+  archived_champion: string | null;
+  message: string | null;
+  error: string | null;
+  epochs: number | null;
+}
+
+export interface RetrainJobQueued {
+  job_id: string;
+  status: "queued";
+  message: string;
+}
+
 export interface ChatbotRequest {
   query: string;
   language?: string;
@@ -187,6 +278,7 @@ export interface PassengerFormData {
   language_pref: string;
   travel_habits: string;
   lifestyle_interests: string;
+  affinity_opt_in: boolean;
   accessibility_needs: boolean;
   preferred_seat_type: string; // "window" | "aisle" | ""
   preferred_side: string; // "left" | "right" | ""

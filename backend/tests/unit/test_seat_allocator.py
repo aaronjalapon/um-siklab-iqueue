@@ -110,7 +110,8 @@ async def test_affinity_scoring_prefers_language_match(
     db_session: AsyncSession, bus, passenger, tenant
 ):
     """Seat allocator should prefer seats next to same-language passengers."""
-    # Create a Filipino-speaking seatmate in seat 1B
+    # Create a Filipino-speaking seatmate in standard seat 3B. Rows 1-2 are
+    # reserved for passengers who need accessible seating.
     seatmate = Passenger(
         id=uuid.uuid4(),
         tenant_id=tenant.id,
@@ -130,7 +131,7 @@ async def test_affinity_scoring_prefers_language_match(
         id=uuid.uuid4(),
         passenger_id=seatmate.id,
         bus_id=bus.id,
-        seat_number="1B",
+        seat_number="3B",
         boarding_window_start=departure,
         boarding_window_end=departure + timedelta(minutes=15),
         status=BookingStatus.CONFIRMED,
@@ -147,9 +148,9 @@ async def test_affinity_scoring_prefers_language_match(
         departure_date=departure,
     )
 
-    # Should get seat 1A or 1C (same row as language-matching seatmate)
+    # Should get seat 3A or 3C (same row as language-matching seatmate)
     row = int(result.seat_number.rstrip("ABCD"))
-    assert row == 1, f"Expected row 1 near language-matching seatmate, got {result.seat_number}"
+    assert row == 3, f"Expected row 3 near language-matching seatmate, got {result.seat_number}"
     assert result.affinity_score > 0, f"Expected positive affinity score, got {result.affinity_score}"
 
 

@@ -36,6 +36,10 @@ class PassengerContext(BaseModel):
     preferred_side: Optional[str] = Field(
         None, description="'left' | 'right' | None"
     )
+    affinity_opt_in: bool = Field(
+        False,
+        description="Explicit consent to language/travel/lifestyle matching",
+    )
 
 
 class SeatAssignmentResult(BaseModel):
@@ -50,6 +54,8 @@ class SeatAssignmentResult(BaseModel):
         False, description="Whether this is an accessibility-priority seat"
     )
     affinity_score: float
+    score_breakdown: dict[str, float] = Field(default_factory=dict)
+    assignment_reasons: list[str] = Field(default_factory=list)
     boarding_window: Optional[str] = Field(
         None, description="HH:MM–HH:MM format"
     )
@@ -83,6 +89,9 @@ class SeatAssignRequest(BaseModel):
 
     bus_id: str = Field(..., description="UUID of the bus")
     passenger: PassengerContext
+    seat_label: Optional[str] = Field(
+        None, description="Specific seat label to lock (e.g. '3B'). If set, only that seat is scored."
+    )
 
 
 class SeatSwapRequest(BaseModel):

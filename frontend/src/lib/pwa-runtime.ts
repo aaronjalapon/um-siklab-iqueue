@@ -3,6 +3,7 @@ export const SHOULD_ENABLE_PWA =
   process.env.NEXT_PUBLIC_ENABLE_SW === "true";
 
 export const PWA_INSTALL_DISMISS_KEY = "iqueue:pwa-install-dismissed:v1";
+export const PWA_INSTALL_REQUEST_EVENT = "iqueue:request-pwa-install";
 
 export async function cleanupDevelopmentPwaState(): Promise<void> {
   if (typeof window === "undefined") return;

@@ -1,10 +1,13 @@
-const CACHE_VERSION = "iqueue-pwa-v1";
+const CACHE_VERSION = "iqueue-pwa-v2";
 const PRECACHE = `${CACHE_VERSION}-precache`;
 const PAGES = `${CACHE_VERSION}-pages`;
 const ASSETS = `${CACHE_VERSION}-assets`;
 const IS_LOCAL_DEV_HOST = ["localhost", "127.0.0.1", "::1"].includes(
   self.location.hostname
 );
+const IS_LOCAL_PWA_ENABLED =
+  new URL(self.location.href).searchParams.get("pwa") === "enabled";
+const SHOULD_DISABLE_LOCAL_PWA = IS_LOCAL_DEV_HOST && !IS_LOCAL_PWA_ENABLED;
 
 const PRECACHE_URLS = [
   "/",
@@ -38,7 +41,23 @@ self.addEventListener("install", (event) => {
 });
 
 self.addEventListener("activate", (event) => {
-  if (IS_LOCAL_DEV_HOST) {
+  if (IS_LOCAL_DEV_HOST && IS_LOCAL_PWA_ENABLED) {
+    event.waitUntil(
+      caches
+        .keys()
+        .then((cacheNames) =>
+          Promise.all(
+            cacheNames
+              .filter((cacheName) => cacheName.startsWith("iqueue-pwa-"))
+              .map((cacheName) => caches.delete(cacheName))
+          )
+        )
+        .then(() => self.clients.claim())
+    );
+    return;
+  }
+
+  if (SHOULD_DISABLE_LOCAL_PWA) {
     event.waitUntil(
       caches
         .keys()
@@ -74,11 +93,16 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
-  if (IS_LOCAL_DEV_HOST) return;
+  if (SHOULD_DISABLE_LOCAL_PWA) return;
 
   const { request } = event;
 
   if (request.method !== "GET") return;
+
+  if (IS_LOCAL_DEV_HOST) {
+    event.respondWith(fetch(request));
+    return;
+  }
 
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;

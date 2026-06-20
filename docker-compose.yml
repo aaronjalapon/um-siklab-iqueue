@@ -47,16 +47,24 @@ services:
       - PROPHET_MODEL_PATH=/app/app/services/forecasting/artifacts/prophet_model.pkl
       - LSTM_MODEL_PATH=/app/app/services/forecasting/artifacts/lstm_model.pt
       - CHATBOT_MODEL_PATH=/app/app/services/chatbot/artifacts/xlm-roberta-iqueue
+      # Tells the backend where to read/write trained model artifacts.
+      # Mounted from ./iqueue_artifacts on the host so training output survives restarts.
+      - FORECASTING_ARTIFACTS_DIR=/app/iqueue_artifacts/artifacts
     ports:
       - "${PORT:-8000}:8000"
     volumes:
       - ./backend/app/services/forecasting/artifacts:/app/app/services/forecasting/artifacts
       - ./deployments/xlm-roberta-iqueue:/app/app/services/chatbot/artifacts/xlm-roberta-iqueue
+      # Trained champion/candidate bundles — persisted on the host filesystem
+      - ./iqueue_artifacts:/app/iqueue_artifacts
+      # ML training scripts needed by the retraining subprocess
+      - ./ml:/app/ml
     networks:
       - iqueue-net
     command: >
       sh -c "alembic upgrade head &&
              uvicorn app.main:app --host 0.0.0.0 --port 8000"
+
 
   # --- Next.js Frontend ---
   frontend:

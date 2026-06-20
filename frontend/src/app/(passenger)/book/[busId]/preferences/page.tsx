@@ -65,6 +65,7 @@ export default function PreferencesPage() {
     language_pref: "fil",
     travel_habits: "leisure",
     lifestyle_interests: "",
+    affinity_opt_in: false,
     accessibility_needs: false,
     preferred_seat_type: "",
     preferred_side: "",
@@ -112,6 +113,7 @@ export default function PreferencesPage() {
       language_pref: formData.language_pref,
       travel_habits: formData.travel_habits,
       lifestyle_interests: formData.lifestyle_interests,
+      affinity_opt_in: String(formData.affinity_opt_in),
       accessibility_needs: String(formData.accessibility_needs),
       preferred_seat_type: formData.preferred_seat_type,
       preferred_side: formData.preferred_side,
@@ -278,10 +280,28 @@ export default function PreferencesPage() {
               className={`${glassStyles.input} w-full text-sm`}
             />
             <p className="mt-1 text-xs text-slate-400">
-              Comma-separated interests help the allocator avoid awkward
-              seatmate pairings.
+              Used for seatmate matching only when you opt in below.
             </p>
           </div>
+
+          <label className="mt-4 flex items-start gap-3 rounded-lg border border-glass-border bg-white/40 p-3 text-sm text-slate-700 dark:bg-slate-900/30 dark:text-slate-300">
+            <input
+              type="checkbox"
+              checked={formData.affinity_opt_in}
+              onChange={(event) =>
+                updateField("affinity_opt_in", event.target.checked)
+              }
+              className="mt-1 rounded border-slate-300"
+            />
+            <span>
+              <span className="font-medium">Opt in to seatmate matching</span>
+              <span className="mt-1 block text-xs text-slate-500">
+                Allows language, trip style, and shared interests to influence
+                the recommendation. Accessibility and group seating do not
+                require this consent.
+              </span>
+            </span>
+          </label>
 
           <label className="mt-4 flex items-start gap-3 rounded-xl border border-glass-border bg-white/40 p-3 text-sm text-slate-700 dark:bg-slate-900/30 dark:text-slate-300">
             <input

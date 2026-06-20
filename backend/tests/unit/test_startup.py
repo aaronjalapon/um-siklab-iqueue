@@ -17,6 +17,10 @@ class DummyForecastingService:
     def __init__(self) -> None:
         self.warmed = False
         self.is_ready = True
+        self.bundle_status = "complete"
+        self.loaded_routes = ["route-1"]
+        self.artifact_version = "test-v1"
+        self.classifier_loaded = True
 
     def warmup(self) -> None:
         self.warmed = True
@@ -91,3 +95,5 @@ async def test_warm_application_marks_forecasting_ready_when_available(monkeypat
     assert dummy_service.warmed is True
     assert state.database_ready is True
     assert state.forecasting_ready is True
+    assert state.forecast_bundle_status == "complete"
+    assert state.loaded_routes == ["route-1"]

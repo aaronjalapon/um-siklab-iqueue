@@ -30,6 +30,38 @@ async def test_create_booking_returns_201(
 
 
 @pytest.mark.asyncio
+async def test_create_booking_reserves_confirmed_selected_seat(
+    client: AsyncClient,
+    db_session,
+    passenger,
+    bus,
+):
+    """The final booking must retain the exact seat confirmed by the user."""
+
+    from datetime import datetime, timedelta, timezone
+
+    from app.services.seat_assignment.bus_layout import generate_seats_for_bus
+
+    await generate_seats_for_bus(bus, db_session)
+    await db_session.flush()
+    departure = (datetime.now(timezone.utc) + timedelta(days=8)).isoformat()
+    response = await client.post(
+        "/api/v1/bookings",
+        json={
+            "passenger_id": str(passenger.id),
+            "bus_id": str(bus.id),
+            "departure_date": departure,
+            "selected_seat": "3A",
+            "seat_preference": "window",
+            "passenger_name": passenger.name,
+        },
+    )
+
+    assert response.status_code == 201, response.text
+    assert response.json()["seat_number"] == "3A"
+
+
+@pytest.mark.asyncio
 async def test_get_booking_returns_200(
     client: AsyncClient, booking
 ):

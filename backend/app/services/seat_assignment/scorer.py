@@ -9,7 +9,9 @@ inputs, it always returns the same score.
 
 from __future__ import annotations
 
-from app.models.seat import Seat, SeatReservation, SeatStatus, SeatType
+from dataclasses import dataclass
+
+from app.models.seat import Seat, SeatReservation, SeatStatus
 
 # ---------------------------------------------------------------------------
 # Scoring weights (constants)
@@ -21,9 +23,9 @@ SCORE_WEIGHTS: dict[str, float] = {
     "group_same_row": 30,         # seat in the same row as a group member (not adjacent)
     "preference_seat_type": 20,   # seat type matches passenger preference (window/aisle)
     "preference_side": 15,        # seat side (left/right) matches passenger preference
-    "affinity_language": 20,      # nearest neighbor shares language preference
-    "affinity_travel_habit": 15,  # nearest neighbor shares travel habit
-    "affinity_lifestyle": 10,     # nearest neighbor shares lifestyle interest
+    "affinity_language": 8,       # opt-in comfort signal; below direct preferences
+    "affinity_travel_habit": 4,   # opt-in comfort signal
+    "affinity_lifestyle": 3,      # per shared interest, capped at three
     "load_balance": 10,           # seat is in the less-occupied half of the bus
     "occupied_penalty": -999,     # seat is already occupied or reserved (hard block)
     "blocked_penalty": -999,      # seat is operator-blocked (hard block)
@@ -46,7 +48,7 @@ class PassengerContext:
     __slots__ = (
         "booking_id", "passenger_name", "group_id", "language_preference",
         "travel_habit", "lifestyle_interest", "needs_accessibility",
-        "preferred_seat_type", "preferred_side",
+        "preferred_seat_type", "preferred_side", "affinity_opt_in",
     )
 
     def __init__(
@@ -60,6 +62,7 @@ class PassengerContext:
         needs_accessibility: bool = False,
         preferred_seat_type: str | None = None,
         preferred_side: str | None = None,
+        affinity_opt_in: bool = False,
     ):
         self.booking_id = booking_id
         self.passenger_name = passenger_name
@@ -70,6 +73,16 @@ class PassengerContext:
         self.needs_accessibility = needs_accessibility
         self.preferred_seat_type = preferred_seat_type
         self.preferred_side = preferred_side
+        self.affinity_opt_in = affinity_opt_in
+
+
+@dataclass(frozen=True, slots=True)
+class SeatScoreBreakdown:
+    """Explainable output from the deterministic seat scorer."""
+
+    total: float
+    components: dict[str, float]
+    reasons: list[str]
 
 
 # ---------------------------------------------------------------------------
@@ -102,44 +115,92 @@ def score_seat(
     Returns:
         Float score. Negative below HARD_BLOCK_THRESHOLD means disqualified.
     """
-    score = 0.0
+    return score_seat_breakdown(
+        candidate_seat,
+        passenger,
+        existing_reservations,
+        total_rows,
+        seats_per_row,
+    ).total
+
+
+def score_seat_breakdown(
+    candidate_seat: Seat,
+    passenger: PassengerContext,
+    existing_reservations: list[SeatReservation],
+    total_rows: int,
+    seats_per_row: int,
+) -> SeatScoreBreakdown:
+    """Compute a seat score with auditable components and reasons."""
+
+    components = {
+        "accessibility": 0.0,
+        "group_proximity": 0.0,
+        "seat_preference": 0.0,
+        "affinity": 0.0,
+        "load_balance": 0.0,
+    }
+    reasons: list[str] = []
 
     # --- Step 1: Hard blocks ---
     if candidate_seat.status == SeatStatus.OCCUPIED:
-        return SCORE_WEIGHTS["occupied_penalty"]
+        return SeatScoreBreakdown(
+            SCORE_WEIGHTS["occupied_penalty"], components, ["Seat is occupied"]
+        )
     if candidate_seat.status == SeatStatus.BLOCKED:
-        return SCORE_WEIGHTS["blocked_penalty"]
+        return SeatScoreBreakdown(
+            SCORE_WEIGHTS["blocked_penalty"], components, ["Seat is blocked"]
+        )
     if candidate_seat.status == SeatStatus.RESERVED:
-        return SCORE_WEIGHTS["occupied_penalty"]
+        return SeatScoreBreakdown(
+            SCORE_WEIGHTS["occupied_penalty"], components, ["Seat is reserved"]
+        )
 
     # Accessibility hard block: passenger needs accessibility but seat is not near exit
     if passenger.needs_accessibility:
         if candidate_seat.is_near_exit and candidate_seat.is_accessibility:
-            score += SCORE_WEIGHTS["accessibility_exit"]
+            components["accessibility"] = SCORE_WEIGHTS["accessibility_exit"]
+            reasons.append("Accessible seat near the exit")
         else:
-            score += SCORE_WEIGHTS["accessibility_penalty"]
-            return score  # hard block — don't assign non-exit to accessibility pax
+            components["accessibility"] = SCORE_WEIGHTS["accessibility_penalty"]
+            return SeatScoreBreakdown(
+                SCORE_WEIGHTS["accessibility_penalty"],
+                components,
+                ["Does not satisfy the accessibility requirement"],
+            )
 
     # --- Step 2: Group proximity ---
     if passenger.group_id:
-        score += _group_proximity_score(
+        components["group_proximity"] = _group_proximity_score(
             candidate_seat, passenger.group_id, existing_reservations
         )
+        if components["group_proximity"]:
+            reasons.append("Keeps the travel group close together")
 
     # --- Step 3: Seat preference ---
-    score += _preference_score(candidate_seat, passenger)
+    components["seat_preference"] = _preference_score(candidate_seat, passenger)
+    if components["seat_preference"]:
+        reasons.append("Matches the selected seat preferences")
 
     # --- Step 4: Neighbor affinity ---
-    score += _neighbor_affinity_score(
-        candidate_seat, passenger, existing_reservations
-    )
+    if passenger.affinity_opt_in:
+        components["affinity"] = _neighbor_affinity_score(
+            candidate_seat, passenger, existing_reservations
+        )
+        if components["affinity"]:
+            reasons.append("Matches opted-in seatmate preferences")
 
     # --- Step 5: Load balancing ---
-    score += _load_balance_score(
+    components["load_balance"] = _load_balance_score(
         candidate_seat, existing_reservations, total_rows
     )
+    if components["load_balance"]:
+        reasons.append("Improves passenger distribution through the bus")
 
-    return round(score, 2)
+    total = round(sum(components.values()), 2)
+    if not reasons:
+        reasons.append("Best available seat under current constraints")
+    return SeatScoreBreakdown(total, components, reasons)
 
 
 # ---------------------------------------------------------------------------

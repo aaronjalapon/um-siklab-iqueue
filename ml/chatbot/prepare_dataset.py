@@ -255,6 +255,26 @@ def _balance_massive(
     return balanced
 
 
+def _load_curated_rows() -> list[dict]:
+    """Preserve manually reviewed multilingual examples across rebuilds."""
+
+    curated: list[dict] = []
+    seen: set[tuple[str, str, str]] = set()
+    for name in ("iqueue_train.csv", "iqueue_val.csv", "iqueue_test.csv"):
+        path = DATA_DIR / name
+        if not path.exists():
+            continue
+        with path.open(encoding="utf-8") as handle:
+            for row in csv.DictReader(handle):
+                if not row.get("source", "").startswith("curated_"):
+                    continue
+                key = (row["text"], row["label"], row["language"])
+                if key not in seen:
+                    curated.append(row)
+                    seen.add(key)
+    return curated
+
+
 def _generate_code_switched(
     intent: str,
     n: int = 30,
@@ -499,6 +519,9 @@ def main() -> None:
 
     # 2. Balance MASSIVE rows
     balanced = _balance_massive(all_rows, per_intent_per_lang=sample_n)
+    curated = _load_curated_rows()
+    balanced.extend(curated)
+    logger.info("Added %d manually reviewed multilingual rows", len(curated))
     logger.info("After balancing: %d rows", len(balanced))
 
     # 3. Generate synthetic for gaps

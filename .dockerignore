@@ -1,0 +1,16 @@
+.git
+.github
+.venv
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+**/node_modules
+**/.next
+frontend
+ml
+data
+*.ipynb
+.env
+.env.*
+htmlcov
+postgres_data

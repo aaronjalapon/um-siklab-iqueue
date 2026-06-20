@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -9,15 +10,14 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.api.v1 import bookings as booking_module
 from app.core.deps import get_db
 from app.models.booking import Booking, BookingStatus
 from app.models.bus import Bus
-from app.models.bus_route import BusRoute
 from app.models.passenger import Passenger
 from app.schemas.booking import BookingCreate, BookingDetailResponse, BookingResponse
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 @router.post(
@@ -59,6 +59,11 @@ async def create_booking(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Bus {payload.bus_id} not found",
         )
+    if passenger.tenant_id != bus.tenant_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Passenger and bus belong to different tenants",
+        )
 
     # Count existing bookings for this bus on this date
     existing_bookings = (
@@ -80,7 +85,6 @@ async def create_booking(
 
     # Try the new SeatAllocator first; fall back to simple assignment
     assigned_seat_label: str | None = None
-    assigned_affinity_score: float = 0.0
     boarding_window_start = payload.departure_date
     boarding_window_end = payload.departure_date + timedelta(minutes=15)
 
@@ -100,16 +104,19 @@ async def create_booking(
             needs_accessibility=payload.needs_accessibility or passenger.accessibility_needs,
             preferred_seat_type=payload.seat_preference,
             preferred_side=payload.preferred_side,
+            affinity_opt_in=payload.affinity_opt_in,
         )
 
-        result = await allocator.assign(str(payload.bus_id), pax_ctx)
+        result = await allocator.assign(
+            str(payload.bus_id),
+            pax_ctx,
+            seat_label=payload.selected_seat,
+        )
         assigned_seat_label = result["seat_label"]
-        assigned_affinity_score = result["affinity_score"]
 
         # Parse boarding window from HH:MM–HH:MM format
         bw = result.get("boarding_window", "")
         if "–" in bw:
-            from datetime import date
             parts = bw.split("–")
             today = payload.departure_date.date()
             t1_parts = parts[0].split(":")
@@ -124,7 +131,17 @@ async def create_booking(
                 int(t2_parts[0]), int(t2_parts[1]),
                 tzinfo=timezone.utc,
             )
-    except Exception:
+    except Exception as exc:
+        if payload.selected_seat:
+            logger.info(
+                "Selected seat %s could not be reserved: %s",
+                payload.selected_seat,
+                exc,
+            )
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Selected seat {payload.selected_seat} is no longer available",
+            )
         # Fallback: simple seat assignment
         taken_seats = {b.seat_number for b in existing_bookings}
         assigned_seat_label = None

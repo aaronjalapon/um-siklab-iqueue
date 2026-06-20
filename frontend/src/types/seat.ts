@@ -45,6 +45,7 @@ export interface PassengerContext {
   needs_accessibility: boolean;
   preferred_seat_type?: SeatType;
   preferred_side?: SeatSide;
+  affinity_opt_in?: boolean;
 }
 
 export interface SeatAssignmentResult {
@@ -55,12 +56,15 @@ export interface SeatAssignmentResult {
   row_number: number;
   is_accessibility: boolean;
   affinity_score: number;
+  score_breakdown: Record<string, number>;
+  assignment_reasons: string[];
   boarding_window?: string;
 }
 
 export interface SeatAssignRequest {
   bus_id: string;
   passenger: PassengerContext;
+  seat_label?: string;
 }
 
 export interface SeatSwapRequest {

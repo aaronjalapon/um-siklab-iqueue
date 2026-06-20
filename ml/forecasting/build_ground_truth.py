@@ -18,9 +18,15 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 
 import pandas as pd
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(PROJECT_ROOT / "backend"))
+
+from app.services.ground_truth import build_ground_truth_records  # noqa: E402
 
 FEATURE_COLUMNS = [
     "tenant_id",
@@ -140,75 +146,25 @@ def build_ground_truth(input_dir: Path, output_path: Path) -> pd.DataFrame:
     if outcomes.empty:
         raise FileNotFoundError(f"Missing operational_outcomes.csv in {input_dir}")
 
-    snapshots = snapshots.copy()
-    outcomes = outcomes.copy()
-    snapshots["service_date"] = pd.to_datetime(snapshots["forecast_date"]).dt.date.astype(str)
-    outcomes["service_date"] = pd.to_datetime(outcomes["service_date"]).dt.date.astype(str)
-
-    latest_snapshots = _latest_by(
-        snapshots,
-        keys=["tenant_id", "route_id", "service_date"],
-        sort_col="created_at",
-    ).rename(columns={"id": "forecast_snapshot_id"})
-
-    if not overrides.empty:
-        latest_overrides = _latest_by(
-            overrides,
-            keys=["forecast_snapshot_id"],
-            sort_col="decided_at",
-        )
-        latest_overrides = latest_overrides[
-            [
-                "forecast_snapshot_id",
-                "action_taken",
-                "override_type",
-                "final_action",
-            ]
-        ].rename(columns={"action_taken": "admin_action_taken"})
-    else:
-        latest_overrides = pd.DataFrame(
-            columns=[
-                "forecast_snapshot_id",
-                "admin_action_taken",
-                "override_type",
-                "final_action",
-            ]
-        )
-
-    rows = outcomes.merge(
-        latest_snapshots,
-        on=["tenant_id", "route_id", "service_date"],
-        how="inner",
-        suffixes=("_actual", "_forecast"),
-    )
-    rows = rows.merge(latest_overrides, on="forecast_snapshot_id", how="left")
-
     booking_counts = _booking_counts(bookings, buses)
-    rows = rows.merge(
-        booking_counts,
-        on=["tenant_id", "route_id", "service_date"],
-        how="left",
+    holiday_flags = {
+        (
+            str(row["tenant_id"]),
+            str(row["route_id"]),
+            pd.Timestamp(row["forecast_date"]).date().isoformat(),
+        ): _holiday_flag(pd.Timestamp(row["forecast_date"]))
+        for row in snapshots.to_dict(orient="records")
+    }
+    records = build_ground_truth_records(
+        snapshots.to_dict(orient="records"),
+        overrides.to_dict(orient="records"),
+        outcomes.to_dict(orient="records"),
+        booking_counts.to_dict(orient="records"),
+        holiday_flags,
     )
-
-    service_dates = pd.to_datetime(rows["service_date"])
-    rows["day_of_week"] = service_dates.dt.dayofweek
-    rows["is_weekend"] = rows["day_of_week"].isin([5, 6])
-    rows["month"] = service_dates.dt.month
-    rows["is_holiday"] = service_dates.apply(_holiday_flag)
-    rows["prebooked_passengers"] = rows["prebooked_passengers"].fillna(0).astype(int)
-
-    threshold = rows.groupby("route_id")["actual_passenger_count"].transform("median") * 1.8
-    rows["actual_surge"] = rows["actual_passenger_count"] >= threshold
-    rows["wait_time_p95"] = rows.get("wait_time_p95_minutes")
-    rows["admin_action_taken"] = rows["admin_action_taken"].fillna("no_action_logged")
-    rows["recommendation_followed"] = (
-        rows["admin_action_taken"].eq("ACCEPTED")
-        | rows["admin_action_taken"].eq("accepted")
-        | rows["final_action"].fillna("").eq(rows["recommended_action"].fillna(""))
-    )
-
-    output_cols = [c for c in FEATURE_COLUMNS + TARGET_COLUMNS if c in rows.columns]
-    final = rows[output_cols].sort_values(["route_id", "service_date"])
+    final = pd.DataFrame(records)
+    output_cols = [c for c in FEATURE_COLUMNS + TARGET_COLUMNS if c in final.columns]
+    final = final[output_cols]
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     final.to_csv(output_path, index=False)

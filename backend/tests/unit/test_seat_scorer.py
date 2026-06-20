@@ -54,6 +54,7 @@ def make_passenger(
     travel_habit: str | None = None,
     lifestyle_interest: str | None = None,
     group_id: str | None = None,
+    affinity_opt_in: bool = False,
 ) -> PassengerContext:
     """Create a PassengerContext for testing."""
     return PassengerContext(
@@ -66,6 +67,7 @@ def make_passenger(
         needs_accessibility=needs_accessibility,
         preferred_seat_type=preferred_seat_type,
         preferred_side=preferred_side,
+        affinity_opt_in=affinity_opt_in,
     )
 
 
@@ -163,7 +165,7 @@ class TestAffinity:
 
     def test_language_match_with_neighbor(self):
         seat = make_seat(label="2B", row=2, col=2)
-        pax = make_passenger(language="fil")
+        pax = make_passenger(language="fil", affinity_opt_in=True)
         # Create a neighbor in 2A who speaks Filipino
         neighbor_seat = make_seat(label="2A", row=2, col=1, status=SeatStatus.OCCUPIED)
         neighbor_res = SeatReservation(
@@ -180,7 +182,7 @@ class TestAffinity:
 
     def test_travel_habit_match_with_neighbor(self):
         seat = make_seat(label="2B", row=2, col=2)
-        pax = make_passenger(travel_habit="business")
+        pax = make_passenger(travel_habit="business", affinity_opt_in=True)
         neighbor_seat = make_seat(label="2A", row=2, col=1, status=SeatStatus.OCCUPIED)
         neighbor_res = SeatReservation(
             id=uuid.uuid4(),
@@ -196,7 +198,9 @@ class TestAffinity:
 
     def test_lifestyle_overlap_with_neighbor(self):
         seat = make_seat(label="2B", row=2, col=2)
-        pax = make_passenger(lifestyle_interest="music,travel,tech")
+        pax = make_passenger(
+            lifestyle_interest="music,travel,tech", affinity_opt_in=True
+        )
         neighbor_seat = make_seat(label="2A", row=2, col=1, status=SeatStatus.OCCUPIED)
         neighbor_res = SeatReservation(
             id=uuid.uuid4(),
@@ -216,6 +220,23 @@ class TestAffinity:
         pax = make_passenger(language="fil", travel_habit="business")
         score = score_seat(seat, pax, [], 14, 4)
         assert score == 0.0
+
+    def test_affinity_fields_do_not_score_without_consent(self):
+        seat = make_seat(label="2B", row=2, col=2)
+        pax = make_passenger(language="fil", affinity_opt_in=False)
+        neighbor_seat = make_seat(
+            label="2A", row=2, col=1, status=SeatStatus.OCCUPIED
+        )
+        neighbor = SeatReservation(
+            id=uuid.uuid4(),
+            seat_id=neighbor_seat.id,
+            booking_id=uuid.uuid4(),
+            passenger_name="Neighbor",
+            language_preference="fil",
+        )
+        neighbor.seat = neighbor_seat
+
+        assert score_seat(seat, pax, [neighbor], 14, 4) == 0.0
 
 
 # ---------------------------------------------------------------------------

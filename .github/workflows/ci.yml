@@ -1,0 +1,144 @@
+name: IQueue CI
+
+on:
+  push:
+    branches: [main, pre-prod]
+  pull_request:
+    branches: [main, pre-prod]
+
+permissions:
+  contents: read
+
+jobs:
+  backend-and-ml:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: iqueue_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d iqueue_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DEBUG: "true"
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/iqueue_ci
+      PYTHONPATH: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+      - name: Install test dependencies
+        run: |
+          python -m pip install -r backend/requirements-dev.txt
+          python -m pip install numpy==2.4.6 pandas==3.0.3 matplotlib==3.10.8 joblib==1.5.3 simpy==4.1.1
+      - name: Validate PostgreSQL migrations
+        run: alembic -c backend/alembic.ini upgrade head
+      - name: Run backend and ML utility tests
+        run: python -m pytest backend/tests ml/forecasting/tests -q
+      - name: Run Ruff
+        run: >-
+          ruff check --ignore E402
+          backend/app/api/v1/boarding.py
+          backend/app/api/v1/bookings.py
+          backend/app/api/v1/buses.py
+          backend/app/api/v1/demo.py
+          backend/app/api/v1/evidence.py
+          backend/app/api/v1/passengers.py
+          backend/app/main.py
+          backend/app/schemas/boarding.py
+          backend/app/services/evidence.py
+          backend/app/services/forecasting/predictor.py
+          backend/app/services/ground_truth.py
+          backend/app/services/seat_assignment/engine.py
+          backend/app/services/seat_assignment/scorer.py
+          ml/evidence/generate_system_evidence.py
+          ml/forecasting/build_ground_truth.py
+          ml/forecasting/splits.py
+          ml/forecasting/train.py
+          ml/forecasting/retraining.py
+          scripts/smoke_demo.py
+          scripts/validate_forecast_bundle.py
+          scripts/verify_boarding_qr.py
+      - name: Validate forecasting splits
+        run: python ml/forecasting/train.py --validate-only
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npx tsc --noEmit
+      - run: npm run build
+      - run: npx playwright test --list
+
+  deployed-e2e:
+    runs-on: ubuntu-latest
+    if: ${{ vars.E2E_BASE_URL != '' }}
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      PLAYWRIGHT_BASE_URL: ${{ vars.E2E_BASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run test:e2e
+
+  docker-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build lightweight API image
+        run: docker build --target runtime-base -t iqueue-api:ci backend
+      - name: Smoke-test API liveness
+        run: |
+          docker run -d --name iqueue-api-ci -p 8000:8000 \
+            -e DATABASE_URL=postgresql+asyncpg://postgres:postgres@127.0.0.1:5999/iqueue \
+            iqueue-api:ci
+          for attempt in $(seq 1 30); do
+            curl -fsS http://localhost:8000/api/v1/health/live && exit 0
+            sleep 2
+          done
+          docker logs iqueue-api-ci
+          exit 1
+
+  full-ml-bundle:
+    runs-on: ubuntu-latest
+    if: ${{ vars.DVC_ARTIFACTS_CONFIGURED == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - run: python -m pip install dvc[azure]
+      - name: Restore DVC model artifacts
+        env:
+          AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
+        run: dvc pull
+      - name: Verify bundle and build full CPU image
+        run: |
+          python scripts/validate_forecast_bundle.py --artifacts iqueue_artifacts/artifacts
+          docker build -t iqueue-full-ml:ci .

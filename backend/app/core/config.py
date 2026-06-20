@@ -41,9 +41,10 @@ class Settings(BaseSettings):
         / "app/services/forecasting/artifacts/lstm_model.pt"
     )
     # Per-route forecasting artifacts directory
+    # train.py writes to <project_root>/iqueue_artifacts/artifacts by default.
     FORECASTING_ARTIFACTS_DIR: str = str(
         Path(__file__).resolve().parents[3]
-        / "ml/forecasting/artifacts/iqueue_artifacts/artifacts"
+        / "iqueue_artifacts/artifacts"
     )
 
     # --- Chatbot ---
@@ -56,6 +57,8 @@ class Settings(BaseSettings):
 
     # --- Application ---
     DEBUG: bool = True
+    DEMO_MODE: bool = False
+    REQUIRE_FORECAST_MODELS: bool = False
     SECRET_KEY: str = "dev-secret-key-change-in-production"
     ALLOWED_ORIGINS: str = "http://localhost:3000"
 

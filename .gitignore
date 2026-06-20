@@ -56,6 +56,8 @@ Thumbs.db
 .coverage
 htmlcov/
 .pytest_cache/
+frontend/test-results/
+frontend/playwright-report/
 
 # Claude Code
 .claude/tasks/

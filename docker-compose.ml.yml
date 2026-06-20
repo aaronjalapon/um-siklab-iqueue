@@ -6,10 +6,13 @@ services:
   backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile.ml.local
-      target: runtime-ml-local
+      dockerfile: Dockerfile
+      target: runtime-ml
     environment:
       - DEBUG=true
+      - DEMO_MODE=true
+      - REQUIRE_FORECAST_MODELS=true
       - FORECASTING_ARTIFACTS_DIR=/app/app/services/forecasting/artifacts
     volumes:
       - ./iqueue_artifacts/artifacts:/app/app/services/forecasting/artifacts:ro
+      - ./evidence:/app/evidence:ro

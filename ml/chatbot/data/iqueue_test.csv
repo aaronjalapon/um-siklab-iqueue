@@ -210,3 +210,36 @@ mag-book ng tren para sa ika-dalawampu at dalawa ng marso alas dose ng tanghali,
 tanggal berapa dua rabu yang lalu dari hari ini,get_departure_info,id,massive
 pwede po bang magbook ng tiket ng tren para sa susunod na sabado papuntang boston,request_requeue,fil,massive
 what is the theme of the party,check_booking,en,massive
+Will the terminal be crowded tomorrow?,surge_info,en,curated_holdout
+How busy is my route this weekend?,surge_info,en,curated_holdout
+Should I expect a long queue at the station?,surge_info,en,curated_holdout
+Matao ba sa terminal bukas?,surge_info,fil,curated_holdout
+Marami bang pasahero sa rutang ito?,surge_info,fil,curated_holdout
+Puno ba ang bus ngayong weekend?,surge_info,fil,curated_holdout
+Gaano kahaba ang pila mamaya?,surge_info,fil,curated_holdout
+May inaasahang dagsa ng tao sa holiday?,surge_info,fil,curated_holdout
+Siksikan ba sa istasyon ngayong gabi?,surge_info,fil,curated_holdout
+Mataas ba ang demand para sa biyaheng ito?,surge_info,fil,curated_holdout
+Kailan pinakamaraming pasahero sa terminal?,surge_info,fil,curated_holdout
+Kailangan ko bang pumunta nang mas maaga dahil matao?,surge_info,fil,curated_holdout
+May surge alert ba para sa ruta ko?,surge_info,fil,curated_holdout
+Apakah terminal akan ramai besok?,surge_info,id,curated_holdout
+Apakah banyak penumpang di rute ini?,surge_info,id,curated_holdout
+Apakah bus penuh akhir pekan ini?,surge_info,id,curated_holdout
+Seberapa panjang antrean nanti?,surge_info,id,curated_holdout
+Apakah ada lonjakan penumpang saat liburan?,surge_info,id,curated_holdout
+Apakah stasiun padat malam ini?,surge_info,id,curated_holdout
+Apakah permintaan rute ini sedang tinggi?,surge_info,id,curated_holdout
+Kapan terminal paling ramai?,surge_info,id,curated_holdout
+Haruskah saya datang lebih awal karena ramai?,surge_info,id,curated_holdout
+Apakah ada peringatan lonjakan untuk rute saya?,surge_info,id,curated_holdout
+Bến xe ngày mai có đông không?,surge_info,vi,curated_holdout
+Tuyến này có nhiều hành khách không?,surge_info,vi,curated_holdout
+Xe cuối tuần này có đầy không?,surge_info,vi,curated_holdout
+Hàng đợi lát nữa có dài không?,surge_info,vi,curated_holdout
+Ngày lễ có dự kiến tăng khách không?,surge_info,vi,curated_holdout
+Nhà ga tối nay có đông đúc không?,surge_info,vi,curated_holdout
+Nhu cầu cho tuyến này có cao không?,surge_info,vi,curated_holdout
+Khi nào bến xe đông nhất?,surge_info,vi,curated_holdout
+Tôi có nên đến sớm vì đông người không?,surge_info,vi,curated_holdout
+Có cảnh báo tăng lượng khách cho tuyến của tôi không?,surge_info,vi,curated_holdout

@@ -7,7 +7,12 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from app.core.security import create_qr_token, generate_secret_key, verify_qr_token
+from app.core.security import (
+    create_qr_token,
+    generate_secret_key,
+    validate_qr_timing,
+    verify_qr_token,
+)
 from app.services.qr_service.qr import QRService
 
 
@@ -95,6 +100,29 @@ class TestQRTokenGeneration:
         is_valid, _ = verify_qr_token("", secret)
         assert not is_valid
 
+    def test_expired_token_timing_is_rejected(self):
+        payload = {
+            "boarding_window": (
+                datetime.now(timezone.utc) - timedelta(hours=8)
+            ).isoformat(),
+            "signed_at": (
+                datetime.now(timezone.utc) - timedelta(hours=9)
+            ).isoformat(),
+        }
+        valid, reason = validate_qr_timing(payload)
+        assert not valid
+        assert reason == "expired"
+
+    def test_future_token_timing_is_not_yet_valid(self):
+        payload = {
+            "boarding_window": (
+                datetime.now(timezone.utc) + timedelta(hours=4)
+            ).isoformat(),
+            "signed_at": datetime.now(timezone.utc).isoformat(),
+        }
+        valid, reason = validate_qr_timing(payload)
+        assert not valid
+        assert reason == "not_yet_valid"
 
 class TestQRService:
     """Tests for the QRService class."""

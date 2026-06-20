@@ -21,13 +21,13 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models.booking import Booking, BookingStatus
 from app.models.bus import Bus
 from app.models.seat import Seat, SeatReservation, SeatStatus
 from app.services.seat_assignment.bus_layout import generate_seats_for_bus
 from app.services.seat_assignment.scorer import (
     PassengerContext,
-    score_seat,
+    SeatScoreBreakdown,
+    score_seat_breakdown,
 )
 
 logger = logging.getLogger(__name__)
@@ -51,11 +51,12 @@ class BusNotFoundError(Exception):
 
 class _ScoredCandidate:
     """Internal container for a scored seat during allocation."""
-    __slots__ = ("seat", "score")
+    __slots__ = ("seat", "score", "breakdown")
 
-    def __init__(self, seat: Seat, score: float):
+    def __init__(self, seat: Seat, breakdown: SeatScoreBreakdown):
         self.seat = seat
-        self.score = score
+        self.score = breakdown.total
+        self.breakdown = breakdown
 
 
 # ---------------------------------------------------------------------------
@@ -97,6 +98,9 @@ class SeatAllocator:
         self,
         bus_id: str | UUID,
         passenger: PassengerContext,
+        *,
+        reserve: bool = True,
+        seat_label: str | None = None,
     ) -> dict:
         """Assign the best available seat to a passenger.
 
@@ -174,19 +178,23 @@ class SeatAllocator:
             available_seats = [
                 seat for seat in available_seats if not seat.is_accessibility
             ]
+        if seat_label is not None:
+            available_seats = [
+                seat for seat in available_seats if seat.seat_label == seat_label
+            ]
 
         for seat in available_seats:
             if seat.status != SeatStatus.AVAILABLE:
                 continue
-            s = score_seat(
+            breakdown = score_seat_breakdown(
                 candidate_seat=seat,
                 passenger=passenger,
                 existing_reservations=existing_reservations,
                 total_rows=total_rows,
                 seats_per_row=seats_per_row,
             )
-            if s > -100:  # Skip hard-blocked seats
-                candidates.append(_ScoredCandidate(seat, s))
+            if breakdown.total > -100:  # Skip hard-blocked seats
+                candidates.append(_ScoredCandidate(seat, breakdown))
 
         if not candidates:
             raise SeatUnavailableError(
@@ -205,18 +213,14 @@ class SeatAllocator:
         window_start = now + timedelta(minutes=row * 3)
         window_end = window_start + timedelta(minutes=15)
 
-        # Create reservation within a nested transaction
-        async with self.session.begin_nested():
-            # Update seat
+        bw_str = (
+            f"{window_start.strftime('%H:%M')}–"
+            f"{window_end.strftime('%H:%M')}"
+        )
+        if reserve:
+            # Create reservation only inside the final booking transaction.
             winner.seat.status = SeatStatus.OCCUPIED
             winner.seat.affinity_score = winner.score
-
-            # Build boarding window string
-            bw_str = (
-                f"{window_start.strftime('%H:%M')}–"
-                f"{window_end.strftime('%H:%M')}"
-            )
-
             # Create reservation
             # booking_id may be a placeholder — generate a real UUID if invalid
             try:
@@ -246,6 +250,7 @@ class SeatAllocator:
                 boarding_window=bw_str,
             )
             self.session.add(reservation)
+            await self.session.flush()
 
         return {
             "seat_id": str(winner.seat.id),
@@ -256,6 +261,8 @@ class SeatAllocator:
             "is_accessibility": winner.seat.is_accessibility,
             "affinity_score": winner.score,
             "boarding_window": bw_str,
+            "score_breakdown": winner.breakdown.components,
+            "assignment_reasons": winner.breakdown.reasons,
         }
 
     async def release(self, booking_id: str | UUID) -> None:
@@ -413,8 +420,39 @@ class SeatAllocator:
             raise ValueError("Cannot swap seats on different buses")
 
         async with self.session.begin_nested():
-            # Swap the seat IDs on the reservations
-            res_a.seat_id, res_b.seat_id = seat_b.id, seat_a.id
+            # A direct two-row UPDATE violates the unique seat_id constraint
+            # before both assignments have changed. Remove and recreate one
+            # reservation so the transition remains portable across SQLite
+            # tests and PostgreSQL production.
+            res_a_values = {
+                "id": res_a.id,
+                "booking_id": res_a.booking_id,
+                "passenger_name": res_a.passenger_name,
+                "group_id": res_a.group_id,
+                "language_preference": res_a.language_preference,
+                "travel_habit": res_a.travel_habit,
+                "lifestyle_interest": res_a.lifestyle_interest,
+                "needs_accessibility": res_a.needs_accessibility,
+                "preferred_seat_type": res_a.preferred_seat_type,
+                "preferred_side": res_a.preferred_side,
+                "computed_affinity_score": res_a.computed_affinity_score,
+                "boarding_window": res_b.boarding_window,
+                "created_at": res_a.created_at,
+            }
+            original_a_window = res_a.boarding_window
+            await self.session.delete(res_a)
+            await self.session.flush()
+
+            res_b.seat_id = seat_a.id
+            res_b.boarding_window = original_a_window
+            await self.session.flush()
+
+            replacement_a = SeatReservation(
+                seat_id=seat_b.id,
+                **res_a_values,
+            )
+            self.session.add(replacement_a)
+            await self.session.flush()
 
             # Swap the affinity scores on the seats
             (
@@ -423,15 +461,6 @@ class SeatAllocator:
             ) = (
                 seat_b.affinity_score,
                 seat_a.affinity_score,
-            )
-
-            # Swap boarding windows
-            (
-                res_a.boarding_window,
-                res_b.boarding_window,
-            ) = (
-                res_b.boarding_window,
-                res_a.boarding_window,
             )
 
         return {

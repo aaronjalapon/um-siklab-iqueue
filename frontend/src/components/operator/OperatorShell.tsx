@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+
 import { usePathname } from "next/navigation";
-import { BarChart3, Bus, Home, Users } from "lucide-react";
+import { BarChart3, BrainCircuit, Bus, FileCheck2, Home, QrCode, Users } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
 import { glassStyles } from "@/lib/design-system";
 
@@ -10,6 +11,9 @@ const NAV_ITEMS = [
   { href: "/operator", label: "Dashboard", shortLabel: "Home", icon: BarChart3, exact: true },
   { href: "/operator/queue", label: "Queue", shortLabel: "Queue", icon: Users, exact: false },
   { href: "/operator/buses", label: "Buses", shortLabel: "Buses", icon: Bus, exact: false },
+  { href: "/operator/scanner", label: "Boarding Scanner", shortLabel: "Scan", icon: QrCode, exact: false },
+  { href: "/operator/evidence", label: "Evidence", shortLabel: "Evidence", icon: FileCheck2, exact: false },
+  { href: "/operator/model", label: "Model Retraining", shortLabel: "Model", icon: BrainCircuit, exact: false },
   { href: "/", label: "Passenger View", shortLabel: "Passenger", icon: Home, exact: true },
 ];
 

@@ -9,22 +9,20 @@ Routes (all under /api/v1/forecasts/model/):
 
 from __future__ import annotations
 
-import asyncio
+import importlib
 import logging
 from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
-from app.services.retraining import (
-    get_job,
-    list_jobs,
-    run_retraining_job,
-    trigger_retraining,
-)
-
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+ML_ADMIN_UNAVAILABLE_DETAIL = (
+    "Model retraining and hot-reload require the full ML runtime. "
+    "Use the runtime-ml image or install optional ML dependencies."
+)
 
 
 # ---------------------------------------------------------------------------
@@ -65,12 +63,38 @@ class RetrainStatusResponse(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Optional dependency loader
+# ---------------------------------------------------------------------------
+
+
+def _get_retraining_service() -> tuple[Any, Any, Any, Any]:
+    """Load retraining helpers only when optional ML dependencies exist."""
+
+    try:
+        module = importlib.import_module("app.services.retraining")
+    except ImportError as exc:
+        logger.warning("Model admin unavailable in lightweight runtime: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=ML_ADMIN_UNAVAILABLE_DETAIL,
+        ) from exc
+
+    return (
+        module.get_job,
+        module.list_jobs,
+        module.run_retraining_job,
+        module.trigger_retraining,
+    )
+
+
+# ---------------------------------------------------------------------------
 # Background task launcher
 # ---------------------------------------------------------------------------
 
 
 async def _launch_retraining_task(job_id: str, task_kwargs: dict) -> None:
     """Wrap run_retraining_job so BackgroundTasks can call it."""
+    _, _, run_retraining_job, _ = _get_retraining_service()
     await run_retraining_job(job_id, **task_kwargs)
 
 
@@ -98,9 +122,14 @@ async def trigger_retrain(
     background_tasks: BackgroundTasks,
 ) -> RetrainJobResponse:
     """Queue a retraining job and return the job_id immediately."""
+    get_job, list_jobs, _, trigger_retraining = _get_retraining_service()
 
     # Reject if another job is already running
-    running = [j for j in list_jobs() if j.get("status") in ("queued", "training", "evaluating", "promoting")]
+    running = [
+        j
+        for j in list_jobs()
+        if j.get("status") in ("queued", "training", "evaluating", "promoting")
+    ]
     if running:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -136,6 +165,7 @@ async def get_retrain_status(
     job_id: str | None = Query(None, description="Job ID from POST /retrain. Omit to get the latest job."),
 ) -> RetrainStatusResponse:
     """Return the current status of a retraining job."""
+    get_job, list_jobs, _, _ = _get_retraining_service()
 
     if job_id:
         job = get_job(job_id)
@@ -175,6 +205,7 @@ async def list_retrain_jobs(
     limit: int = Query(default=10, ge=1, le=50),
 ) -> list[dict]:
     """Return the most recent retraining job summaries."""
+    _, list_jobs, _, _ = _get_retraining_service()
     return [
         {k: v for k, v in job.items() if not k.startswith("_")}
         for job in list_jobs(limit=limit)
@@ -195,6 +226,11 @@ async def reload_model() -> dict[str, Any]:
     try:
         from app.core.startup import reload_forecasting_service, runtime_snapshot
         service = reload_forecasting_service()
+        if service is None:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=ML_ADMIN_UNAVAILABLE_DETAIL,
+            )
         snapshot = runtime_snapshot()
         return {
             "message": "ForecastingService reloaded successfully",
@@ -202,6 +238,8 @@ async def reload_model() -> dict[str, Any]:
             "bundle_status": snapshot.get("forecast_bundle_status"),
             "loaded_routes": snapshot.get("loaded_routes", []),
         }
+    except HTTPException:
+        raise
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

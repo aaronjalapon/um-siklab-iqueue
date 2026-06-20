@@ -4,4 +4,4 @@
 # =============================================================================
 
 -r requirements.base.txt
--r requirements.ml.txt
+-r requirements.ml-local.txt

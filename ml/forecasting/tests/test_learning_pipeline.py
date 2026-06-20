@@ -8,6 +8,7 @@ from pathlib import Path
 import pandas as pd
 
 from ml.forecasting import build_ground_truth, evaluate, retraining
+from ml.forecasting.splits import chronological_split
 
 
 def test_build_ground_truth_creates_route_day_rows(tmp_path: Path) -> None:
@@ -138,3 +139,21 @@ def test_evaluate_exports_comparison_files(tmp_path: Path, monkeypatch) -> None:
     assert not comparison.empty
     assert (artifact_dir / "baseline_comparison.csv").exists()
     assert (artifact_dir / "baseline_comparison.json").exists()
+
+
+def test_chronological_split_keeps_test_window_untouched() -> None:
+    """Train, validation, and test dates must be ordered and non-overlapping."""
+
+    frame = pd.DataFrame(
+        {
+            "date": pd.date_range("2024-01-01", periods=100),
+            "passenger_count": range(100),
+        }
+    )
+    split = chronological_split(frame)
+
+    assert len(split.train) == 70
+    assert len(split.validation) == 15
+    assert len(split.test) == 15
+    assert split.train["date"].max() < split.validation["date"].min()
+    assert split.validation["date"].max() < split.test["date"].min()

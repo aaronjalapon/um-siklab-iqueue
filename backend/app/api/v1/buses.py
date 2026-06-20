@@ -14,7 +14,7 @@ from app.models.booking import Booking, BookingStatus
 from app.models.bus import Bus
 from app.models.bus_route import BusRoute
 from app.models.seat import Seat, SeatStatus
-from app.schemas.bus import BusResponse, BusListResponse, SeatInfo, SeatMapResponse
+from app.schemas.bus import BusListResponse, SeatInfo, SeatMapResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -124,9 +124,14 @@ async def list_buses(
     # Populate surge probabilities from the forecasting service
     if bus_responses and route:
         try:
-            from app.services.forecasting.predictor import ForecastingService
-            service = ForecastingService()
-            predictions = service.predict(route.id, horizon_days=7)
+            from app.core.startup import get_forecasting_service
+
+            service = get_forecasting_service()
+            predictions = (
+                service.predict(route.id, horizon_days=7)
+                if service is not None and service.has_route_bundle(route.id)
+                else []
+            )
             if predictions:
                 # Use tomorrow's surge (index 0 = tomorrow) as the badge value
                 # — more actionable than a 7-day average

@@ -44,12 +44,14 @@ export function BusSeatGrid({
 
   function getCellState(seat: SeatMapEntry): SeatCellState {
     if (seat.status === "blocked") return "blocked";
-    if (seat.seat_id === selectedSeatId) return "selected";
-    if (seat.seat_id === autoAssignedSeatId) return "auto_assigned";
+    // Check occupied/reserved BEFORE selection state so a stale selectedSeatId
+    // never renders a taken seat as clickable.
     if (seat.status === "occupied" || seat.status === "reserved") {
       if (groupId && seat.group_id === groupId) return "group_reserved";
       return "occupied";
     }
+    if (seat.seat_id === selectedSeatId) return "selected";
+    if (seat.seat_id === autoAssignedSeatId) return "auto_assigned";
     if (seat.is_accessibility) return "accessibility";
     return "available";
   }

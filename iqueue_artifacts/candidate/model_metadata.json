@@ -1,0 +1,268 @@
+{
+  "version": "candidate-9f7ad398",
+  "generated_at": "2026-06-20T01:31:13.933897+00:00",
+  "data_type": "synthetic",
+  "field_pilot_completed": false,
+  "evaluation_protocol": "chronological_70_15_15_untouched_test",
+  "raw_data_sha256": "7c38c710b9c3e7f500a6475c1161ca4c2aa5fc0270d9bc2fcd87662c41671512",
+  "git_commit": "9f7ad3980cd3868766df2e23016cb36eb077b62b",
+  "python": "3.12.3",
+  "packages": {
+    "scikit_learn": "1.9.0",
+    "torch": "2.12.0+cu130",
+    "lightgbm": "4.6.0"
+  },
+  "classifier_threshold": 0.7,
+  "routes": {
+    "cagayan-iligan": {
+      "train": [
+        "2022-01-01",
+        "2024-02-12"
+      ],
+      "validation": [
+        "2024-02-13",
+        "2024-07-22"
+      ],
+      "test": [
+        "2024-07-23",
+        "2024-12-31"
+      ],
+      "surge_threshold": 345.6,
+      "lstm_best_epoch": 77,
+      "hybrid_best_epoch": 7,
+      "surge_multiplier": 1.5
+    },
+    "cotabato-zambo": {
+      "train": [
+        "2022-01-01",
+        "2024-02-12"
+      ],
+      "validation": [
+        "2024-02-13",
+        "2024-07-21"
+      ],
+      "test": [
+        "2024-07-22",
+        "2024-12-31"
+      ],
+      "surge_threshold": 297.90000000000003,
+      "lstm_best_epoch": 8,
+      "hybrid_best_epoch": 7,
+      "surge_multiplier": 1.7
+    },
+    "davao-butuan": {
+      "train": [
+        "2022-01-01",
+        "2024-02-06"
+      ],
+      "validation": [
+        "2024-02-07",
+        "2024-07-18"
+      ],
+      "test": [
+        "2024-07-19",
+        "2024-12-31"
+      ],
+      "surge_threshold": 565.2,
+      "lstm_best_epoch": 15,
+      "hybrid_best_epoch": 11,
+      "surge_multiplier": 1.3
+    },
+    "davao-cagayan": {
+      "train": [
+        "2022-01-01",
+        "2024-02-04"
+      ],
+      "validation": [
+        "2024-02-05",
+        "2024-07-22"
+      ],
+      "test": [
+        "2024-07-23",
+        "2024-12-31"
+      ],
+      "surge_threshold": 786.6,
+      "lstm_best_epoch": 4,
+      "hybrid_best_epoch": 3,
+      "surge_multiplier": 1.3
+    },
+    "davao-cotabato": {
+      "train": [
+        "2022-01-01",
+        "2024-02-02"
+      ],
+      "validation": [
+        "2024-02-03",
+        "2024-07-17"
+      ],
+      "test": [
+        "2024-07-18",
+        "2024-12-29"
+      ],
+      "surge_threshold": 511.2,
+      "lstm_best_epoch": 2,
+      "hybrid_best_epoch": 3,
+      "surge_multiplier": 1.3
+    },
+    "davao-general-santos": {
+      "train": [
+        "2022-01-01",
+        "2024-02-04"
+      ],
+      "validation": [
+        "2024-02-05",
+        "2024-07-21"
+      ],
+      "test": [
+        "2024-07-22",
+        "2024-12-31"
+      ],
+      "surge_threshold": 658.8000000000001,
+      "lstm_best_epoch": 15,
+      "hybrid_best_epoch": 22,
+      "surge_multiplier": 1.3
+    }
+  },
+  "macro_test_metrics": [
+    {
+      "model": "Yesterday baseline",
+      "mae": 94.1744,
+      "rmse": 150.7383,
+      "mape": 28.3644,
+      "surge_precision": 0.5841,
+      "surge_recall": 0.5841,
+      "surge_f1": 0.5841,
+      "false_alarm_rate": 0.0351,
+      "mae_ci95_lower": 72.4268,
+      "mae_ci95_upper": 115.922,
+      "surge_f1_ci95_lower": 0.5242,
+      "surge_f1_ci95_upper": 0.6439,
+      "source": "untouched_test"
+    },
+    {
+      "model": "7-day moving average",
+      "mae": 108.8807,
+      "rmse": 174.6537,
+      "mape": 33.1665,
+      "surge_precision": 0.4554,
+      "surge_recall": 0.366,
+      "surge_f1": 0.4014,
+      "false_alarm_rate": 0.0395,
+      "mae_ci95_lower": 81.1218,
+      "mae_ci95_upper": 137.2962,
+      "surge_f1_ci95_lower": 0.365,
+      "surge_f1_ci95_upper": 0.4349,
+      "source": "untouched_test"
+    },
+    {
+      "model": "Prophet-only",
+      "mae": 78.7703,
+      "rmse": 112.6814,
+      "mape": 25.2663,
+      "surge_precision": 0.8333,
+      "surge_recall": 0.7925,
+      "surge_f1": 0.8086,
+      "false_alarm_rate": 0.0135,
+      "mae_ci95_lower": 57.7863,
+      "mae_ci95_upper": 98.8522,
+      "surge_f1_ci95_lower": 0.7493,
+      "surge_f1_ci95_upper": 0.8691,
+      "source": "untouched_test"
+    },
+    {
+      "model": "LSTM-only",
+      "mae": 85.9927,
+      "rmse": 140.3408,
+      "mape": 25.6153,
+      "surge_precision": 0.6799,
+      "surge_recall": 0.5167,
+      "surge_f1": 0.5641,
+      "false_alarm_rate": 0.0203,
+      "mae_ci95_lower": 61.1731,
+      "mae_ci95_upper": 113.2711,
+      "surge_f1_ci95_lower": 0.4488,
+      "surge_f1_ci95_upper": 0.6689,
+      "source": "untouched_test"
+    },
+    {
+      "model": "Prophet+LSTM hybrid",
+      "mae": 87.6846,
+      "rmse": 141.7854,
+      "mape": 26.3339,
+      "surge_precision": 0.6995,
+      "surge_recall": 0.6009,
+      "surge_f1": 0.6387,
+      "false_alarm_rate": 0.0214,
+      "mae_ci95_lower": 63.1197,
+      "mae_ci95_upper": 112.2495,
+      "surge_f1_ci95_lower": 0.5805,
+      "surge_f1_ci95_upper": 0.7078,
+      "source": "untouched_test"
+    },
+    {
+      "model": "Prophet+LSTM+LightGBM decision model",
+      "mae": 86.9322,
+      "rmse": 143.2837,
+      "mape": 27.0548,
+      "surge_precision": 0.7061,
+      "surge_recall": 0.6811,
+      "surge_f1": 0.6887,
+      "false_alarm_rate": 0.0236,
+      "mae_ci95_lower": 64.6584,
+      "mae_ci95_upper": 109.0774,
+      "surge_f1_ci95_lower": 0.6429,
+      "surge_f1_ci95_upper": 0.738,
+      "source": "untouched_test"
+    },
+    {
+      "model": "LightGBM surge classifier",
+      "mae": null,
+      "rmse": null,
+      "mape": null,
+      "surge_precision": 0.7682,
+      "surge_recall": 0.6516,
+      "surge_f1": 0.7017,
+      "false_alarm_rate": 0.0169,
+      "mae_ci95_lower": null,
+      "mae_ci95_upper": null,
+      "surge_f1_ci95_lower": 0.6581,
+      "surge_f1_ci95_upper": 0.7524,
+      "source": "untouched_test"
+    }
+  ],
+  "artifact_sha256": {
+    "baseline_comparison.csv": "006de1b49205cb92af985873ffef562908dbcf9d42549d8821a21583e140eeac",
+    "baseline_comparison.json": "cc3e63de6893b1c3b896baf22a78a9c49a757d73710f64326b6e61e8f3303e12",
+    "cagayan-iligan_scaler.pkl": "e00d05430fb37874203bc8e718e98c5f3344f7c6bdbb9c2c357a7d1abbc678ea",
+    "cotabato-zambo_scaler.pkl": "ac3deae7a3da2f30ed0b0f9c40ecaf6d78de10ae6aea0d9414461982986996f1",
+    "davao-butuan_scaler.pkl": "17572c50b7e1ad03cd78b1c42425eb805e54949fef1932963d0d2666e8aeebee",
+    "davao-cagayan_scaler.pkl": "8113d92d54d24cd170893bac30831278d07729a8bc7a95dd4575a42b1441a396",
+    "davao-cotabato_scaler.pkl": "a2739ecf90c40ffc541b67e0d3b372dedfb587bd77bfbd5e806dc88e3ce45852",
+    "davao-general-santos_scaler.pkl": "530acb2d437fcf3cbf6f8414de3d977ceb7dee3c1c164e3a2ba9f4378b64d225",
+    "eval_summary.json": "8058e7c2892cf9bee11c509f6028db40c0182e5a9df60b7228012d2df12162b0",
+    "evaluation_report.json": "8453a9e0280e30e55ae1825e27d6343da7a4ff257348e507e8d7bfd13624a0e8",
+    "lstm_cagayan-iligan_ablation.pt": "7a7cd92f0ad10e7be889fe8489ffe915f559691d35e3d9bfc1cae2586a906253",
+    "lstm_cagayan-iligan_best.pt": "23a1187861b51f6b53aa962615e9b0d0346e60b7bec324dec3ee7b4e1ee42c08",
+    "lstm_cotabato-zambo_ablation.pt": "62ccd10a8654f226674371e372956dfb0caf0e53d22cb7967e51f8d5be770ef3",
+    "lstm_cotabato-zambo_best.pt": "e185ea1cdf753efb64a6a192167a178ec9ed58435a872451c83b5abe58cf11c0",
+    "lstm_davao-butuan_ablation.pt": "923116f9cb75f8076196e4ccf9b0e8dd24f522852a9e133abe2eb2b2368db88a",
+    "lstm_davao-butuan_best.pt": "701f1f359b9642cef09ca3936840470c631d40d403fa15457376c58c0b9891e5",
+    "lstm_davao-cagayan_ablation.pt": "80f60438400918417d3a136d5279ca6bd8c7c57034b324d539d9fb4f1405523d",
+    "lstm_davao-cagayan_best.pt": "f9ce1d0fb29343a15d8c30a5151493ba9b544be991fe1d7838f7912023c7ba0b",
+    "lstm_davao-cotabato_ablation.pt": "e4525eeeba44a2a3f50d947021c649979242240626619ea60ae96c7fdab6a820",
+    "lstm_davao-cotabato_best.pt": "5ca99d78c7c90a0ac0ca65ffa58926d5d59e696f8d78db3ad24cbe8fc9845efd",
+    "lstm_davao-general-santos_ablation.pt": "4536b7870fe5ff00b05f10458b74c77903219cbcbc67dfd659b9906700f1814e",
+    "lstm_davao-general-santos_best.pt": "0322c56417f085984cd4bad91ffe33d1c44fa33e032ad1e719d4b56a83677f53",
+    "model_comparison.png": "6a1c0d23ab4ea9d35e18283e6df59a88e2fbc694fadc5fdd07911ca868c98536",
+    "prophet_cagayan-iligan.pkl": "88ff9db4ccbd298c9eb9d3a30dc60a20a6e202f78432c6f30c857a97e8e52d13",
+    "prophet_cotabato-zambo.pkl": "3018851c8e978bfc35f48b25aae6776429891ee8938d1a5b045d57bd7d5f015f",
+    "prophet_davao-butuan.pkl": "04d7a3c2149f5ecc0285a5518f608debdcad914287f9778d80960055b02c208e",
+    "prophet_davao-cagayan.pkl": "e7fa6f0ff2d50daf66510afe820d2c9906fd90fbe42530e29aba1bf545eab230",
+    "prophet_davao-cotabato.pkl": "a1ea9cafe1d2c1fb3fd1a9d4bfe9cd732fc22d5b8b19e124bc7112141f9e2042",
+    "prophet_davao-general-santos.pkl": "568a8ad88a5adc754de481cff70d73b97c82e3d15afa6867afc62e27c887388f",
+    "surge_clf_features.pkl": "8210b0e26ad3ea8014f9ffa090abff2a6e46eb113fb6a785d7e02ddf4c906a9c",
+    "surge_clf_global.pkl": "c18cbc711765600441abde873afc9f56faba7763f4d490ae01a30093bc8569fd"
+  },
+  "promotion_policy": "improve surge F1 or recall; MAE regression <= 5%",
+  "promotion_decision": "pending_champion_gate"
+}

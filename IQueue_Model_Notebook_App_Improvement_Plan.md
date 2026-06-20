@@ -6,6 +6,15 @@
 **Prepared for:** Model, backend, frontend, and documentation teammates  
 **Current purpose of notebook:** Training and exporting the AI model, not serving as the final app
 
+> **Implementation update (June 20, 2026):** the application now includes the
+> continuous-learning tables and APIs, shared ground-truth builder, non-mutating
+> retraining replay, seven-model comparison pipeline, evidence dashboard,
+> consent-aware seat explanations, QR verification, and CPU-only ML container.
+> The active model bundle is still labeled legacy validation evidence. One
+> canonical Kaggle/Colab GPU retrain remains before claiming untouched-test
+> metrics. See `docs/MODEL_CARD.md`, `docs/DATA_CARD.md`, and
+> `docs/DEMO_SCRIPT.md`.
+
 ---
 
 ## 1. Executive Summary

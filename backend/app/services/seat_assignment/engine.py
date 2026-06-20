@@ -21,13 +21,13 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models.booking import Booking, BookingStatus
 from app.models.bus import Bus
 from app.models.seat import Seat, SeatReservation, SeatStatus
 from app.services.seat_assignment.bus_layout import generate_seats_for_bus
 from app.services.seat_assignment.scorer import (
     PassengerContext,
-    score_seat,
+    SeatScoreBreakdown,
+    score_seat_breakdown,
 )
 
 logger = logging.getLogger(__name__)
@@ -51,11 +51,12 @@ class BusNotFoundError(Exception):
 
 class _ScoredCandidate:
     """Internal container for a scored seat during allocation."""
-    __slots__ = ("seat", "score")
+    __slots__ = ("seat", "score", "breakdown")
 
-    def __init__(self, seat: Seat, score: float):
+    def __init__(self, seat: Seat, breakdown: SeatScoreBreakdown):
         self.seat = seat
-        self.score = score
+        self.score = breakdown.total
+        self.breakdown = breakdown
 
 
 # ---------------------------------------------------------------------------
@@ -98,8 +99,8 @@ class SeatAllocator:
         bus_id: str | UUID,
         passenger: PassengerContext,
         *,
-        requested_seat_label: str | None = None,
         reserve: bool = True,
+        seat_label: str | None = None,
     ) -> dict:
         """Assign the best available seat to a passenger.
 
@@ -109,7 +110,7 @@ class SeatAllocator:
           3. For each available seat, call scorer.score_seat().
           4. Select the seat with the highest score.
              Tiebreak: lower row_number, then lower col_number.
-          5. When ``reserve`` is true, within a DB transaction:
+          5. Within a DB transaction:
              a. Set seat.status = OCCUPIED
              b. Set seat.affinity_score = winning score
              c. Create SeatReservation row
@@ -118,9 +119,6 @@ class SeatAllocator:
         Args:
             bus_id: UUID of the target bus.
             passenger: Passenger context with preferences and constraints.
-            requested_seat_label: Exact seat selected from a prior
-                recommendation.
-            reserve: Persist the winner when true; preview it when false.
 
         Returns:
             Dict with seat_id, seat_label, seat_type, side, row_number,
@@ -180,25 +178,23 @@ class SeatAllocator:
             available_seats = [
                 seat for seat in available_seats if not seat.is_accessibility
             ]
-        if requested_seat_label:
+        if seat_label is not None:
             available_seats = [
-                seat
-                for seat in available_seats
-                if seat.seat_label == requested_seat_label
+                seat for seat in available_seats if seat.seat_label == seat_label
             ]
 
         for seat in available_seats:
             if seat.status != SeatStatus.AVAILABLE:
                 continue
-            s = score_seat(
+            breakdown = score_seat_breakdown(
                 candidate_seat=seat,
                 passenger=passenger,
                 existing_reservations=existing_reservations,
                 total_rows=total_rows,
                 seats_per_row=seats_per_row,
             )
-            if s > -100:  # Skip hard-blocked seats
-                candidates.append(_ScoredCandidate(seat, s))
+            if breakdown.total > -100:  # Skip hard-blocked seats
+                candidates.append(_ScoredCandidate(seat, breakdown))
 
         if not candidates:
             raise SeatUnavailableError(
@@ -221,41 +217,40 @@ class SeatAllocator:
             f"{window_start.strftime('%H:%M')}–"
             f"{window_end.strftime('%H:%M')}"
         )
-
         if reserve:
-            # Create reservation within a nested transaction
-            async with self.session.begin_nested():
-                winner.seat.status = SeatStatus.OCCUPIED
-                winner.seat.affinity_score = winner.score
+            # Create reservation only inside the final booking transaction.
+            winner.seat.status = SeatStatus.OCCUPIED
+            winner.seat.affinity_score = winner.score
+            # Create reservation
+            # booking_id may be a placeholder — generate a real UUID if invalid
+            try:
+                b_id = UUID(passenger.booking_id)
+            except (ValueError, AttributeError):
+                b_id = uuid.uuid4()
 
-                # booking_id may be a placeholder — generate a real UUID if invalid
+            g_id = None
+            if passenger.group_id:
                 try:
-                    b_id = UUID(passenger.booking_id)
+                    g_id = UUID(passenger.group_id)
                 except (ValueError, AttributeError):
-                    b_id = uuid.uuid4()
+                    g_id = None
 
-                g_id = None
-                if passenger.group_id:
-                    try:
-                        g_id = UUID(passenger.group_id)
-                    except (ValueError, AttributeError):
-                        g_id = None
-
-                reservation = SeatReservation(
-                    seat_id=winner.seat.id,
-                    booking_id=b_id,
-                    passenger_name=passenger.passenger_name,
-                    group_id=g_id,
-                    language_preference=passenger.language_preference,
-                    travel_habit=passenger.travel_habit,
-                    lifestyle_interest=passenger.lifestyle_interest,
-                    needs_accessibility=passenger.needs_accessibility,
-                    preferred_seat_type=passenger.preferred_seat_type,
-                    preferred_side=passenger.preferred_side,
-                    computed_affinity_score=winner.score,
-                    boarding_window=bw_str,
-                )
-                self.session.add(reservation)
+            reservation = SeatReservation(
+                seat_id=winner.seat.id,
+                booking_id=b_id,
+                passenger_name=passenger.passenger_name,
+                group_id=g_id,
+                language_preference=passenger.language_preference,
+                travel_habit=passenger.travel_habit,
+                lifestyle_interest=passenger.lifestyle_interest,
+                needs_accessibility=passenger.needs_accessibility,
+                preferred_seat_type=passenger.preferred_seat_type,
+                preferred_side=passenger.preferred_side,
+                computed_affinity_score=winner.score,
+                boarding_window=bw_str,
+            )
+            self.session.add(reservation)
+            await self.session.flush()
 
         return {
             "seat_id": str(winner.seat.id),
@@ -266,6 +261,8 @@ class SeatAllocator:
             "is_accessibility": winner.seat.is_accessibility,
             "affinity_score": winner.score,
             "boarding_window": bw_str,
+            "score_breakdown": winner.breakdown.components,
+            "assignment_reasons": winner.breakdown.reasons,
         }
 
     async def release(self, booking_id: str | UUID) -> None:
@@ -430,8 +427,39 @@ class SeatAllocator:
             raise ValueError("Cannot swap seats on different buses")
 
         async with self.session.begin_nested():
-            # Swap the seat IDs on the reservations
-            res_a.seat_id, res_b.seat_id = seat_b.id, seat_a.id
+            # A direct two-row UPDATE violates the unique seat_id constraint
+            # before both assignments have changed. Remove and recreate one
+            # reservation so the transition remains portable across SQLite
+            # tests and PostgreSQL production.
+            res_a_values = {
+                "id": res_a.id,
+                "booking_id": res_a.booking_id,
+                "passenger_name": res_a.passenger_name,
+                "group_id": res_a.group_id,
+                "language_preference": res_a.language_preference,
+                "travel_habit": res_a.travel_habit,
+                "lifestyle_interest": res_a.lifestyle_interest,
+                "needs_accessibility": res_a.needs_accessibility,
+                "preferred_seat_type": res_a.preferred_seat_type,
+                "preferred_side": res_a.preferred_side,
+                "computed_affinity_score": res_a.computed_affinity_score,
+                "boarding_window": res_b.boarding_window,
+                "created_at": res_a.created_at,
+            }
+            original_a_window = res_a.boarding_window
+            await self.session.delete(res_a)
+            await self.session.flush()
+
+            res_b.seat_id = seat_a.id
+            res_b.boarding_window = original_a_window
+            await self.session.flush()
+
+            replacement_a = SeatReservation(
+                seat_id=seat_b.id,
+                **res_a_values,
+            )
+            self.session.add(replacement_a)
+            await self.session.flush()
 
             # Swap the affinity scores on the seats
             (
@@ -440,15 +468,6 @@ class SeatAllocator:
             ) = (
                 seat_b.affinity_score,
                 seat_a.affinity_score,
-            )
-
-            # Swap boarding windows
-            (
-                res_a.boarding_window,
-                res_b.boarding_window,
-            ) = (
-                res_b.boarding_window,
-                res_a.boarding_window,
             )
 
         return {

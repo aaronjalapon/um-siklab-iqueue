@@ -103,5 +103,5 @@ async def test_accessibility_passenger_cannot_reserve_standard_seat(
                 passenger_name="Accessibility Passenger",
                 needs_accessibility=True,
             ),
-            requested_seat_label=standard_seat["seat_label"],
+            seat_label=standard_seat["seat_label"],
         )

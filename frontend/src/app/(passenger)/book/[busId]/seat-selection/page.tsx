@@ -11,6 +11,7 @@ import { BookingProgress } from "@/components/ui/BookingProgress";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { useSeatMap } from "@/hooks/useSeatMap";
 import { glassStyles } from "@/lib/design-system";
+import { DEMO_TENANT_ID } from "@/lib/demo-config";
 import type { SeatMapEntry, SeatAssignmentResult } from "@/types/seat";
 import type { PassengerContext } from "@/types/seat";
 
@@ -28,6 +29,7 @@ export default function SeatSelectionPage() {
   const languagePref = params.get("language_pref") || "en";
   const travelHabits = params.get("travel_habits") || "";
   const lifestyleInterests = params.get("lifestyle_interests") || "";
+  const affinityOptIn = params.get("affinity_opt_in") === "true";
   const accessibilityNeeds = params.get("accessibility_needs") === "true";
   const preferredSeatType = params.get("preferred_seat_type") || "";
   const preferredSide = params.get("preferred_side") || "";
@@ -49,6 +51,7 @@ export default function SeatSelectionPage() {
       language_preference: languagePref,
       travel_habit: travelHabits || undefined,
       lifestyle_interest: lifestyleInterests || undefined,
+      affinity_opt_in: affinityOptIn,
       needs_accessibility: accessibilityNeeds,
       preferred_seat_type: (preferredSeatType || undefined) as
         | "window"
@@ -61,6 +64,7 @@ export default function SeatSelectionPage() {
     }),
     [
       accessibilityNeeds,
+      affinityOptIn,
       languagePref,
       lifestyleInterests,
       name,
@@ -109,7 +113,7 @@ export default function SeatSelectionPage() {
         ...passengerContext,
         preferred_seat_type: seat.seat_type,
       };
-      const result = await assignSeat(ctx);
+      const result = await assignSeat(ctx, seat.seat_label);
       setAutoAssigned(result);
     } catch {
       // Keep the visible manual selection if the recommendation API is unavailable.
@@ -131,7 +135,7 @@ export default function SeatSelectionPage() {
     try {
       // Step 1: Create or find passenger in the backend
       const passenger = await createPassenger({
-        tenant_id: "00000000-0000-0000-0000-000000000001",
+        tenant_id: DEMO_TENANT_ID,
         name,
         phone,
         language_pref: languagePref,
@@ -146,11 +150,12 @@ export default function SeatSelectionPage() {
         bus_id: busId,
         departure_date: new Date(date).toISOString(),
         seat_preference: preferredSeatType || undefined,
-        requested_seat_label: selectedSeatLabel,
+        selected_seat: selectedSeatLabel,
         passenger_name: name,
         language_preference: languagePref,
         travel_habit: travelHabits || undefined,
         lifestyle_interest: lifestyleInterests || undefined,
+        affinity_opt_in: affinityOptIn,
         needs_accessibility: accessibilityNeeds,
         preferred_side: preferredSide || undefined,
       });
@@ -178,7 +183,7 @@ export default function SeatSelectionPage() {
       <div className={`${glassStyles.pageContainer} max-w-7xl`}>
         <BookingProgress current="seat" />
         <PageHeader
-          eyebrow="AI seat allocator"
+          eyebrow="Explainable seat allocator"
           title="Finding Your Best Seat"
           description="Loading the seat map and applying your preferences before anything is shown."
         />
@@ -287,7 +292,7 @@ export default function SeatSelectionPage() {
             <div className="bg-teal-50 border border-teal-200 rounded-lg p-4 space-y-2">
               <div className="flex items-center gap-2 text-teal-800">
                 <Star className="w-5 h-5" />
-                <span className="font-semibold">AI Recommended</span>
+                <span className="font-semibold">IQueue Recommended</span>
               </div>
               <p className="text-2xl font-bold text-teal-900">
                 Seat {autoAssigned.seat_label}
@@ -303,8 +308,15 @@ export default function SeatSelectionPage() {
               )}
               {autoAssigned.affinity_score > 0 && (
                 <p className="text-sm text-teal-700">
-                  Affinity Score: {autoAssigned.affinity_score.toFixed(0)}
+                  Decision score: {autoAssigned.affinity_score.toFixed(0)}
                 </p>
+              )}
+              {autoAssigned.assignment_reasons.length > 0 && (
+                <ul className="space-y-1 text-xs text-teal-700">
+                  {autoAssigned.assignment_reasons.map((reason) => (
+                    <li key={reason}>• {reason}</li>
+                  ))}
+                </ul>
               )}
               {autoAssigned.boarding_window && (
                 <p className="text-xs text-teal-600">
@@ -327,7 +339,7 @@ export default function SeatSelectionPage() {
                 }}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-amber-300 text-amber-700 rounded-md text-xs font-medium hover:bg-amber-100 hover:border-amber-400 transition"
               >
-                <RefreshCw className="w-3.5 h-3.5" /> Reset to AI pick
+                <RefreshCw className="w-3.5 h-3.5" /> Reset to IQueue pick
               </button>
             </div>
           )}

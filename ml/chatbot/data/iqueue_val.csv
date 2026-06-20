@@ -1,4 +1,13 @@
 text,label,language,source
+May inaasahang siksikan ba bukas?,surge_info,fil,curated_validation
+Mataas ba ang dami ng pasahero ngayong linggo?,surge_info,fil,curated_validation
+Puno ba ang terminal sa oras ng alis?,surge_info,fil,curated_validation
+Apakah besok diperkirakan ramai?,surge_info,id,curated_validation
+Apakah jumlah penumpang tinggi minggu ini?,surge_info,id,curated_validation
+Apakah terminal penuh saat keberangkatan?,surge_info,id,curated_validation
+Ngày mai có dự kiến đông không?,surge_info,vi,curated_validation
+Tuần này lượng hành khách có cao không?,surge_info,vi,curated_validation
+Bến xe có đầy vào giờ khởi hành không?,surge_info,vi,curated_validation
 give me the time at washington right now,get_departure_info,en,massive
 local events,check_booking,en,massive
 bantu saya memesan tiket kereta,request_requeue,id,massive

@@ -5,15 +5,20 @@ import type {
   BookingCreate,
   BookingDetail,
   BookingResponse,
+  BoardingVerifyResponse,
   BusListResponse,
   ChatbotRequest,
   ChatbotResponse,
   ForecastActionCreate,
   ForecastActionResponse,
   ForecastResponse,
+  EvidenceSummary,
   LearningLogSummary,
   OperationalOutcomeCreate,
   OperationalOutcomeResponse,
+  RetrainingReplay,
+  RetrainJob,
+  RetrainJobQueued,
   SeatMapResponse,
   SessionCreateResponse,
 } from "./types";
@@ -109,6 +114,15 @@ export async function getBookingQR(bookingId: string): Promise<Blob> {
   return data;
 }
 
+export async function verifyBoardingPass(
+  token: string
+): Promise<BoardingVerifyResponse> {
+  const { data } = await api.post<BoardingVerifyResponse>("/boarding/verify", {
+    token,
+  });
+  return data;
+}
+
 // --- Forecasts ---
 
 export async function getForecast(
@@ -145,6 +159,57 @@ export async function recordOperationalOutcome(
     "/operations/outcomes",
     payload
   );
+  return data;
+}
+
+export async function getEvidenceSummary(): Promise<EvidenceSummary> {
+  const { data } = await api.get<EvidenceSummary>("/evidence/summary");
+  return data;
+}
+
+export async function replayRetraining(): Promise<RetrainingReplay> {
+  const { data } = await api.post<RetrainingReplay>("/demo/retraining-replay");
+  return data;
+}
+
+// --- Model Admin ---
+
+export async function triggerRetrain(
+  epochs: number = 80,
+  minNewRows: number = 30
+): Promise<RetrainJobQueued> {
+  const { data } = await api.post<RetrainJobQueued>("/forecasts/model/retrain", {
+    epochs,
+    min_new_rows: minNewRows,
+  });
+  return data;
+}
+
+export async function getRetrainStatus(
+  jobId?: string
+): Promise<RetrainJob> {
+  const { data } = await api.get<RetrainJob>("/forecasts/model/retrain/status", {
+    params: jobId ? { job_id: jobId } : {},
+  });
+  return data;
+}
+
+export async function listRetrainJobs(
+  limit: number = 10
+): Promise<RetrainJob[]> {
+  const { data } = await api.get<RetrainJob[]>("/forecasts/model/retrain/jobs", {
+    params: { limit },
+  });
+  return data;
+}
+
+export async function reloadModel(): Promise<{
+  message: string;
+  model_version: string | null;
+  bundle_status: string;
+  loaded_routes: string[];
+}> {
+  const { data } = await api.post("/forecasts/model/reload");
   return data;
 }
 

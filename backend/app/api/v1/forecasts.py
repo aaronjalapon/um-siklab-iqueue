@@ -15,6 +15,7 @@ from app.models.booking import Booking, BookingStatus
 from app.models.bus import Bus
 from app.models.bus_route import BusRoute
 from app.models.forecast_learning import ForecastSnapshot
+from app.models.forecast_learning import OperationalOutcome
 from app.schemas.forecast import ForecastResponse, SurgePrediction
 
 logger = logging.getLogger(__name__)
@@ -178,6 +179,52 @@ async def _persist_forecast_snapshots(
     return enriched
 
 
+async def _recent_route_history(
+    db: AsyncSession,
+    route_id: UUID,
+    days: int = 14,
+) -> list[tuple[date, float]]:
+    """Load recent actual outcomes and booking counts for model features."""
+
+    outcomes = list(
+        (
+            await db.scalars(
+                select(OperationalOutcome)
+                .where(OperationalOutcome.route_id == route_id)
+                .order_by(OperationalOutcome.service_date.desc())
+                .limit(days)
+            )
+        ).all()
+    )
+    history = {
+        outcome.service_date: float(outcome.actual_passenger_count)
+        for outcome in outcomes
+    }
+
+    booking_dates = (
+        await db.scalars(
+            select(Booking.departure_date)
+            .join(Bus, Booking.bus_id == Bus.id)
+            .where(
+                Bus.route_id == route_id,
+                Booking.status.in_(
+                    [BookingStatus.CONFIRMED, BookingStatus.BOARDED]
+                ),
+            )
+            .order_by(Booking.departure_date.desc())
+            .limit(days * 100)
+        )
+    ).all()
+    booking_counts: dict[date, int] = {}
+    for departure in booking_dates:
+        departure_day = departure.date()
+        booking_counts[departure_day] = booking_counts.get(departure_day, 0) + 1
+    for service_date, count in booking_counts.items():
+        history.setdefault(service_date, float(count))
+
+    return sorted(history.items(), key=lambda item: item[0])[-days:]
+
+
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
@@ -210,22 +257,27 @@ async def get_forecast(
     model_version: str | None = "heuristic-v1"
     metrics_summary: dict | None = None
 
-    # Try to use the ML forecasting service first
+    # Try to use the warmed ML forecasting singleton first.
     try:
-        from app.services.forecasting.predictor import ForecastingService
-        service = ForecastingService()
-        ml_predictions = service.predict(route_id, horizon_days=7)
+        from app.core.startup import get_forecasting_service
 
-        # If ML model returns all-zero surge (untrained / cold start), fall back
-        max_surge = max((p.surge_probability for p in ml_predictions), default=0)
-        if max_surge > 0.01:
-            logger.info("Forecast for route %s: using ML model (max surge=%.2f)", route_id, max_surge)
-            predictions = ml_predictions
+        service = get_forecasting_service()
+        if service is not None and service.has_route_bundle(route_id):
+            recent_history = await _recent_route_history(db, route_id)
+            predictions = service.predict(
+                route_id,
+                horizon_days=7,
+                recent_history=recent_history,
+            )
             model_source = "ml_bundle"
             model_version = service.artifact_version or "v1-hackathon"
             metrics_summary = service.metrics_summary
-        else:
-            logger.info("Forecast for route %s: ML model returned flat surges — using heuristic", route_id)
+            logger.info(
+                "Forecast for route %s: ML bundle %s with %d history rows",
+                route_id,
+                model_version,
+                len(recent_history),
+            )
     except (ImportError, FileNotFoundError) as e:
         logger.warning("ML forecast unavailable for route %s: %s — using heuristic", route_id, e)
 

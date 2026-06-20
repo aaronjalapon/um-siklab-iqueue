@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
+from app.core.config import get_settings
 from app.core.startup import probe_database, runtime_snapshot
 
 router = APIRouter()
@@ -22,10 +23,13 @@ async def readiness_check() -> dict[str, object]:
 
     snapshot = runtime_snapshot()
     snapshot["database_ready"] = await probe_database()
+    require_models = get_settings().REQUIRE_FORECAST_MODELS
+    snapshot["forecast_models_required"] = require_models
     snapshot["ready"] = bool(
         snapshot["chatbot_ready"]
         and snapshot["forecasting_ready"]
         and snapshot["database_ready"]
+        and (snapshot["forecast_bundle_ready"] or not require_models)
     )
     snapshot["status"] = "ok" if snapshot["ready"] else "degraded"
     return snapshot

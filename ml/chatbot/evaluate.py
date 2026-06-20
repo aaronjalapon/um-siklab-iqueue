@@ -58,7 +58,7 @@ LANGS_FULL: dict[str, str] = {
 # ---------------------------------------------------------------------------
 
 
-def load_test_data() -> tuple[pd.DataFrame, dict[str, str]]:
+def load_test_data(model_path: Path) -> tuple[pd.DataFrame, dict[str, int]]:
     """Load test CSV and label map."""
     test_path = DATA_DIR / "iqueue_test.csv"
     if not test_path.exists():
@@ -68,7 +68,7 @@ def load_test_data() -> tuple[pd.DataFrame, dict[str, str]]:
     df = pd.read_csv(test_path)
     logger.info("Loaded %d test examples", len(df))
 
-    label_map_path = ARTIFACTS_DIR / "label_map.json"
+    label_map_path = model_path / "label_map.json"
     if label_map_path.exists():
         with open(label_map_path) as f:
             label_map_str = json.load(f)
@@ -103,7 +103,10 @@ def load_pipeline(model_path: Path):
     )
 
 
-def _parse_top_intent(pipeline_result: list[dict]) -> tuple[str, float]:
+def _parse_top_intent(
+    pipeline_result: list[dict],
+    label2id: dict[str, int],
+) -> tuple[int, float]:
     """Extract the highest-scoring label from pipeline output.
 
     Pipeline returns list of dicts like [{"label": "LABEL_0", "score": 0.95}, ...].
@@ -113,7 +116,9 @@ def _parse_top_intent(pipeline_result: list[dict]) -> tuple[str, float]:
 
     results = pipeline_result[0] if isinstance(pipeline_result, list) else pipeline_result
     best = max(results, key=lambda x: x["score"])
-    label_str = best["label"]
+    label_str = str(best["label"])
+    if label_str in label2id:
+        return label2id[label_str], round(best["score"], 4)
     # Handle both "LABEL_0" and "0" formats
     if label_str.startswith("LABEL_"):
         label_idx = int(label_str.split("_")[1])
@@ -137,10 +142,16 @@ def main() -> None:
         default=DEFAULT_MODEL_PATH,
         help="Path to the fine-tuned model directory",
     )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=Path(__file__).resolve().parents[2] / "evidence/chatbot_evaluation.json",
+        help="Machine-readable evaluation report",
+    )
     args = parser.parse_args()
 
     # 1. Load data
-    df, label2id = load_test_data()
+    df, label2id = load_test_data(args.model_path)
     labels_sorted = sorted(label2id.keys())
 
     # 2. Load pipeline
@@ -159,7 +170,7 @@ def main() -> None:
 
         try:
             result = pipe(text)
-            pred_id, _ = _parse_top_intent(result)
+            pred_id, _ = _parse_top_intent(result, label2id)
             y_pred.append(pred_id)
         except Exception as exc:
             logger.warning("Inference failed for '%s': %s", text[:60], exc)
@@ -175,6 +186,7 @@ def main() -> None:
     # 5. Per-language accuracy
     logger.info("\n--- Per-Language Accuracy ---")
     all_lang_ok = True
+    language_accuracy: dict[str, float] = {}
     for lang_code, lang_name in LANGS_FULL.items():
         mask = df["language"] == lang_code
         if not mask.any():
@@ -184,6 +196,7 @@ def main() -> None:
         lang_y_true = [y_true[i] for i, m in enumerate(mask) if m]
         lang_y_pred = [y_pred[i] for i, m in enumerate(mask) if m]
         lang_acc = accuracy_score(lang_y_true, lang_y_pred)
+        language_accuracy[lang_code] = float(lang_acc)
         flag = " ✓" if lang_acc >= ACCURACY_THRESHOLD else " ⚠ BELOW THRESHOLD"
         logger.info("  %-20s : %.4f%s", lang_name, lang_acc, flag)
         if lang_acc < ACCURACY_THRESHOLD:
@@ -191,7 +204,6 @@ def main() -> None:
 
     # 6. Per-intent recall
     logger.info("\n--- Per-Intent Recall ---")
-    id2label_inv = {v: k for k, v in label2id.items()}
     all_intent_ok = True
     recall_report: dict[str, float] = {}
 
@@ -215,6 +227,8 @@ def main() -> None:
 
     # 7. Per-language confusion matrices
     logger.info("\n--- Confusion Matrices ---")
+    intent_order = sorted(label2id, key=label2id.get)
+    confusion_reports: dict[str, list[list[int]]] = {}
     for lang_code, lang_name in LANGS_FULL.items():
         mask = df["language"] == lang_code
         if not mask.any():
@@ -225,18 +239,70 @@ def main() -> None:
         cm = confusion_matrix(
             lang_y_true,
             lang_y_pred,
-            labels=list(range(len(labels_sorted))),
+            labels=[label2id[intent] for intent in intent_order],
         )
+        confusion_reports[lang_code] = cm.tolist()
         logger.info("\n  %s:", lang_name)
-        header = "           " + " ".join(f"{lbl[:8]:>8}" for lbl in labels_sorted)
+        header = "           " + " ".join(f"{lbl[:8]:>8}" for lbl in intent_order)
         logger.info("  %s", header)
-        for i, lbl in enumerate(labels_sorted):
+        for i, lbl in enumerate(intent_order):
             row = "  ".join(f"{v:>8}" for v in cm[i])
             logger.info("  %-10s %s", lbl[:10], row)
 
     # 8. Summary
+    coverage = {
+        language: {
+            intent: int(
+                ((df["language"] == language) & (df["label"] == intent)).sum()
+            )
+            for intent in intent_order
+        }
+        for language in LANGS_FULL
+    }
+    coverage_ok = all(
+        count >= 10
+        for language_counts in coverage.values()
+        for count in language_counts.values()
+    )
+    passed = bool(
+        overall_acc >= ACCURACY_THRESHOLD
+        and all_lang_ok
+        and all_intent_ok
+        and coverage_ok
+    )
+    report = {
+        "model_path": str(args.model_path),
+        "evaluation_data": "curated and MASSIVE holdout",
+        "examples": len(df),
+        "overall_accuracy": round(float(overall_acc), 4),
+        "per_language_accuracy": {
+            key: round(value, 4) for key, value in language_accuracy.items()
+        },
+        "per_intent_recall": {
+            key: round(float(value), 4) for key, value in recall_report.items()
+        },
+        "fallback_prediction_rate": round(
+            sum(pred == label2id["fallback"] for pred in y_pred) / len(y_pred),
+            4,
+        ),
+        "minimum_examples_per_language_intent": 10,
+        "coverage": coverage,
+        "coverage_passed": coverage_ok,
+        "intent_order": intent_order,
+        "confusion_matrices": confusion_reports,
+        "thresholds": {
+            "overall_accuracy": ACCURACY_THRESHOLD,
+            "per_language_accuracy": ACCURACY_THRESHOLD,
+            "per_intent_recall": RECALL_THRESHOLD,
+        },
+        "passed": passed,
+    }
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(json.dumps(report, indent=2), encoding="utf-8")
+    logger.info("Wrote evaluation report to %s", args.output)
+
     logger.info("\n" + "=" * 56)
-    if overall_acc >= ACCURACY_THRESHOLD and all_lang_ok and all_intent_ok:
+    if passed:
         logger.info("  ✓ All thresholds passed!")
         logger.info("=" * 56)
         sys.exit(0)
@@ -253,6 +319,8 @@ def main() -> None:
                 ", ".join(flagged),
             )
             logger.error("  → Add more training examples for these intents.")
+        if not coverage_ok:
+            logger.error("  ✗ Some intent-language cells have fewer than 10 examples")
         logger.info("=" * 56)
         sys.exit(1)
 

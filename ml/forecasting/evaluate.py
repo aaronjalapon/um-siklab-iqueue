@@ -154,8 +154,16 @@ def _simple_baselines(raw_path: Path) -> list[dict[str, Any]]:
         moving_avg_metrics.append(_metrics(actual, preds["ma7_pred"].values, threshold))
 
     return [
-        _row("Yesterday baseline", _average_metric_dicts(yesterday_metrics), "computed"),
-        _row("7-day moving average", _average_metric_dicts(moving_avg_metrics), "computed"),
+        _row(
+            "Yesterday baseline",
+            _average_metric_dicts(yesterday_metrics),
+            "legacy_80_20_holdout",
+        ),
+        _row(
+            "7-day moving average",
+            _average_metric_dicts(moving_avg_metrics),
+            "legacy_80_20_holdout",
+        ),
     ]
 
 
@@ -234,7 +242,11 @@ def _lightgbm_row(metrics: dict[str, Any]) -> dict[str, Any] | None:
         "surge_f1": float(np.mean([m.get("f1", 0) for m in route_metrics])),
         "false_alarm_rate": None,
     }
-    return _row("LightGBM surge classifier", averaged, "saved_metrics")
+    return _row(
+        "LightGBM surge classifier",
+        averaged,
+        "legacy_validation_metrics",
+    )
 
 
 def build_comparison() -> pd.DataFrame:
@@ -242,13 +254,35 @@ def build_comparison() -> pd.DataFrame:
 
     raw_path = _first_existing(RAW_DATA_CANDIDATES)
     artifact_dir = _first_existing(ARTIFACT_CANDIDATES) or OUTPUT_DIR
+    metadata = _load_json(artifact_dir / "model_metadata.json")
+    existing_report = artifact_dir / "baseline_comparison.json"
+    if (
+        metadata.get("evaluation_protocol")
+        == "chronological_70_15_15_untouched_test"
+        and existing_report.exists()
+    ):
+        comparison = pd.read_json(existing_report)
+        OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+        comparison.to_csv(OUTPUT_DIR / "baseline_comparison.csv", index=False)
+        (OUTPUT_DIR / "baseline_comparison.json").write_text(
+            comparison.to_json(orient="records", indent=2),
+            encoding="utf-8",
+        )
+        _write_comparison_plot(comparison, OUTPUT_DIR / "model_comparison.png")
+        return comparison
     rows: list[dict[str, Any]] = []
 
     if raw_path:
         rows.extend(_simple_baselines(raw_path))
         prophet_metrics = _prophet_only_metrics(raw_path, artifact_dir)
         if prophet_metrics:
-            rows.append(_row("Prophet-only", prophet_metrics, "artifact_eval"))
+            rows.append(
+                _row(
+                    "Prophet-only",
+                    prophet_metrics,
+                    "legacy_artifact_eval_possible_training_overlap",
+                )
+            )
         else:
             rows.append(_row("Prophet-only", {}, "not_available"))
     else:
@@ -262,7 +296,7 @@ def build_comparison() -> pd.DataFrame:
 
     baseline = _aggregate_saved_metrics(_load_json(artifact_dir / "eval_baseline.json"))
     if baseline:
-        rows.append(_row("Prophet+LSTM hybrid", baseline, "saved_metrics"))
+        rows.append(_row("Prophet+LSTM hybrid", baseline, "legacy_validation_metrics"))
     else:
         rows.append(_row("Prophet+LSTM hybrid", {}, "not_available"))
 
@@ -270,7 +304,7 @@ def build_comparison() -> pd.DataFrame:
         _row(
             "LSTM-only",
             {},
-            "not_available_separate_checkpoint",
+            "requires_canonical_retrain",
         )
     )
 
@@ -286,7 +320,7 @@ def build_comparison() -> pd.DataFrame:
             _row(
                 "Prophet+LSTM+LightGBM decision model",
                 combined,
-                "saved_metrics",
+                "legacy_validation_metrics",
             )
         )
     else:

@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageCircle, X, Send, Globe, Loader2 } from "lucide-react";
 import { createChatSession, sendChatMessage } from "@/lib/api";
-import type { ChatbotResponse } from "@/lib/types";
-import { LANGUAGE_LABELS } from "@/lib/utils";
+import type { ChatbotAction, ChatbotResponse } from "@/lib/types";
 
 type Language = "en" | "fil" | "id" | "vi";
 
@@ -30,6 +30,7 @@ interface Message {
   content: string;
   intent?: string;
   suggested_actions?: string[];
+  actions?: ChatbotAction[];
   detected_language?: string;
   language_confidence?: number | null;
 }
@@ -42,6 +43,7 @@ const QUICK_REPLIES: Record<Language, string[]> = {
 };
 
 export default function ChatbotTeaser() {
+  const router = useRouter();
   const initialLang = detectBrowserLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [lang, setLang] = useState<Language>(initialLang);
@@ -120,6 +122,7 @@ export default function ChatbotTeaser() {
           content: response.response_text,
           intent: response.intent,
           suggested_actions: response.suggested_actions,
+          actions: response.actions,
           detected_language: response.detected_language,
           language_confidence: response.language_confidence,
         },
@@ -154,6 +157,46 @@ export default function ChatbotTeaser() {
       ]);
     } catch {
       // Keep existing messages if session creation fails
+    }
+  };
+
+  const handleAction = async (action: string | ChatbotAction) => {
+    if (typeof action === "string") {
+      await handleSend(action);
+      return;
+    }
+
+    if (action.kind === "send_message") {
+      await handleSend(String(action.payload.message || action.label));
+      return;
+    }
+
+    if (action.kind === "prefill_route_search") {
+      const params = new URLSearchParams();
+      const origin = action.payload.origin;
+      const destination = action.payload.destination;
+      const date = action.payload.date;
+      if (typeof origin === "string" && origin) params.set("origin", origin);
+      if (typeof destination === "string" && destination) {
+        params.set("destination", destination);
+      }
+      if (typeof date === "string" && date) params.set("date", date);
+      router.push(`/buy${params.toString() ? `?${params.toString()}` : ""}`);
+      setIsOpen(false);
+      return;
+    }
+
+    if (action.kind === "open_booking" || action.kind === "open_qr") {
+      const bookingId = action.payload.booking_id;
+      if (typeof bookingId === "string" && bookingId) {
+        router.push(`/confirmation/${bookingId}`);
+        setIsOpen(false);
+      }
+      return;
+    }
+
+    if (action.kind === "handoff") {
+      await handleSend("Contact support");
     }
   };
 
@@ -250,26 +293,21 @@ export default function ChatbotTeaser() {
                       }`}
                     >
                       <p>{msg.content}</p>
-                      {msg.role === "bot" && msg.detected_language && (
-                        <span className="text-xs opacity-60 mt-1 block">
-                          {LANGUAGE_LABELS[msg.detected_language] || msg.detected_language}
-                          {msg.intent && msg.intent !== "fallback" && msg.intent !== "greeting" && msg.intent !== "error" && (
-                            <> · {msg.intent.replace(/_/g, " ")}</>
-                          )}
-                        </span>
-                      )}
-
-                      {/* Suggested action buttons */}
-                      {msg.role === "bot" && msg.suggested_actions && msg.suggested_actions.length > 0 && (
+                      {msg.role === "bot" &&
+                        ((msg.actions && msg.actions.length > 0) ||
+                          (msg.suggested_actions && msg.suggested_actions.length > 0)) && (
                         <div className="mt-2 flex flex-wrap gap-1.5">
-                          {msg.suggested_actions.map((action, ai) => (
+                          {(msg.actions?.length
+                            ? msg.actions
+                            : msg.suggested_actions || []
+                          ).map((action, ai) => (
                             <button
                               key={ai}
-                              onClick={() => handleSend(action)}
+                              onClick={() => handleAction(action)}
                               disabled={loading}
                               className="text-xs bg-blue-700/20 text-blue-300 border border-blue-700/30 rounded-full px-2.5 py-1 hover:bg-blue-700/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
-                              {action}
+                              {typeof action === "string" ? action : action.label}
                             </button>
                           ))}
                         </div>

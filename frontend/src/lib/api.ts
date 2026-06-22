@@ -55,7 +55,6 @@ function getApiBaseUrl(): string {
 const api = axios.create({
   baseURL: getApiBaseUrl(),
   timeout: 15000,
-  headers: { "Content-Type": "application/json" },
 });
 
 // Response interceptor for error normalization

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from uuid import UUID
 
+from typing import Literal, Any
+
 from pydantic import BaseModel, Field
 
 
@@ -26,6 +28,24 @@ class ChatbotRequest(BaseModel):
     )
 
 
+class ChatbotAction(BaseModel):
+    """A structured follow-up action the client can execute."""
+
+    id: str = Field(..., description="Stable action identifier")
+    label: str = Field(..., description="User-facing action label")
+    kind: Literal[
+        "send_message",
+        "prefill_route_search",
+        "open_booking",
+        "open_qr",
+        "handoff",
+    ] = Field(..., description="Client behavior for this action")
+    payload: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Action-specific data for the client",
+    )
+
+
 class ChatbotResponse(BaseModel):
     """Response body from the chatbot."""
 
@@ -44,6 +64,10 @@ class ChatbotResponse(BaseModel):
     suggested_actions: list[str] = Field(
         default_factory=list,
         description="Suggested follow-up actions the user can take",
+    )
+    actions: list[ChatbotAction] = Field(
+        default_factory=list,
+        description="Structured actions the client can execute",
     )
     confidence: float = Field(
         0.0, ge=0.0, le=1.0, description="Confidence score for the detected intent"

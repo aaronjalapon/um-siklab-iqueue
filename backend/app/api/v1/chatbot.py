@@ -8,7 +8,6 @@ Exposes:
 from __future__ import annotations
 
 import logging
-import uuid
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -171,6 +170,7 @@ async def chatbot_message(
                     language_confidence=0.9,
                     intent="request_requeue",
                     suggested_actions=["Continue rebooking"] if not result.get("is_complete") else ["View QR code", "Check boarding time"],
+                    actions=_rebooking_actions(result),
                     confidence=0.85,
                     session_id=session.id,
                     degradation_level=0,
@@ -228,7 +228,59 @@ async def chatbot_message(
         language_confidence=0.40,
         intent="fallback",
         suggested_actions=["Contact Support", "Try Again"],
+        actions=[
+            {
+                "id": "handoff",
+                "label": "Contact Support",
+                "kind": "handoff",
+                "payload": {"reason": "chatbot_unavailable"},
+            },
+            {
+                "id": "try_again",
+                "label": "Try Again",
+                "kind": "send_message",
+                "payload": {"message": "Try Again"},
+            },
+        ],
         confidence=0.0,
         session_id=session_id,
         degradation_level=4,
     )
+
+
+def _rebooking_actions(result: dict) -> list[dict]:
+    """Build structured actions for an active rebooking turn."""
+    metadata = result.get("flow_metadata") or {}
+    booking_id = metadata.get("new_booking_id") or metadata.get("booking_id")
+    if booking_id:
+        return [
+            {
+                "id": "open_booking",
+                "label": "View booking",
+                "kind": "open_booking",
+                "payload": {"booking_id": str(booking_id)},
+            },
+            {
+                "id": "open_qr",
+                "label": "View QR code",
+                "kind": "open_qr",
+                "payload": {"booking_id": str(booking_id)},
+            },
+        ]
+    if result.get("is_complete"):
+        return [
+            {
+                "id": "check_boarding_time",
+                "label": "Check boarding time",
+                "kind": "send_message",
+                "payload": {"message": "Check boarding time"},
+            }
+        ]
+    return [
+        {
+            "id": "continue_rebooking",
+            "label": "Continue rebooking",
+            "kind": "send_message",
+            "payload": {"message": "Continue rebooking"},
+        }
+    ]

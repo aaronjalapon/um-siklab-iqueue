@@ -49,13 +49,13 @@ _DATE_PATTERNS: list[tuple[re.Pattern, str]] = [
     ), "date"),
     # YYYY-MM-DD
     (re.compile(r"\d{4}-\d{2}-\d{2}"), "date"),
-    # "today", "tomorrow", "next monday", "this weekend" + supported local variants
+    # "today", "tomorrow", "next monday", "this weekend" + ASEAN variants
     (re.compile(
         r"\b(?:today|tomorrow|yesterday|bukas|ngayon|kahapon|besok|hari ini|"
-        r"kemarin|ngày mai|ngay mai|hôm nay|hom nay|hôm qua|hom qua|"
+        r"kemarin|hôm nay|hom nay|ngày mai|ngay mai|hôm qua|hom qua|"
         r"(?:this|next|last)\s+(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|"
-        r"week(?:end)?|month)|ngayong\s+weekend|akhir\s+pekan\s+ini|"
-        r"cuối\s+tuần\s+này|cuoi\s+tuan\s+nay)\b",
+        r"week(?:end)?|month)|ngayong\s+weekend|akhir\s+pekan\s+ini|cuối\s+tuần\s+này|"
+        r"cuoi\s+tuan\s+nay)\b",
         re.IGNORECASE,
     ), "relative_date"),
 ]
@@ -226,6 +226,12 @@ class SessionManager:
             route_pair = SessionManager._extract_route_pair(text_lower)
             if route_pair:
                 entities["origin"], entities["destination"] = route_pair
+            elif len(found_cities) == 1:
+                destination = SessionManager._extract_destination_only(
+                    text_lower, found_cities[0]
+                )
+                if destination:
+                    entities["destination"] = destination
 
         # --- Phone numbers ---
         phone_match = _PHONE_RE.search(text)
@@ -328,7 +334,7 @@ class SessionManager:
 
     @staticmethod
     def _extract_route_pair(text_lower: str) -> tuple[str, str] | None:
-        """Extract origin and destination from common route phrasings."""
+        """Extract origin/destination from common route phrasings."""
         city_pattern = "|".join(
             re.escape(city) for city in sorted(_ROUTE_CITIES, key=len, reverse=True)
         )
@@ -341,6 +347,16 @@ class SessionManager:
             match = re.search(pattern, text_lower, re.IGNORECASE)
             if match:
                 return match.group("origin"), match.group("destination")
+        return None
+
+    @staticmethod
+    def _extract_destination_only(text_lower: str, city: str) -> str | None:
+        """Extract a destination when the user has not provided an origin yet."""
+        prefix_pattern = (
+            r"(?:to|papuntang|punta\s+sa|going\s+to|bound\s+for|ke|đến|den|tới|toi)"
+        )
+        if re.search(rf"\b{prefix_pattern}\s+{re.escape(city)}\b", text_lower):
+            return city
         return None
 
     @staticmethod

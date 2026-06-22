@@ -338,6 +338,13 @@ class TestEntityExtraction:
         assert entities.get("destination") == "cotabato"
         assert entities.get("date") is not None
 
+    def test_extract_asean_relative_dates(self):
+        from app.services.chatbot.session import SessionManager
+
+        for text in ("bukas", "besok", "ngày mai"):
+            entities = SessionManager.extract_entities(text, "get_departure_info")
+            assert entities.get("date") is not None
+
     def test_extract_phone_number(self):
         from app.services.chatbot.session import SessionManager
 
@@ -465,6 +472,7 @@ class TestChatbotEndpoint:
         assert "response_text" in data
         assert "detected_language" in data
         assert "suggested_actions" in data
+        assert "actions" in data
         assert "confidence" in data
         # New fields
         assert "language_confidence" in data
@@ -557,6 +565,37 @@ class TestChatbotEndpoint:
         assert response.status_code == 200
         data = response.json()
         assert "do not know who you are yet" in data["response_text"].lower()
+
+    @pytest.mark.asyncio
+    async def test_route_followup_keeps_surge_context(self, client):
+        """A route-only reply after a surge prompt should not fall back."""
+        session_res = await client.post("/api/v1/chatbot/session?language=fil")
+        session_id = session_res.json()["session_id"]
+
+        first = await client.post(
+            "/api/v1/chatbot/message",
+            json={
+                "query": "Mataas ba ang surge bukas?",
+                "language": "fil",
+                "session_id": session_id,
+            },
+        )
+        assert first.status_code == 200
+        assert first.json()["intent"] == "surge_info"
+
+        followup = await client.post(
+            "/api/v1/chatbot/message",
+            json={
+                "query": "Davao-cotabato",
+                "language": "fil",
+                "session_id": session_id,
+            },
+        )
+        assert followup.status_code == 200
+        data = followup.json()
+        assert data["intent"] == "surge_info"
+        assert data["session_id"] == session_id
+        assert "hindi ko maintindihan" not in data["response_text"].lower()
 
 
 # ============================================================================

@@ -10,6 +10,7 @@ Intent targets:
   - request_requeue  — "I missed my bus, can I rebook?"
   - get_departure_info — "When does my bus leave?"
   - surge_info       — "Is it going to be crowded?"
+  - boarding_help    — "What do I show at boarding?"
   - fallback         — Polite fallback in detected language
 """
 
@@ -19,6 +20,7 @@ import asyncio
 import json
 import logging
 import uuid
+from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -97,6 +99,10 @@ INTENT_KEYWORDS: dict[str, dict[str, list[str]]] = {
             "many people", "crowd", "packed", "how full",
             "is it busy", "is it crowded", "how crowded",
         ],
+        "boarding_help": [
+            "boarding", "board", "qr", "qr code", "gate", "show at terminal",
+            "what do i show", "boarding pass", "scan", "boarding window",
+        ],
     },
     "fil": {
         "greeting": [
@@ -123,6 +129,10 @@ INTENT_KEYWORDS: dict[str, dict[str, list[str]]] = {
             "madami tao", "maraming pasahero", "karami", "gaano karami",
             "karamihan", "puno ba", "sikip",
         ],
+        "boarding_help": [
+            "boarding", "sumakay", "sakay", "qr", "qr code", "gate",
+            "ipapakita", "ano ipapakita", "boarding pass", "scan",
+        ],
     },
     "id": {
         "greeting": [
@@ -145,6 +155,10 @@ INTENT_KEYWORDS: dict[str, dict[str, list[str]]] = {
             "ramai", "penuh", "padat", "banyak orang", "crowded",
             "liburan", "puncak", "lonjakan", "sepi", "sibuk",
         ],
+        "boarding_help": [
+            "naik", "boarding", "qr", "kode qr", "gerbang", "gate",
+            "tunjukkan", "boarding pass", "scan", "pindai",
+        ],
     },
     "vi": {
         "greeting": [
@@ -166,6 +180,10 @@ INTENT_KEYWORDS: dict[str, dict[str, list[str]]] = {
         "surge_info": [
             "đông", "đầy", "chật", "nhiều người", "cao điểm",
             "lễ", "tết", "đông đúc", "vắng", "đông khách",
+        ],
+        "boarding_help": [
+            "lên xe", "qr", "mã qr", "cổng", "vé lên xe", "xuất trình",
+            "quét", "boarding", "boarding pass",
         ],
     },
 }
@@ -221,6 +239,12 @@ INTENT_RESPONSES: dict[str, dict[str, str]] = {
         "id": "Saya bisa memeriksa tingkat keramaian untuk rute Anda. Saat liburan dan akhir pekan, tingkat lonjakan bisa tinggi. Rute mana yang Anda tanyakan?",
         "vi": "Tôi có thể kiểm tra mức độ đông đúc cho tuyến đường của bạn. Vào dịp lễ và cuối tuần, mức độ có thể cao. Bạn đang hỏi về tuyến nào?",
     },
+    "boarding_help": {
+        "en": "At the terminal, show your QR boarding pass and arrive inside your assigned boarding window. If you share your booking ID or phone number, I can pull up the exact seat and window.",
+        "fil": "Sa terminal, ipakita ang QR boarding pass at dumating sa iyong assigned boarding window. Kung ibibigay mo ang booking ID o phone number, makikita ko ang eksaktong upuan at oras.",
+        "id": "Di terminal, tunjukkan QR boarding pass dan datang sesuai waktu naik yang ditetapkan. Jika Anda memberi ID pemesanan atau nomor telepon, saya bisa menampilkan kursi dan waktunya.",
+        "vi": "Tại bến, hãy xuất trình mã QR lên xe và đến đúng khung giờ lên xe được chỉ định. Nếu bạn gửi mã đặt vé hoặc số điện thoại, tôi có thể xem ghế và thời gian chính xác.",
+    },
 }
 
 # ---------------------------------------------------------------------------
@@ -243,7 +267,7 @@ BASE_MIN_CONFIDENCE = 0.50
 # Intents that are "simple" (use templates) vs "complex" (use LLM)
 # ---------------------------------------------------------------------------
 
-SIMPLE_INTENTS = {"surge_info", "get_departure_info"}
+SIMPLE_INTENTS = {"surge_info", "get_departure_info", "boarding_help"}
 COMPLEX_INTENTS = {"check_booking", "request_requeue", "fallback"}
 
 
@@ -525,18 +549,22 @@ class ChatbotService:
             except Exception:
                 logger.warning("Failed to load session context for %s", session_id)
 
+        from app.services.chatbot.session import SessionManager
+        query_entities = SessionManager.extract_entities(query, "")
+        effective_booking_id = booking_id
+        if not effective_booking_id and query_entities.get("booking_id"):
+            try:
+                effective_booking_id = uuid.UUID(str(query_entities["booking_id"]))
+            except ValueError:
+                effective_booking_id = None
+
         # Merge phone from various sources
         effective_phone = phone
         if not effective_phone and session_context:
             effective_phone = session_context.get("phone")
         # Also try extracting phone from query
         if not effective_phone:
-            from app.services.chatbot.session import SessionManager
-
-            entities = SessionManager.extract_entities(query, "")
-            effective_phone = entities.get("phone")
-
-        effective_booking_id = booking_id
+            effective_phone = query_entities.get("phone")
 
         greeting_intent, greeting_confidence = self._classify_intent_fallback(
             query, detected_lang
@@ -551,6 +579,7 @@ class ChatbotService:
                     language_confidence=round(lang_confidence, 4),
                     intent="greeting",
                     suggested_actions=self._get_suggestions("greeting", detected_lang),
+                    actions=self._get_actions("greeting", detected_lang),
                     confidence=max(greeting_confidence, 0.9),
                     session_id=session_id,
                     degradation_level=degradation,
@@ -567,6 +596,7 @@ class ChatbotService:
                     language_confidence=round(lang_confidence, 4),
                     intent="fallback",
                     suggested_actions=self._get_suggestions("identity", detected_lang),
+                    actions=self._get_actions("identity", detected_lang),
                     confidence=0.9,
                     session_id=session_id,
                     degradation_level=degradation,
@@ -577,7 +607,14 @@ class ChatbotService:
 
         route_intent, route_confidence = self._detect_route_search_intent(query)
         if route_intent:
-            response_text = self._route_search_response(query, detected_lang)
+            route_context: dict[str, Any] = {}
+            response_text = ""
+            if db:
+                degradation, response_text, route_context = await self._handle_departure_info(
+                    db, query, session_context, query_entities, detected_lang, degradation,
+                )
+            if not response_text:
+                response_text = self._route_search_response(query, detected_lang)
             return (
                 ChatbotResponse(
                     response_text=response_text,
@@ -585,11 +622,23 @@ class ChatbotService:
                     language_confidence=round(lang_confidence, 4),
                     intent=route_intent,
                     suggested_actions=self._get_suggestions(route_intent, detected_lang),
+                    actions=self._get_actions(
+                        route_intent,
+                        detected_lang,
+                        query_entities,
+                        session_context,
+                        route_context,
+                    ),
                     confidence=route_confidence,
                     session_id=session_id,
                     degradation_level=degradation,
                 ),
-                {"intent": route_intent, "entities": {}, "language": detected_lang},
+                {
+                    "intent": route_intent,
+                    "entities": query_entities,
+                    "language": detected_lang,
+                    **route_context,
+                },
                 degradation,
             )
 
@@ -606,7 +655,6 @@ class ChatbotService:
         confidence = classification["confidence"]
 
         # Step 4: Extract entities from this query
-        from app.services.chatbot.session import SessionManager
         entities = SessionManager.extract_entities(query, intent)
         if not effective_booking_id and entities.get("booking_id"):
             try:
@@ -614,12 +662,37 @@ class ChatbotService:
             except ValueError:
                 effective_booking_id = None
 
+        if intent == "fallback" and (
+            entities.get("phone")
+            or entities.get("booking_id")
+            or (session_context or {}).get("intent") in {"check_booking", "boarding_help"}
+        ):
+            intent = "check_booking"
+            confidence = max(confidence, 0.72)
+
+        if (
+            intent == "fallback"
+            and session_context
+            and entities.get("origin")
+            and entities.get("destination")
+            and session_context.get("intent") in {"surge_info", "get_departure_info"}
+            and len(query.split()) <= 4
+        ):
+            intent = session_context["intent"]
+            confidence = max(confidence, 0.75)
+        elif intent == "fallback" and (
+            entities.get("origin") or entities.get("destination") or entities.get("route_cities")
+        ):
+            intent = "get_departure_info"
+            confidence = max(confidence, 0.72)
+
         # Step 5: Build response based on intent (with real data when available)
         response_text = ""
         suggested_actions: list[str] = []
+        action_context: dict[str, Any] = {}
 
-        if intent == "check_booking" and db and (effective_booking_id or effective_phone):
-            degradation, response_text = await self._handle_check_booking(
+        if intent == "check_booking" and db:
+            degradation, response_text, action_context = await self._handle_check_booking(
                 db, effective_booking_id, effective_phone, detected_lang, degradation,
             )
             if degradation >= 4:
@@ -627,20 +700,48 @@ class ChatbotService:
                 response_text = ""
 
         if not response_text and intent == "surge_info" and db:
-            degradation, response_text = await self._handle_surge_info(
+            degradation, response_text, action_context = await self._handle_surge_info(
                 db, query, session_context, entities, detected_lang, degradation,
             )
 
         if not response_text and intent == "get_departure_info" and db:
-            degradation, response_text = await self._handle_departure_info(
+            degradation, response_text, action_context = await self._handle_departure_info(
                 db, query, session_context, entities, detected_lang, degradation,
             )
 
         if not response_text and intent == "request_requeue" and db:
-            degradation, response_text = await self._handle_requeue_start(
-                db, effective_phone, booking_id, session_context,
-                entities, detected_lang, degradation,
+            try:
+                from app.services.chatbot.actions import RebookingFlow
+
+                flow_query = (
+                    str(effective_booking_id)
+                    if effective_booking_id
+                    else (effective_phone or query)
+                )
+                result = await RebookingFlow.process_turn(
+                    db=db,
+                    session_id=session_id or uuid.uuid4(),
+                    query=flow_query,
+                    language=detected_lang,
+                    flow_state=session_context
+                    if (session_context or {}).get("flow") == "rebooking"
+                    else None,
+                )
+                response_text = result["response_text"]
+                action_context = result.get("flow_metadata") or {}
+            except Exception as exc:
+                logger.warning("Rebooking flow start failed: %s", exc)
+                degradation, response_text = await self._handle_requeue_start(
+                    db, effective_phone, booking_id, session_context,
+                    entities, detected_lang, degradation,
+                )
+
+        if not response_text and intent == "boarding_help" and db:
+            degradation, response_text, action_context = await self._handle_check_booking(
+                db, effective_booking_id, effective_phone, detected_lang, degradation,
             )
+            if not action_context:
+                response_text = ""
 
         # Step 6: Fall back to templates if no real-data response yet
         if not response_text:
@@ -660,6 +761,13 @@ class ChatbotService:
         elif intent == "surge_info" and not self._has_route_context(entities, session_context):
             suggestion_intent = "surge_prompt"
         suggested_actions = self._get_suggestions(suggestion_intent, detected_lang)
+        actions = self._get_actions(
+            suggestion_intent,
+            detected_lang,
+            entities,
+            session_context,
+            action_context,
+        )
 
         # Step 7: Try LLM enhancement for complex intents (if we have real data)
         if intent in COMPLEX_INTENTS and response_text and degradation < 2:
@@ -684,12 +792,13 @@ class ChatbotService:
             "intent": intent,
             "entities": entities,
             "language": detected_lang,
+            **action_context,
         }
 
         # Merge with any flow metadata from rebooking
         if intent == "request_requeue":
             session_metadata["flow"] = "rebooking"
-            session_metadata["flow_step"] = 1
+            session_metadata.setdefault("step", action_context.get("step", "identify"))
 
         return (
             ChatbotResponse(
@@ -698,6 +807,7 @@ class ChatbotService:
                 language_confidence=round(lang_confidence, 4),
                 intent=intent,
                 suggested_actions=suggested_actions,
+                actions=actions,
                 confidence=confidence,
                 session_id=session_id,
                 degradation_level=degradation,
@@ -717,9 +827,18 @@ class ChatbotService:
         phone: str | None,
         language: str,
         degradation: int,
-    ) -> tuple[int, str]:
+    ) -> tuple[int, str, dict[str, Any]]:
         """Look up a booking by ID or phone and return a status message."""
         booking: Booking | None = None
+
+        if not booking_id and not phone:
+            templates = {
+                "en": "Please provide your booking ID or the phone number used for booking, and I can look up your trip details.",
+                "fil": "Pakibigay ang booking ID o phone number na ginamit sa booking para matingnan ko ang biyahe mo.",
+                "id": "Mohon berikan ID pemesanan atau nomor telepon yang digunakan agar saya bisa melihat detail perjalanan Anda.",
+                "vi": "Vui lòng cung cấp mã đặt vé hoặc số điện thoại đã dùng để tôi có thể xem chi tiết chuyến đi.",
+            }
+            return degradation, templates.get(language, templates["en"]), {}
 
         try:
             if booking_id:
@@ -729,8 +848,20 @@ class ChatbotService:
                 booking = result.scalars().first()
             elif phone:
                 # Find passenger by phone, then latest booking
+                normalized_phone = self._normalize_phone(phone)
                 p_result = await db.execute(
-                    select(Passenger).where(Passenger.phone == phone)
+                    select(Passenger).where(
+                        func.replace(
+                            func.replace(
+                                func.replace(Passenger.phone, " ", ""),
+                                "-",
+                                "",
+                            ),
+                            "+63",
+                            "0",
+                        )
+                        == normalized_phone
+                    )
                 )
                 passenger = p_result.scalars().first()
                 if passenger:
@@ -743,7 +874,7 @@ class ChatbotService:
                     booking = b_result.scalars().first()
         except Exception as exc:
             logger.warning("Booking lookup failed: %s", exc)
-            return max(degradation, 3), ""
+            return max(degradation, 3), "", {}
 
         if not booking:
             templates = {
@@ -752,7 +883,7 @@ class ChatbotService:
                 "id": "Saya tidak dapat menemukan pemesanan dengan informasi tersebut. Silakan periksa kembali ID pemesanan atau nomor telepon Anda.",
                 "vi": "Tôi không tìm thấy đặt vé với thông tin đó. Vui lòng kiểm tra lại mã đặt vé hoặc số điện thoại.",
             }
-            return degradation, templates.get(language, templates["en"])
+            return degradation, templates.get(language, templates["en"]), {}
 
         # Build booking status response
         status_map = {
@@ -782,6 +913,10 @@ class ChatbotService:
 
         # Try to get route info
         route_info = ""
+        action_context: dict[str, Any] = {
+            "booking_id": str(booking.id),
+            "has_qr": bool(booking.qr_token),
+        }
         try:
             bus_result = await db.execute(
                 select(Bus).where(Bus.id == booking.bus_id)
@@ -794,6 +929,10 @@ class ChatbotService:
                 route = route_result.scalars().first()
                 if route:
                     route_info = f" {route.origin} → {route.destination}"
+                    action_context.update({
+                        "origin": route.origin,
+                        "destination": route.destination,
+                    })
         except Exception:
             pass
 
@@ -816,7 +955,7 @@ class ChatbotService:
                   f"{booking.boarding_window_end.strftime('%H:%M')}.",
         }
 
-        return degradation, templates.get(language, templates["en"])
+        return degradation, templates.get(language, templates["en"]), action_context
 
     async def _handle_surge_info(
         self,
@@ -826,13 +965,9 @@ class ChatbotService:
         entities: dict[str, Any],
         language: str,
         degradation: int,
-    ) -> tuple[int, str]:
+    ) -> tuple[int, str, dict[str, Any]]:
         """Query real surge forecast for a route."""
         try:
-            from app.services.forecasting.predictor import (
-                ForecastingService,
-            )
-
             # Determine route from context or entities
             origin = None
             destination = None
@@ -851,7 +986,7 @@ class ChatbotService:
                     origin, destination = route_cities[0], route_cities[-1]
 
             if not origin:
-                return degradation, ""  # Can't determine route — fall through
+                return degradation, "", {}  # Can't determine route — fall through
 
             # Find matching route
             route_result = await db.execute(
@@ -863,11 +998,43 @@ class ChatbotService:
             route = route_result.scalars().first()
 
             if not route:
-                return degradation, ""
+                return degradation, "", {}
+
+            action_context = {
+                "origin": route.origin,
+                "destination": route.destination,
+                "route_id": str(route.id),
+                "date": entities.get("date") or (session_context or {}).get("date"),
+            }
 
             # Get forecast
-            forecast_service = ForecastingService()
-            predictions = forecast_service.predict(route.id, horizon_days=7)
+            predictions = []
+            try:
+                from app.core.startup import get_forecasting_service
+
+                forecast_service = get_forecasting_service()
+                if forecast_service is not None:
+                    predictions = forecast_service.predict(route.id, horizon_days=7)
+            except Exception as exc:
+                logger.info("Forecast model unavailable for chatbot surge advice: %s", exc)
+
+            if not predictions:
+                travel_day = self._resolve_travel_day(entities, session_context)
+                is_busy_day = travel_day.weekday() in {4, 5, 6}
+                level = {
+                    "en": "moderate to high" if is_busy_day else "normal to moderate",
+                    "fil": "katamtaman hanggang mataas" if is_busy_day else "normal hanggang katamtaman",
+                    "id": "sedang sampai tinggi" if is_busy_day else "normal sampai sedang",
+                    "vi": "vừa đến cao" if is_busy_day else "bình thường đến vừa",
+                }
+                response_map = {
+                    "en": f"For {route.origin} → {route.destination} on {travel_day.strftime('%B %d')}, crowd level looks {level['en']}. Book early and arrive inside your boarding window.",
+                    "fil": f"Para sa {route.origin} → {route.destination} sa {travel_day.strftime('%B %d')}, mukhang {level['fil']} ang dami ng tao. Mag-book nang maaga at dumating sa boarding window mo.",
+                    "id": f"Untuk {route.origin} → {route.destination} pada {travel_day.strftime('%B %d')}, tingkat keramaian terlihat {level['id']}. Pesan lebih awal dan datang sesuai waktu naik.",
+                    "vi": f"Với tuyến {route.origin} → {route.destination} ngày {travel_day.strftime('%B %d')}, mức đông khách có vẻ {level['vi']}. Hãy đặt sớm và đến đúng khung giờ lên xe.",
+                }
+                action_context["date"] = travel_day.isoformat()
+                return degradation, response_map.get(language, response_map["en"]), action_context
 
             # Format response
             surge_days = [p for p in predictions if p.surge_probability > 0.25]
@@ -878,7 +1045,7 @@ class ChatbotService:
                     "id": f"Rute {route.origin} → {route.destination} terlihat normal minggu ini. Tidak ada lonjakan signifikan. Aman untuk bepergian!",
                     "vi": f"Tuyến {route.origin} → {route.destination} có vẻ bình thường tuần này. Không có đợt tăng đột biến nào. An toàn để đi lại!",
                 }
-                return degradation, response_map.get(language, response_map["en"])
+                return degradation, response_map.get(language, response_map["en"]), action_context
 
             # Highlight top surge days
             top = sorted(surge_days, key=lambda x: x.surge_probability, reverse=True)[:3]
@@ -896,12 +1063,18 @@ class ChatbotService:
                 "fil": f"Surge forecast para sa {route.origin} → {route.destination} ngayong linggo:\n"
                        + "\n".join(f"• {d}" for d in day_strs)
                        + "\n\nInirerekomenda kong mag-book nang maaga para sa mga araw na mataas ang surge.",
+                "id": f"Prediksi lonjakan untuk {route.origin} → {route.destination} minggu ini:\n"
+                      + "\n".join(f"• {d}" for d in day_strs)
+                      + "\n\nSaya sarankan memesan lebih awal pada hari dengan lonjakan tinggi.",
+                "vi": f"Dự báo đông khách cho tuyến {route.origin} → {route.destination} tuần này:\n"
+                      + "\n".join(f"• {d}" for d in day_strs)
+                      + "\n\nBạn nên đặt vé sớm vào những ngày đông khách.",
             }
-            return degradation, response_map.get(language, response_map["en"])
+            return degradation, response_map.get(language, response_map["en"]), action_context
 
         except Exception as exc:
             logger.warning("Surge info lookup failed: %s", exc)
-            return max(degradation, 3), ""
+            return max(degradation, 3), "", {}
 
     async def _handle_departure_info(
         self,
@@ -911,7 +1084,7 @@ class ChatbotService:
         entities: dict[str, Any],
         language: str,
         degradation: int,
-    ) -> tuple[int, str]:
+    ) -> tuple[int, str, dict[str, Any]]:
         """Query real bus departure schedule for a route."""
         try:
             origin = None
@@ -929,7 +1102,9 @@ class ChatbotService:
                     origin, destination = route_cities[0], route_cities[-1]
 
             if not origin:
-                return degradation, ""
+                return degradation, "", {}
+
+            travel_day = self._resolve_travel_day(entities, session_context)
 
             # Find matching routes and their buses
             route_result = await db.execute(
@@ -943,7 +1118,18 @@ class ChatbotService:
             routes = route_result.scalars().all()
 
             if not routes:
-                return degradation, ""
+                destination_text = destination or "your destination"
+                response_map = {
+                    "en": f"I couldn't find scheduled buses for {origin} → {destination_text} on {travel_day.strftime('%B %d')}. Try a nearby terminal or a different date.",
+                    "fil": f"Wala akong nakitang naka-schedule na bus para sa {origin} → {destination_text} sa {travel_day.strftime('%B %d')}. Subukan ang kalapit na terminal o ibang petsa.",
+                    "id": f"Saya tidak menemukan bus terjadwal untuk {origin} → {destination_text} pada {travel_day.strftime('%B %d')}. Coba terminal terdekat atau tanggal lain.",
+                    "vi": f"Tôi không tìm thấy xe theo lịch cho {origin} → {destination_text} ngày {travel_day.strftime('%B %d')}. Hãy thử bến gần đó hoặc ngày khác.",
+                }
+                return degradation, response_map.get(language, response_map["en"]), {
+                    "origin": origin,
+                    "destination": destination,
+                    "date": travel_day.isoformat(),
+                }
 
             # Get buses for these routes
             all_buses: list[Bus] = []
@@ -957,16 +1143,25 @@ class ChatbotService:
                 response_map = {
                     "en": f"I found the {routes[0].origin} → {routes[0].destination} route but no buses are currently scheduled. Please check back later.",
                     "fil": f"Nakita ko ang ruta {routes[0].origin} → {routes[0].destination} pero walang naka-schedule na bus. Pakitingnan muli.",
+                    "id": f"Saya menemukan rute {routes[0].origin} → {routes[0].destination}, tetapi belum ada bus yang terjadwal. Silakan cek lagi nanti.",
+                    "vi": f"Tôi tìm thấy tuyến {routes[0].origin} → {routes[0].destination}, nhưng hiện chưa có xe được lên lịch. Vui lòng kiểm tra lại sau.",
                 }
-                return degradation, response_map.get(language, response_map["en"])
+                return degradation, response_map.get(language, response_map["en"]), {
+                    "origin": routes[0].origin,
+                    "destination": routes[0].destination,
+                    "date": travel_day.isoformat(),
+                }
 
             # Format bus list
             bus_lines = []
             for bus in all_buses[:5]:
                 # Count booked seats to show availability
+                start_dt, end_dt = self._day_bounds(travel_day)
                 booked_count_result = await db.execute(
                     select(func.count()).select_from(Booking).where(
                         Booking.bus_id == bus.id,
+                        Booking.departure_date >= start_dt,
+                        Booking.departure_date < end_dt,
                         Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.PENDING]),
                     )
                 )
@@ -974,19 +1169,31 @@ class ChatbotService:
                 available = max(0, bus.capacity - booked)
                 bus_lines.append(f"Bus {bus.plate_number} · {available} seats available")
 
+            date_label = travel_day.strftime("%B %d, %Y")
             response_map = {
-                "en": f"Buses on {routes[0].origin} → {routes[0].destination}:\n"
+                "en": f"Buses on {routes[0].origin} → {routes[0].destination} for {date_label}:\n"
                       + "\n".join(f"• {b}" for b in bus_lines)
                       + "\n\nWould you like to book a specific bus?",
-                "fil": f"Mga bus sa {routes[0].origin} → {routes[0].destination}:\n"
+                "fil": f"Mga bus sa {routes[0].origin} → {routes[0].destination} para sa {date_label}:\n"
                        + "\n".join(f"• {b}" for b in bus_lines)
                        + "\n\nGusto mo bang mag-book ng partikular na bus?",
+                "id": f"Bus untuk {routes[0].origin} → {routes[0].destination} pada {date_label}:\n"
+                      + "\n".join(f"• {b}" for b in bus_lines)
+                      + "\n\nApakah Anda ingin memesan bus tertentu?",
+                "vi": f"Các xe tuyến {routes[0].origin} → {routes[0].destination} ngày {date_label}:\n"
+                      + "\n".join(f"• {b}" for b in bus_lines)
+                      + "\n\nBạn có muốn đặt một xe cụ thể không?",
             }
-            return degradation, response_map.get(language, response_map["en"])
+            return degradation, response_map.get(language, response_map["en"]), {
+                "origin": routes[0].origin,
+                "destination": routes[0].destination,
+                "date": travel_day.isoformat(),
+                "route_id": str(routes[0].id),
+            }
 
         except Exception as exc:
             logger.warning("Departure info lookup failed: %s", exc)
-            return max(degradation, 3), ""
+            return max(degradation, 3), "", {}
 
     async def _handle_requeue_start(
         self,
@@ -1341,6 +1548,109 @@ class ChatbotService:
             or (session_context or {}).get("destination")
         )
 
+    @staticmethod
+    def _normalize_phone(phone: str) -> str:
+        """Normalize local Philippine phone formats for lookup."""
+        value = phone.replace(" ", "").replace("-", "").strip()
+        if value.startswith("+63"):
+            value = "0" + value[3:]
+        return value
+
+    @staticmethod
+    def _day_bounds(travel_day: date) -> tuple[datetime, datetime]:
+        """Return UTC day bounds for booking availability checks."""
+        start_dt = datetime.combine(travel_day, time.min, tzinfo=timezone.utc)
+        return start_dt, start_dt + timedelta(days=1)
+
+    @staticmethod
+    def _resolve_travel_day(
+        entities: dict[str, Any],
+        session_context: dict[str, Any] | None,
+    ) -> date:
+        """Resolve the requested travel date, defaulting to today."""
+        date_value = entities.get("date") or (session_context or {}).get("date")
+        if date_value:
+            try:
+                return date.fromisoformat(str(date_value))
+            except ValueError:
+                pass
+        return date.today()
+
+    @staticmethod
+    def _get_actions(
+        intent: str,
+        language: str,
+        entities: dict[str, Any] | None = None,
+        session_context: dict[str, Any] | None = None,
+        action_context: dict[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
+        """Return structured client actions for the current response."""
+        ctx: dict[str, Any] = {}
+        for source in (session_context, entities, action_context):
+            if source:
+                ctx.update({k: v for k, v in source.items() if v is not None})
+
+        labels = ChatbotService._get_suggestions(intent, language)
+        actions: list[dict[str, Any]] = []
+
+        booking_id = ctx.get("booking_id") or ctx.get("new_booking_id")
+        if booking_id and intent in {"check_booking", "boarding_help", "request_requeue"}:
+            actions.append({
+                "id": "open_booking",
+                "label": labels[0] if labels else "View booking",
+                "kind": "open_booking",
+                "payload": {"booking_id": str(booking_id)},
+            })
+            if ctx.get("has_qr") or ctx.get("new_booking_id"):
+                actions.append({
+                    "id": "open_qr",
+                    "label": "View QR code",
+                    "kind": "open_qr",
+                    "payload": {"booking_id": str(booking_id)},
+                })
+
+        if intent in {"get_departure_info", "surge_info"}:
+            route_payload = {
+                "origin": ctx.get("origin"),
+                "destination": ctx.get("destination"),
+                "date": ctx.get("date"),
+                "route_id": ctx.get("route_id"),
+            }
+            if route_payload["origin"] or route_payload["destination"]:
+                actions.append({
+                    "id": "prefill_route_search",
+                    "label": labels[0] if labels else "View route",
+                    "kind": "prefill_route_search",
+                    "payload": route_payload,
+                })
+
+        if intent == "request_requeue" and not booking_id:
+            actions.append({
+                "id": "continue_rebooking",
+                "label": labels[0] if labels else "Continue rebooking",
+                "kind": "send_message",
+                "payload": {"message": labels[0] if labels else "Find next bus"},
+            })
+
+        while len(actions) < min(3, len(labels)):
+            label = labels[len(actions)]
+            actions.append({
+                "id": label.lower().replace(" ", "_"),
+                "label": label,
+                "kind": "send_message",
+                "payload": {"message": label},
+            })
+
+        if not actions and intent == "fallback":
+            actions.append({
+                "id": "handoff",
+                "label": labels[-1] if labels else "Contact support",
+                "kind": "handoff",
+                "payload": {"reason": "chatbot_fallback"},
+            })
+
+        return actions[:3]
+
     # ------------------------------------------------------------------
     # Internal — suggestions
     # ------------------------------------------------------------------
@@ -1385,6 +1695,12 @@ class ChatbotService:
                 "id": ["Davao ke Cotabato besok", "Cari rute", "Tanya jadwal"],
                 "vi": ["Davao đến Cotabato ngày mai", "Tìm tuyến", "Hỏi lịch trình"],
             },
+            "boarding_help": {
+                "en": ["View QR code", "Check boarding time", "Contact support"],
+                "fil": ["Tingnan QR code", "Oras ng pagsakay", "Humingi ng tulong"],
+                "id": ["Lihat QR code", "Cek waktu naik", "Hubungi bantuan"],
+                "vi": ["Xem mã QR", "Kiểm tra giờ lên xe", "Liên hệ hỗ trợ"],
+            },
             "greeting": {
                 "en": ["Search routes", "Check booking", "Ask about schedules"],
                 "fil": ["Maghanap ng ruta", "Tingnan booking", "Oras ng alis"],
@@ -1392,10 +1708,10 @@ class ChatbotService:
                 "vi": ["Tìm tuyến", "Kiểm tra vé", "Hỏi lịch trình"],
             },
             "fallback": {
-                "en": ["Search routes", "Check bookings", "Ask about schedules"],
-                "fil": ["Maghanap ng ruta", "Tingnan booking", "Oras ng alis"],
-                "id": ["Cari rute", "Cek pemesanan", "Tanya jadwal"],
-                "vi": ["Tìm tuyến", "Kiểm tra vé", "Hỏi lịch trình"],
+                "en": ["Search routes", "Check bookings", "Contact support"],
+                "fil": ["Maghanap ng ruta", "Tingnan booking", "Humingi ng tulong"],
+                "id": ["Cari rute", "Cek pemesanan", "Hubungi bantuan"],
+                "vi": ["Tìm tuyến", "Kiểm tra vé", "Liên hệ hỗ trợ"],
             },
             "identity": {
                 "en": ["Check booking", "Use phone number", "Search routes"],

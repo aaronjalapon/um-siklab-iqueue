@@ -536,6 +536,8 @@ class ChatbotService:
             entities = SessionManager.extract_entities(query, "")
             effective_phone = entities.get("phone")
 
+        effective_booking_id = booking_id
+
         greeting_intent, greeting_confidence = self._classify_intent_fallback(
             query, detected_lang
         )
@@ -554,6 +556,22 @@ class ChatbotService:
                     degradation_level=degradation,
                 ),
                 {"intent": "greeting", "entities": {}, "language": detected_lang},
+                degradation,
+            )
+
+        if self._is_identity_question(query):
+            return (
+                ChatbotResponse(
+                    response_text=self._identity_response(detected_lang),
+                    detected_language=detected_lang,
+                    language_confidence=round(lang_confidence, 4),
+                    intent="fallback",
+                    suggested_actions=self._get_suggestions("identity", detected_lang),
+                    confidence=0.9,
+                    session_id=session_id,
+                    degradation_level=degradation,
+                ),
+                {"intent": "fallback", "entities": {}, "language": detected_lang},
                 degradation,
             )
 
@@ -590,14 +608,19 @@ class ChatbotService:
         # Step 4: Extract entities from this query
         from app.services.chatbot.session import SessionManager
         entities = SessionManager.extract_entities(query, intent)
+        if not effective_booking_id and entities.get("booking_id"):
+            try:
+                effective_booking_id = uuid.UUID(str(entities["booking_id"]))
+            except ValueError:
+                effective_booking_id = None
 
         # Step 5: Build response based on intent (with real data when available)
         response_text = ""
         suggested_actions: list[str] = []
 
-        if intent == "check_booking" and db:
+        if intent == "check_booking" and db and (effective_booking_id or effective_phone):
             degradation, response_text = await self._handle_check_booking(
-                db, booking_id, effective_phone, detected_lang, degradation,
+                db, effective_booking_id, effective_phone, detected_lang, degradation,
             )
             if degradation >= 4:
                 # Lookup failed completely — fall through to template
@@ -631,7 +654,12 @@ class ChatbotService:
                     INTENT_RESPONSES.get(intent, {}).get("en", ""),
                 )
 
-        suggested_actions = self._get_suggestions(intent, detected_lang)
+        suggestion_intent = intent
+        if intent == "check_booking" and not (effective_booking_id or effective_phone):
+            suggestion_intent = "booking_identify"
+        elif intent == "surge_info" and not self._has_route_context(entities, session_context):
+            suggestion_intent = "surge_prompt"
+        suggested_actions = self._get_suggestions(suggestion_intent, detected_lang)
 
         # Step 7: Try LLM enhancement for complex intents (if we have real data)
         if intent in COMPLEX_INTENTS and response_text and degradation < 2:
@@ -1262,6 +1290,57 @@ class ChatbotService:
             return f"I can help search trips to {destination}. Where are you coming from, and what travel date should I use?"
         return "I can help search routes. Please tell me your origin, destination, and travel date."
 
+    @staticmethod
+    def _is_identity_question(query: str) -> bool:
+        """Detect questions about whether the assistant knows the passenger."""
+        q = query.lower().strip()
+        return any(
+            phrase in q
+            for phrase in (
+                "do you know me",
+                "who am i",
+                "you know me",
+                "kilala mo ba ako",
+                "apakah kamu mengenal saya",
+            )
+        )
+
+    @staticmethod
+    def _identity_response(language: str) -> str:
+        """Explain identity/privacy limits in the user's language."""
+        responses = {
+            "en": (
+                "I do not know who you are yet. If you share your booking ID or "
+                "the phone number used for booking, I can look up your trip details."
+            ),
+            "fil": (
+                "Hindi ko pa alam kung sino ka. Kung ibibigay mo ang booking ID "
+                "o phone number na ginamit sa booking, matitingnan ko ang biyahe mo."
+            ),
+            "id": (
+                "Saya belum tahu siapa Anda. Jika Anda memberi ID pemesanan atau "
+                "nomor telepon yang digunakan, saya bisa melihat detail perjalanan Anda."
+            ),
+            "vi": (
+                "Tôi chưa biết bạn là ai. Nếu bạn gửi mã đặt vé hoặc số điện thoại "
+                "đã dùng khi đặt vé, tôi có thể xem chi tiết chuyến đi của bạn."
+            ),
+        }
+        return responses.get(language, responses["en"])
+
+    @staticmethod
+    def _has_route_context(
+        entities: dict[str, Any],
+        session_context: dict[str, Any] | None,
+    ) -> bool:
+        """Return True when a route is known in this turn or session."""
+        return bool(
+            entities.get("origin")
+            or entities.get("destination")
+            or (session_context or {}).get("origin")
+            or (session_context or {}).get("destination")
+        )
+
     # ------------------------------------------------------------------
     # Internal — suggestions
     # ------------------------------------------------------------------
@@ -1271,10 +1350,16 @@ class ChatbotService:
         """Return suggested follow-up actions based on intent."""
         suggestions = {
             "check_booking": {
-                "en": ["View QR code", "Check boarding time", "Cancel booking"],
-                "fil": ["Tingnan QR code", "Oras ng pagsakay", "Kanselahin"],
-                "id": ["Lihat QR code", "Cek waktu naik", "Batalkan"],
-                "vi": ["Xem mã QR", "Kiểm tra giờ lên xe", "Hủy vé"],
+                "en": ["Check another booking", "Boarding pass help", "Contact support"],
+                "fil": ["Tingnan ibang booking", "Tulong sa boarding pass", "Humingi ng tulong"],
+                "id": ["Cek pemesanan lain", "Bantuan boarding pass", "Hubungi bantuan"],
+                "vi": ["Kiểm tra vé khác", "Trợ giúp vé lên xe", "Liên hệ hỗ trợ"],
+            },
+            "booking_identify": {
+                "en": ["Enter booking ID", "Use phone number", "Contact support"],
+                "fil": ["Ibigay booking ID", "Gamitin phone number", "Humingi ng tulong"],
+                "id": ["Masukkan ID pemesanan", "Gunakan nomor telepon", "Hubungi bantuan"],
+                "vi": ["Nhập mã đặt vé", "Dùng số điện thoại", "Liên hệ hỗ trợ"],
             },
             "request_requeue": {
                 "en": ["Find next bus", "Change route", "Contact support"],
@@ -1289,10 +1374,16 @@ class ChatbotService:
                 "vi": ["Xem lịch trình", "Kiểm tra cổng", "Nhắc nhở"],
             },
             "surge_info": {
-                "en": ["View forecast", "Choose different date", "Book early"],
-                "fil": ["Tingnan forecast", "Pumili ng ibang petsa"],
-                "id": ["Lihat prediksi", "Pilih tanggal lain", "Pesan awal"],
-                "vi": ["Xem dự báo", "Chọn ngày khác", "Đặt sớm"],
+                "en": ["Davao to Cotabato tomorrow", "Choose different date", "Search routes"],
+                "fil": ["Davao to Cotabato bukas", "Pumili ng ibang petsa", "Maghanap ng ruta"],
+                "id": ["Davao ke Cotabato besok", "Pilih tanggal lain", "Cari rute"],
+                "vi": ["Davao đến Cotabato ngày mai", "Chọn ngày khác", "Tìm tuyến"],
+            },
+            "surge_prompt": {
+                "en": ["Davao to Cotabato tomorrow", "Search routes", "Ask about schedules"],
+                "fil": ["Davao to Cotabato bukas", "Maghanap ng ruta", "Oras ng alis"],
+                "id": ["Davao ke Cotabato besok", "Cari rute", "Tanya jadwal"],
+                "vi": ["Davao đến Cotabato ngày mai", "Tìm tuyến", "Hỏi lịch trình"],
             },
             "greeting": {
                 "en": ["Search routes", "Check booking", "Ask about schedules"],
@@ -1305,6 +1396,12 @@ class ChatbotService:
                 "fil": ["Maghanap ng ruta", "Tingnan booking", "Oras ng alis"],
                 "id": ["Cari rute", "Cek pemesanan", "Tanya jadwal"],
                 "vi": ["Tìm tuyến", "Kiểm tra vé", "Hỏi lịch trình"],
+            },
+            "identity": {
+                "en": ["Check booking", "Use phone number", "Search routes"],
+                "fil": ["Tingnan booking", "Gamitin phone number", "Maghanap ng ruta"],
+                "id": ["Cek pemesanan", "Gunakan nomor telepon", "Cari rute"],
+                "vi": ["Kiểm tra vé", "Dùng số điện thoại", "Tìm tuyến"],
             },
         }
 

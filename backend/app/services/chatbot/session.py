@@ -13,7 +13,7 @@ import uuid
 from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
-from sqlalchemy import delete, select, update
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.chat_session import ChatMessage, ChatSession
@@ -49,11 +49,13 @@ _DATE_PATTERNS: list[tuple[re.Pattern, str]] = [
     ), "date"),
     # YYYY-MM-DD
     (re.compile(r"\d{4}-\d{2}-\d{2}"), "date"),
-    # "today", "tomorrow", "next monday", "this weekend"
+    # "today", "tomorrow", "next monday", "this weekend" + supported local variants
     (re.compile(
-        r"\b(?:today|tomorrow|yesterday|"
+        r"\b(?:today|tomorrow|yesterday|bukas|ngayon|kahapon|besok|hari ini|"
+        r"kemarin|ngày mai|ngay mai|hôm nay|hom nay|hôm qua|hom qua|"
         r"(?:this|next|last)\s+(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|"
-        r"week(?:end)?|month))\b",
+        r"week(?:end)?|month)|ngayong\s+weekend|akhir\s+pekan\s+ini|"
+        r"cuối\s+tuần\s+này|cuoi\s+tuan\s+nay)\b",
         re.IGNORECASE,
     ), "relative_date"),
 ]
@@ -221,6 +223,10 @@ class SessionManager:
                 entities["origin"] = found_cities[0]
                 entities["destination"] = found_cities[-1]
 
+            route_pair = SessionManager._extract_route_pair(text_lower)
+            if route_pair:
+                entities["origin"], entities["destination"] = route_pair
+
         # --- Phone numbers ---
         phone_match = _PHONE_RE.search(text)
         if phone_match:
@@ -266,11 +272,11 @@ class SessionManager:
 
         # Relative dates
         rel = text.lower().strip()
-        if rel == "today":
+        if rel in {"today", "ngayon", "hari ini", "hôm nay", "hom nay"}:
             return today
-        if rel == "tomorrow":
+        if rel in {"tomorrow", "bukas", "besok", "ngày mai", "ngay mai"}:
             return today + timedelta(days=1)
-        if rel == "yesterday":
+        if rel in {"yesterday", "kahapon", "kemarin", "hôm qua", "hom qua"}:
             return today - timedelta(days=1)
 
         # Day-of-week relative
@@ -281,7 +287,14 @@ class SessionManager:
                     target = today + timedelta(days=offset + (i - today.weekday()))
                     return target
 
-        if rel in ("this weekend", "this week"):
+        if rel in (
+            "this weekend",
+            "this week",
+            "ngayong weekend",
+            "akhir pekan ini",
+            "cuối tuần này",
+            "cuoi tuan nay",
+        ):
             # Next Saturday
             days_until_sat = (5 - today.weekday()) % 7
             return today + timedelta(days=days_until_sat)
@@ -311,6 +324,23 @@ class SessionManager:
         except (ValueError, TypeError):
             pass
 
+        return None
+
+    @staticmethod
+    def _extract_route_pair(text_lower: str) -> tuple[str, str] | None:
+        """Extract origin and destination from common route phrasings."""
+        city_pattern = "|".join(
+            re.escape(city) for city in sorted(_ROUTE_CITIES, key=len, reverse=True)
+        )
+        patterns = [
+            rf"\bfrom\s+(?P<origin>{city_pattern})\s+to\s+(?P<destination>{city_pattern})\b",
+            rf"\b(?P<origin>{city_pattern})\s*(?:to|[-–—>→])\s*(?P<destination>{city_pattern})\b",
+            rf"\b(?P<origin>{city_pattern})\s+(?:papuntang|punta\s+sa|going\s+to|bound\s+for|ke|đến|den|tới|toi)\s+(?P<destination>{city_pattern})\b",
+        ]
+        for pattern in patterns:
+            match = re.search(pattern, text_lower, re.IGNORECASE)
+            if match:
+                return match.group("origin"), match.group("destination")
         return None
 
     @staticmethod

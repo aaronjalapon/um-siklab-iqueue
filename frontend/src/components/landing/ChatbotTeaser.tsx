@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { MessageCircle, X, Send, Globe, Loader2 } from "lucide-react";
 import { createChatSession, sendChatMessage } from "@/lib/api";
 import type { ChatbotResponse } from "@/lib/types";
-import { LANGUAGE_LABELS } from "@/lib/utils";
 
 type Language = "en" | "fil" | "id" | "vi";
 
@@ -40,6 +39,24 @@ const QUICK_REPLIES: Record<Language, string[]> = {
   id: ["Cek pemesanan saya", "Apakah ramai akhir pekan ini?", "Kapan bus saya berangkat?", "Saya ketinggalan bus"],
   vi: ["Kiểm tra đặt vé của tôi", "Cuối tuần này có đông không?", "Khi nào xe tôi khởi hành?", "Tôi bị lỡ xe"],
 };
+
+function suggestionToQuery(action: string): string {
+  const normalized = action.toLowerCase();
+  const mapping: Record<string, string> = {
+    "view qr code": "Check my booking",
+    "check boarding time": "Check my booking",
+    "cancel booking": "I need help with my booking",
+    "view forecast": "Davao to Cotabato tomorrow",
+    "choose different date": "Davao to Cotabato tomorrow",
+    "book early": "Search routes",
+    "enter booking id": "I have a booking ID",
+    "use phone number": "I want to use my phone number",
+    "check bookings": "Check my booking",
+    "check booking": "Check my booking",
+    "ask about schedules": "When does my bus leave?",
+  };
+  return mapping[normalized] || action;
+}
 
 export default function ChatbotTeaser() {
   const initialLang = detectBrowserLanguage();
@@ -250,22 +267,13 @@ export default function ChatbotTeaser() {
                       }`}
                     >
                       <p>{msg.content}</p>
-                      {msg.role === "bot" && msg.detected_language && (
-                        <span className="text-xs opacity-60 mt-1 block">
-                          {LANGUAGE_LABELS[msg.detected_language] || msg.detected_language}
-                          {msg.intent && msg.intent !== "fallback" && msg.intent !== "greeting" && msg.intent !== "error" && (
-                            <> · {msg.intent.replace(/_/g, " ")}</>
-                          )}
-                        </span>
-                      )}
-
                       {/* Suggested action buttons */}
                       {msg.role === "bot" && msg.suggested_actions && msg.suggested_actions.length > 0 && (
                         <div className="mt-2 flex flex-wrap gap-1.5">
                           {msg.suggested_actions.map((action, ai) => (
                             <button
                               key={ai}
-                              onClick={() => handleSend(action)}
+                              onClick={() => handleSend(suggestionToQuery(action))}
                               disabled={loading}
                               className="text-xs bg-blue-700/20 text-blue-300 border border-blue-700/30 rounded-full px-2.5 py-1 hover:bg-blue-700/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >

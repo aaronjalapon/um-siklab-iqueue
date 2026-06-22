@@ -328,6 +328,16 @@ class TestEntityExtraction:
         assert entities.get("origin") == "manila"
         assert entities.get("destination") == "davao"
 
+    def test_extract_hyphenated_route_and_local_date(self):
+        from app.services.chatbot.session import SessionManager
+
+        entities = SessionManager.extract_entities(
+            "Davao-Cotabato bukas", "get_departure_info"
+        )
+        assert entities.get("origin") == "davao"
+        assert entities.get("destination") == "cotabato"
+        assert entities.get("date") is not None
+
     def test_extract_phone_number(self):
         from app.services.chatbot.session import SessionManager
 
@@ -529,6 +539,24 @@ class TestChatbotEndpoint:
         data = response.json()
         # Should return the same session_id
         assert data["session_id"] == session_id
+
+    @pytest.mark.asyncio
+    async def test_check_booking_without_identifier_asks_for_identifier(self, client):
+        payload = {"query": "Check my booking", "language": "en"}
+        response = await client.post("/api/v1/chatbot/message", json=payload)
+        assert response.status_code == 200
+        data = response.json()
+        assert data["intent"] == "check_booking"
+        assert "provide your booking ID" in data["response_text"]
+        assert "couldn't find" not in data["response_text"].lower()
+
+    @pytest.mark.asyncio
+    async def test_identity_question_explains_privacy_boundary(self, client):
+        payload = {"query": "Do you know me?", "language": "en"}
+        response = await client.post("/api/v1/chatbot/message", json=payload)
+        assert response.status_code == 200
+        data = response.json()
+        assert "do not know who you are yet" in data["response_text"].lower()
 
 
 # ============================================================================

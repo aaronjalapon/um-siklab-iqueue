@@ -3,8 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { sendChatMessage, createChatSession } from "@/lib/api";
 import type { ChatbotResponse } from "@/lib/types";
-import { LANGUAGE_LABELS } from "@/lib/utils";
-import { MessageCircle, Send, X, AlertTriangle } from "lucide-react";
+import { MessageCircle, Send, X } from "lucide-react";
 
 // ---------------------------------------------------------------------------
 // Language config
@@ -59,6 +58,24 @@ const QUICK_REPLIES: Record<LanguageCode, string[]> = {
   id: ["Cek pesanan", "Apakah ramai?", "Kapan berangkat?", "Ketinggalan bus"],
   vi: ["Kiểm tra vé", "Có đông không?", "Khi nào khởi hành?", "Bị lỡ xe"],
 };
+
+function suggestionToQuery(action: string): string {
+  const normalized = action.toLowerCase();
+  const mapping: Record<string, string> = {
+    "view qr code": "Check my booking",
+    "check boarding time": "Check my booking",
+    "cancel booking": "I need help with my booking",
+    "view forecast": "Davao to Cotabato tomorrow",
+    "choose different date": "Davao to Cotabato tomorrow",
+    "book early": "Search routes",
+    "enter booking id": "I have a booking ID",
+    "use phone number": "I want to use my phone number",
+    "check bookings": "Check my booking",
+    "check booking": "Check my booking",
+    "ask about schedules": "When does my bus leave?",
+  };
+  return mapping[normalized] || action;
+}
 
 // ---------------------------------------------------------------------------
 // Browser language detection
@@ -188,7 +205,7 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
   };
 
   const handleSuggestionClick = async (action: string) => {
-    await handleSend(action);
+    await handleSend(suggestionToQuery(action));
   };
 
   const handleLanguageChange = async (code: LanguageCode) => {
@@ -295,31 +312,6 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
                   }`}
                 >
                   <p>{msg.text}</p>
-
-                  {/* Language & confidence indicator */}
-                  {msg.language && (
-                    <span className="text-xs opacity-70 mt-1 block">
-                      {LANGUAGE_LABELS[msg.language] || msg.language}
-                      {msg.languageConfidence != null && (
-                        <span title={`Detection confidence: ${Math.round(msg.languageConfidence * 100)}%`}>
-                          {" "}· {Math.round(msg.languageConfidence * 100)}% confidence
-                        </span>
-                      )}
-                      {msg.intent &&
-                        msg.intent !== "fallback" &&
-                        msg.intent !== "greeting" && (
-                          <> · {msg.intent.replace(/_/g, " ")}</>
-                        )}
-                    </span>
-                  )}
-
-                  {/* Degradation warning */}
-                  {msg.degradation != null && msg.degradation > 0 && (
-                    <span className="text-xs text-amber-500 mt-1 flex items-center gap-1">
-                      <AlertTriangle className="w-3 h-3" />
-                      Running in reduced mode
-                    </span>
-                  )}
 
                   {/* Suggested action pills */}
                   {msg.role === "bot" &&

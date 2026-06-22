@@ -254,12 +254,27 @@ export interface ChatbotRequest {
   phone?: string;
 }
 
+export type ChatbotActionKind =
+  | "send_message"
+  | "prefill_route_search"
+  | "open_booking"
+  | "open_qr"
+  | "handoff";
+
+export interface ChatbotAction {
+  id: string;
+  label: string;
+  kind: ChatbotActionKind;
+  payload: Record<string, string | number | boolean | null | undefined>;
+}
+
 export interface ChatbotResponse {
   response_text: string;
   detected_language: string;
   language_confidence: number | null;
   intent: string;
   suggested_actions: string[];
+  actions: ChatbotAction[];
   confidence: number;
   session_id: string | null;
   degradation_level: number;

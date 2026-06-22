@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { sendChatMessage, createChatSession } from "@/lib/api";
-import type { ChatbotResponse } from "@/lib/types";
-import { LANGUAGE_LABELS } from "@/lib/utils";
+import type { ChatbotAction, ChatbotResponse } from "@/lib/types";
 import { MessageCircle, Send, X, AlertTriangle } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -84,6 +84,7 @@ interface Message {
   languageConfidence?: number | null;
   intent?: string;
   suggested_actions?: string[];
+  actions?: ChatbotAction[];
   degradation?: number;
 }
 
@@ -96,6 +97,7 @@ interface ChatbotPanelProps {
 // ---------------------------------------------------------------------------
 
 export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
+  const router = useRouter();
   const initialLang = detectBrowserLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [lang, setLang] = useState<LanguageCode>(initialLang);
@@ -169,6 +171,7 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
           languageConfidence: response.language_confidence,
           intent: response.intent,
           suggested_actions: response.suggested_actions,
+          actions: response.actions,
           degradation: response.degradation_level,
         },
       ]);
@@ -187,8 +190,45 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
     }
   };
 
-  const handleSuggestionClick = async (action: string) => {
-    await handleSend(action);
+  const handleSuggestionClick = async (action: string | ChatbotAction) => {
+    if (typeof action === "string") {
+      await handleSend(action);
+      return;
+    }
+
+    if (action.kind === "send_message") {
+      const message = String(action.payload.message || action.label);
+      await handleSend(message);
+      return;
+    }
+
+    if (action.kind === "prefill_route_search") {
+      const params = new URLSearchParams();
+      const origin = action.payload.origin;
+      const destination = action.payload.destination;
+      const date = action.payload.date;
+      if (typeof origin === "string" && origin) params.set("origin", origin);
+      if (typeof destination === "string" && destination) {
+        params.set("destination", destination);
+      }
+      if (typeof date === "string" && date) params.set("date", date);
+      router.push(`/buy${params.toString() ? `?${params.toString()}` : ""}`);
+      setIsOpen(false);
+      return;
+    }
+
+    if (action.kind === "open_booking" || action.kind === "open_qr") {
+      const targetBookingId = action.payload.booking_id;
+      if (typeof targetBookingId === "string" && targetBookingId) {
+        router.push(`/confirmation/${targetBookingId}`);
+        setIsOpen(false);
+      }
+      return;
+    }
+
+    if (action.kind === "handoff") {
+      await handleSend("Contact support");
+    }
   };
 
   const handleLanguageChange = async (code: LanguageCode) => {
@@ -296,37 +336,23 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
                 >
                   <p>{msg.text}</p>
 
-                  {/* Language & confidence indicator */}
-                  {msg.language && (
-                    <span className="text-xs opacity-70 mt-1 block">
-                      {LANGUAGE_LABELS[msg.language] || msg.language}
-                      {msg.languageConfidence != null && (
-                        <span title={`Detection confidence: ${Math.round(msg.languageConfidence * 100)}%`}>
-                          {" "}· {Math.round(msg.languageConfidence * 100)}% confidence
-                        </span>
-                      )}
-                      {msg.intent &&
-                        msg.intent !== "fallback" &&
-                        msg.intent !== "greeting" && (
-                          <> · {msg.intent.replace(/_/g, " ")}</>
-                        )}
-                    </span>
-                  )}
-
-                  {/* Degradation warning */}
-                  {msg.degradation != null && msg.degradation > 0 && (
+                  {process.env.NODE_ENV === "development" &&
+                    msg.degradation != null &&
+                    msg.degradation > 0 && (
                     <span className="text-xs text-amber-500 mt-1 flex items-center gap-1">
                       <AlertTriangle className="w-3 h-3" />
                       Running in reduced mode
                     </span>
                   )}
 
-                  {/* Suggested action pills */}
                   {msg.role === "bot" &&
-                    msg.suggested_actions &&
-                    msg.suggested_actions.length > 0 && (
+                    ((msg.actions && msg.actions.length > 0) ||
+                      (msg.suggested_actions && msg.suggested_actions.length > 0)) && (
                       <div className="mt-2 flex flex-wrap gap-1.5">
-                        {msg.suggested_actions.map((action, ai) => (
+                        {(msg.actions?.length
+                          ? msg.actions
+                          : msg.suggested_actions || []
+                        ).map((action, ai) => (
                           <button
                             type="button"
                             key={ai}
@@ -340,7 +366,7 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
                                        disabled:opacity-50 disabled:cursor-not-allowed
                                        transition-colors"
                           >
-                            {action}
+                            {typeof action === "string" ? action : action.label}
                           </button>
                         ))}
                       </div>

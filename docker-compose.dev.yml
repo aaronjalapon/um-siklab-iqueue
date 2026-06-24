@@ -45,9 +45,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
-    command: >
-      sh -c "find /app/.next -mindepth 1 -maxdepth 1 -exec rm -rf {} + 2>/dev/null || true;
-             exec npm run dev:webpack"
+    command: npm run dev:docker
     stdin_open: true
     tty: true
     volumes:

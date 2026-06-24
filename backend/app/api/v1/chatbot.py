@@ -8,13 +8,13 @@ Exposes:
 from __future__ import annotations
 
 import logging
-import uuid
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_db
 from app.schemas.chatbot import (
+    ChatbotAction,
     ChatbotRequest,
     ChatbotResponse,
     SessionCreateResponse,
@@ -23,6 +23,37 @@ from app.schemas.chatbot import (
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
+def _rebooking_actions(result: dict, is_complete: bool) -> list[ChatbotAction]:
+    """Map rebooking flow state into frontend-executable actions."""
+    flow_metadata = result.get("flow_metadata") or {}
+    booking_id = flow_metadata.get("new_booking_id") or flow_metadata.get("booking_id")
+    if is_complete and booking_id:
+        return [
+            ChatbotAction(
+                id="open-rebooking",
+                label="View booking",
+                kind="open_booking",
+                payload={"booking_id": str(booking_id)},
+            ),
+            ChatbotAction(
+                id="open-rebooking-qr",
+                label="View QR code",
+                kind="open_qr",
+                payload={"booking_id": str(booking_id)},
+            ),
+        ]
+    if is_complete:
+        return []
+    return [
+        ChatbotAction(
+            id="continue-rebooking",
+            label="Continue rebooking",
+            kind="send_message",
+            payload={"message": "Continue rebooking"},
+        )
+    ]
 
 # ---------------------------------------------------------------------------
 # Greeting templates per language (used for new sessions)
@@ -171,6 +202,7 @@ async def chatbot_message(
                     language_confidence=0.9,
                     intent="request_requeue",
                     suggested_actions=["Continue rebooking"] if not result.get("is_complete") else ["View QR code", "Check boarding time"],
+                    actions=_rebooking_actions(result, bool(result.get("is_complete"))),
                     confidence=0.85,
                     session_id=session.id,
                     degradation_level=0,
@@ -228,6 +260,20 @@ async def chatbot_message(
         language_confidence=0.40,
         intent="fallback",
         suggested_actions=["Contact Support", "Try Again"],
+        actions=[
+            ChatbotAction(
+                id="contact-support",
+                label="Contact support",
+                kind="handoff",
+                payload={"message": "Please contact terminal staff for assistance."},
+            ),
+            ChatbotAction(
+                id="try-again",
+                label="Try again",
+                kind="send_message",
+                payload={"message": "Try again"},
+            ),
+        ],
         confidence=0.0,
         session_id=session_id,
         degradation_level=4,

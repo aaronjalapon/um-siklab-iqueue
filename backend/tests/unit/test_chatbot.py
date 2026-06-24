@@ -345,6 +345,38 @@ class TestEntityExtraction:
         assert entities.get("date_text") == "tomorrow"
         assert entities.get("date") is not None  # Parsed to actual date
 
+    def test_extract_multilingual_route_and_date(self):
+        from app.services.chatbot.session import SessionManager
+
+        examples = [
+            ("Davao-Cotabato bukas", "davao", "cotabato", "bukas"),
+            ("Davao ke Cotabato besok", "davao", "cotabato", "besok"),
+            ("Davao đến Cotabato ngày mai", "davao", "cotabato", "ngày mai"),
+            ("Davao papuntang Cotabato bukas", "davao", "cotabato", "bukas"),
+        ]
+
+        for query, origin, destination, date_text in examples:
+            entities = SessionManager.extract_entities(query, "get_departure_info")
+            assert entities.get("origin") == origin
+            assert entities.get("destination") == destination
+            assert entities.get("date_text") == date_text
+            assert entities.get("date") is not None
+
+    def test_extract_partial_route_turns(self):
+        from app.services.chatbot.session import SessionManager
+
+        destination = SessionManager.extract_entities(
+            "I want to go to Cotabato", "get_departure_info"
+        )
+        origin = SessionManager.extract_entities(
+            "I'm from Davao", "get_departure_info"
+        )
+
+        assert destination.get("destination") == "cotabato"
+        assert "origin" not in destination
+        assert origin.get("origin") == "davao"
+        assert "destination" not in origin
+
     def test_extract_booking_id(self):
         from app.services.chatbot.session import SessionManager
 
@@ -455,6 +487,8 @@ class TestChatbotEndpoint:
         assert "response_text" in data
         assert "detected_language" in data
         assert "suggested_actions" in data
+        assert "actions" in data
+        assert isinstance(data["actions"], list)
         assert "confidence" in data
         # New fields
         assert "language_confidence" in data
@@ -529,6 +563,65 @@ class TestChatbotEndpoint:
         data = response.json()
         # Should return the same session_id
         assert data["session_id"] == session_id
+
+    @pytest.mark.asyncio
+    async def test_check_booking_without_identifier_asks_for_identifier(self, client):
+        """Booking lookup should request ID/phone instead of claiming not found."""
+        payload = {"query": "Check my booking", "language": "en"}
+        response = await client.post("/api/v1/chatbot/message", json=payload)
+        assert response.status_code == 200
+        data = response.json()
+        assert "booking id" in data["response_text"].lower()
+        assert any(a["kind"] == "send_message" for a in data["actions"])
+
+    @pytest.mark.asyncio
+    async def test_route_query_returns_booking_action(self, client):
+        """Known route/date queries should expose a prefilled booking action."""
+        payload = {
+            "query": "I want to go from Davao to Cotabato tomorrow",
+            "language": "en",
+        }
+        response = await client.post("/api/v1/chatbot/message", json=payload)
+        assert response.status_code == 200
+        data = response.json()
+        action = next(
+            (a for a in data["actions"] if a["kind"] == "prefill_route_search"),
+            None,
+        )
+        assert action is not None
+        assert action["payload"]["origin"].lower() == "davao"
+        assert action["payload"]["destination"].lower() == "cotabato"
+
+    @pytest.mark.asyncio
+    async def test_partial_route_context_collects_missing_date(self, client):
+        """Destination then origin should be merged across chat turns."""
+        session_res = await client.post("/api/v1/chatbot/session?language=en")
+        session_id = session_res.json()["session_id"]
+
+        first = await client.post(
+            "/api/v1/chatbot/message",
+            json={
+                "query": "I want to go to Cotabato",
+                "language": "en",
+                "session_id": session_id,
+            },
+        )
+        assert first.status_code == 200
+        assert "where are you coming from" in first.json()["response_text"].lower()
+
+        second = await client.post(
+            "/api/v1/chatbot/message",
+            json={
+                "query": "I'm from Davao",
+                "language": "en",
+                "session_id": session_id,
+            },
+        )
+        assert second.status_code == 200
+        text = second.json()["response_text"].lower()
+        assert "davao" in text
+        assert "cotabato" in text
+        assert "date" in text
 
 
 # ============================================================================

@@ -2,10 +2,10 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useRouter } from "next/navigation";
 import { MessageCircle, X, Send, Globe, Loader2 } from "lucide-react";
 import { createChatSession, sendChatMessage } from "@/lib/api";
-import type { ChatbotResponse } from "@/lib/types";
-import { LANGUAGE_LABELS } from "@/lib/utils";
+import type { ChatbotAction, ChatbotResponse } from "@/lib/types";
 
 type Language = "en" | "fil" | "id" | "vi";
 
@@ -30,8 +30,31 @@ interface Message {
   content: string;
   intent?: string;
   suggested_actions?: string[];
+  actions?: ChatbotAction[];
   detected_language?: string;
   language_confidence?: number | null;
+}
+
+type ActionLike = ChatbotAction | string;
+
+function suggestionToQuery(action: string): string {
+  const normalized = action.toLowerCase();
+  if (normalized.includes("qr") || normalized.includes("boarding")) {
+    return "Check my booking";
+  }
+  if (normalized.includes("book") || normalized.includes("route") || normalized.includes("schedule")) {
+    return "I want to book";
+  }
+  if (normalized.includes("crowd") || normalized.includes("forecast") || normalized.includes("ramai")) {
+    return "Is it crowded?";
+  }
+  if (normalized.includes("phone")) {
+    return "I want to use my phone number";
+  }
+  if (normalized.includes("booking id")) {
+    return "I have a booking ID";
+  }
+  return action;
 }
 
 const QUICK_REPLIES: Record<Language, string[]> = {
@@ -41,7 +64,35 @@ const QUICK_REPLIES: Record<Language, string[]> = {
   vi: ["Kiểm tra đặt vé của tôi", "Cuối tuần này có đông không?", "Khi nào xe tôi khởi hành?", "Tôi bị lỡ xe"],
 };
 
+const GREETING_ACTIONS: ChatbotAction[] = [
+  {
+    id: "book-ticket",
+    label: "Book a ticket",
+    kind: "send_message",
+    payload: { message: "I want to book" },
+  },
+  {
+    id: "check-booking",
+    label: "Check my booking",
+    kind: "send_message",
+    payload: { message: "Check my booking" },
+  },
+  {
+    id: "crowd-levels",
+    label: "Ask about crowd levels",
+    kind: "send_message",
+    payload: { message: "Is it crowded?" },
+  },
+  {
+    id: "rebook-missed",
+    label: "Rebook missed bus",
+    kind: "send_message",
+    payload: { message: "I missed my bus" },
+  },
+];
+
 export default function ChatbotTeaser() {
+  const router = useRouter();
   const initialLang = detectBrowserLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [lang, setLang] = useState<Language>(initialLang);
@@ -72,6 +123,7 @@ export default function ChatbotTeaser() {
               role: "bot",
               content: res.greeting,
               intent: "greeting",
+              actions: GREETING_ACTIONS,
             },
           ]);
           scrollToBottom();
@@ -83,6 +135,7 @@ export default function ChatbotTeaser() {
               role: "bot",
               content: "Hi! I'm the IQueue assistant. How can I help you today?",
               intent: "greeting",
+              actions: GREETING_ACTIONS,
             },
           ]);
         });
@@ -120,6 +173,7 @@ export default function ChatbotTeaser() {
           content: response.response_text,
           intent: response.intent,
           suggested_actions: response.suggested_actions,
+          actions: response.actions,
           detected_language: response.detected_language,
           language_confidence: response.language_confidence,
         },
@@ -150,10 +204,49 @@ export default function ChatbotTeaser() {
           role: "bot",
           content: res.greeting,
           intent: "greeting",
+          actions: GREETING_ACTIONS,
         },
       ]);
     } catch {
       // Keep existing messages if session creation fails
+    }
+  };
+
+  const handleAction = async (action: ActionLike) => {
+    if (typeof action === "string") {
+      await handleSend(suggestionToQuery(action));
+      return;
+    }
+
+    if (action.kind === "send_message") {
+      await handleSend(String(action.payload.message || action.label));
+      return;
+    }
+
+    if (action.kind === "prefill_route_search") {
+      const params = new URLSearchParams();
+      for (const key of ["origin", "destination", "date", "route_id"]) {
+        const value = action.payload[key];
+        if (value != null && value !== "") params.set(key, String(value));
+      }
+      router.push(`/buy${params.toString() ? `?${params.toString()}` : ""}`);
+      setIsOpen(false);
+      return;
+    }
+
+    if (action.kind === "open_booking" || action.kind === "open_qr") {
+      const bookingId = action.payload.booking_id;
+      if (bookingId) {
+        router.push(`/confirmation/${String(bookingId)}`);
+        setIsOpen(false);
+      } else {
+        await handleSend("Check my booking");
+      }
+      return;
+    }
+
+    if (action.kind === "handoff") {
+      await handleSend(String(action.payload.message || "Contact support"));
     }
   };
 
@@ -250,30 +343,28 @@ export default function ChatbotTeaser() {
                       }`}
                     >
                       <p>{msg.content}</p>
-                      {msg.role === "bot" && msg.detected_language && (
-                        <span className="text-xs opacity-60 mt-1 block">
-                          {LANGUAGE_LABELS[msg.detected_language] || msg.detected_language}
-                          {msg.intent && msg.intent !== "fallback" && msg.intent !== "greeting" && msg.intent !== "error" && (
-                            <> · {msg.intent.replace(/_/g, " ")}</>
-                          )}
-                        </span>
-                      )}
 
                       {/* Suggested action buttons */}
-                      {msg.role === "bot" && msg.suggested_actions && msg.suggested_actions.length > 0 && (
+                      {msg.role === "bot" && (() => {
+                        const actionItems: ActionLike[] =
+                          msg.actions && msg.actions.length > 0
+                            ? msg.actions
+                            : msg.suggested_actions || [];
+                        return actionItems.length > 0 ? (
                         <div className="mt-2 flex flex-wrap gap-1.5">
-                          {msg.suggested_actions.map((action, ai) => (
+                          {actionItems.map((action, ai) => (
                             <button
                               key={ai}
-                              onClick={() => handleSend(action)}
+                              onClick={() => handleAction(action)}
                               disabled={loading}
                               className="text-xs bg-blue-700/20 text-blue-300 border border-blue-700/30 rounded-full px-2.5 py-1 hover:bg-blue-700/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
-                              {action}
+                              {typeof action === "string" ? action : action.label}
                             </button>
                           ))}
                         </div>
-                      )}
+                        ) : null;
+                      })()}
                     </div>
                   </motion.div>
                 ))}
@@ -297,7 +388,7 @@ export default function ChatbotTeaser() {
                 {QUICK_REPLIES[lang].map((reply, i) => (
                   <button
                     key={i}
-                    onClick={() => handleSend(reply)}
+                    onClick={() => handleAction(reply)}
                     className="flex-shrink-0 text-[11px] px-3 py-1.5 rounded-full bg-slate-700/80 text-slate-300 border border-white/10 hover:bg-blue-700/30 hover:text-blue-200 hover:border-blue-700/30 transition-colors"
                   >
                     {reply}

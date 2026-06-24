@@ -134,6 +134,33 @@ class TestFallbackClassifier:
         assert intent == "check_booking"
         assert confidence > 0
 
+    def test_deterministic_existing_booking_phrase(self):
+        """Real passenger wording should bypass model ambiguity."""
+        from app.services.chatbot.bot import ChatbotService
+
+        intent, confidence = ChatbotService._deterministic_intent(
+            "I just wanna know if I have an existing booking"
+        )
+        assert intent == "check_booking"
+        assert confidence >= 0.9
+
+    @pytest.mark.parametrize(
+        ("query", "expected"),
+        [
+            ("I want to book", "get_departure_info"),
+            ("I missed my bus", "request_requeue"),
+            ("Is it crowded tomorrow?", "surge_info"),
+            ("Check my booking", "check_booking"),
+        ],
+    )
+    def test_deterministic_passenger_tasks(self, query, expected):
+        """High-confidence passenger tasks should not depend on ML output."""
+        from app.services.chatbot.bot import ChatbotService
+
+        intent, confidence = ChatbotService._deterministic_intent(query)
+        assert intent == expected
+        assert confidence >= 0.9
+
 
 # ============================================================================
 # Language detection tests (updated for tuple return)
@@ -622,6 +649,124 @@ class TestChatbotEndpoint:
         assert "davao" in text
         assert "cotabato" in text
         assert "date" in text
+
+    @pytest.mark.asyncio
+    async def test_existing_booking_wording_asks_for_supported_identifier(self, client):
+        """Existing-booking wording should ask only for booking ID or phone."""
+        response = await client.post(
+            "/api/v1/chatbot/message",
+            json={
+                "query": "I just wanna know if I have an existing booking",
+                "language": "en",
+            },
+        )
+        assert response.status_code == 200
+        data = response.json()
+        text = data["response_text"].lower()
+        assert data["intent"] == "check_booking"
+        assert "booking id" in text
+        assert "phone" in text
+        assert "email" not in text
+
+    @pytest.mark.asyncio
+    async def test_rebooking_without_identifier_asks_for_identifier(self, client):
+        """Missed-bus start should not say not found before an ID/phone is given."""
+        response = await client.post(
+            "/api/v1/chatbot/message",
+            json={"query": "I missed my bus", "language": "en"},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["intent"] == "request_requeue"
+        text = data["response_text"].lower()
+        assert "booking id" in text
+        assert "phone" in text
+        assert "couldn't find" not in text
+
+    @pytest.mark.asyncio
+    async def test_stale_rebooking_does_not_hijack_booking_lookup(self, client):
+        """Check booking should escape active rebooking identify state."""
+        session_res = await client.post("/api/v1/chatbot/session?language=en")
+        session_id = session_res.json()["session_id"]
+
+        first = await client.post(
+            "/api/v1/chatbot/message",
+            json={
+                "query": "I missed my bus",
+                "language": "en",
+                "session_id": session_id,
+            },
+        )
+        assert first.status_code == 200
+        assert first.json()["intent"] == "request_requeue"
+
+        second = await client.post(
+            "/api/v1/chatbot/message",
+            json={
+                "query": "Check my booking",
+                "language": "en",
+                "session_id": session_id,
+            },
+        )
+        assert second.status_code == 200
+        data = second.json()
+        assert data["intent"] == "check_booking"
+        assert "booking id" in data["response_text"].lower()
+
+    @pytest.mark.asyncio
+    async def test_stale_rebooking_does_not_hijack_new_booking(self, client):
+        """New booking intent should exit stale rebooking and route normally."""
+        session_res = await client.post("/api/v1/chatbot/session?language=en")
+        session_id = session_res.json()["session_id"]
+
+        await client.post(
+            "/api/v1/chatbot/message",
+            json={
+                "query": "I missed my bus",
+                "language": "en",
+                "session_id": session_id,
+            },
+        )
+        response = await client.post(
+            "/api/v1/chatbot/message",
+            json={
+                "query": "I want to book",
+                "language": "en",
+                "session_id": session_id,
+            },
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["intent"] == "get_departure_info"
+        assert "origin" in data["response_text"].lower()
+        assert any(action["id"] == "add-route-date" for action in data["actions"])
+
+    @pytest.mark.asyncio
+    async def test_start_over_clears_active_rebooking(self, client):
+        """Reset phrases should return the normal menu actions."""
+        session_res = await client.post("/api/v1/chatbot/session?language=en")
+        session_id = session_res.json()["session_id"]
+
+        await client.post(
+            "/api/v1/chatbot/message",
+            json={
+                "query": "I missed my bus",
+                "language": "en",
+                "session_id": session_id,
+            },
+        )
+        response = await client.post(
+            "/api/v1/chatbot/message",
+            json={
+                "query": "start over",
+                "language": "en",
+                "session_id": session_id,
+            },
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["intent"] == "greeting"
+        assert any(action["id"] == "book-ticket" for action in data["actions"])
 
 
 # ============================================================================

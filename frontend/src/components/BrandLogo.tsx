@@ -20,7 +20,6 @@ export default function BrandLogo({
         alt=""
         width={48}
         height={48}
-        priority
         className={`${markClassName} shrink-0 rounded-2xl shadow-lg shadow-brand-blue/20`}
         aria-hidden
       />

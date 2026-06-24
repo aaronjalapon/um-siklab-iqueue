@@ -6,7 +6,7 @@ import {
   cleanupDevelopmentPwaState,
   PWA_INSTALL_DISMISS_KEY,
   PWA_INSTALL_REQUEST_EVENT,
-  SHOULD_ENABLE_PWA,
+  shouldEnablePwaClientRuntime,
 } from "@/lib/pwa-runtime";
 
 const DISMISS_TTL_MS = 1000 * 60 * 60 * 24;
@@ -170,6 +170,7 @@ function wasDismissedRecently() {
 }
 
 export default function PWARegistrar() {
+  const shouldEnablePwa = shouldEnablePwaClientRuntime();
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
   const [isInstallVisible, setIsInstallVisible] = useState(false);
@@ -227,7 +228,7 @@ export default function PWARegistrar() {
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
 
-    if (!SHOULD_ENABLE_PWA) {
+    if (!shouldEnablePwa) {
       void cleanupDevelopmentPwaState();
       return;
     }
@@ -258,10 +259,10 @@ export default function PWARegistrar() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [shouldEnablePwa]);
 
   useEffect(() => {
-    if (!SHOULD_ENABLE_PWA || typeof window === "undefined") return;
+    if (!shouldEnablePwa || typeof window === "undefined") return;
 
     let visibilityTimer: number | null = null;
 
@@ -318,7 +319,7 @@ export default function PWARegistrar() {
       );
       window.removeEventListener("appinstalled", handleInstalled);
     };
-  }, []);
+  }, [shouldEnablePwa]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;

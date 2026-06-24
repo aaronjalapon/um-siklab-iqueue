@@ -39,6 +39,14 @@ type ActionLike = ChatbotAction | string;
 
 function suggestionToQuery(action: string): string {
   const normalized = action.toLowerCase();
+  if (
+    normalized.includes("cancel") ||
+    normalized.includes("start over") ||
+    normalized.includes("main menu") ||
+    normalized.includes("reset")
+  ) {
+    return "cancel";
+  }
   if (normalized.includes("qr") || normalized.includes("boarding")) {
     return "Check my booking";
   }

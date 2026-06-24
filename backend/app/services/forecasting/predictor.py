@@ -483,20 +483,35 @@ class ForecastingService:
                 )
 
                 if input_size >= 9 and getattr(scaler, "n_features_in_", 0) >= 8:
-                    raw_features = np.array(
-                        [
+                    raw_values = [
+                        past_vol,
+                        float(past_is_holiday),
+                        math.sin(2 * math.pi * past_date.weekday() / 7),
+                        math.cos(2 * math.pi * past_date.weekday() / 7),
+                        past_is_weekend,
+                        math.sin(2 * math.pi * past_date.month / 12),
+                        math.cos(2 * math.pi * past_date.month / 12),
+                        (past_date.day - 1) / 30.0,
+                    ]
+                    feature_names = list(
+                        getattr(
+                            scaler,
+                            "feature_names_in_",
                             [
-                                past_vol,
-                                float(past_is_holiday),
-                                math.sin(2 * math.pi * past_date.weekday() / 7),
-                                math.cos(2 * math.pi * past_date.weekday() / 7),
-                                past_is_weekend,
-                                math.sin(2 * math.pi * past_date.month / 12),
-                                math.cos(2 * math.pi * past_date.month / 12),
-                                (past_date.day - 1) / 30.0,
-                            ]
-                        ],
-                        dtype=np.float32,
+                                "passenger_count",
+                                "is_holiday",
+                                "dow_sin",
+                                "dow_cos",
+                                "is_weekend",
+                                "month_sin",
+                                "month_cos",
+                                "day_of_month",
+                            ],
+                        )
+                    )
+                    raw_features = pd.DataFrame(
+                        [raw_values[: len(feature_names)]],
+                        columns=feature_names,
                     )
                     scaled = scaler.transform(raw_features)[0].tolist()
                     cache = prophet_cache if prophet_cache is not None else {}
@@ -587,9 +602,9 @@ class ForecastingService:
                 "day_of_month_t1": min(d.day / 30.0, 1.0),
                 "route_cat": float(_KNOWN_SLUGS.index(slug)),
             }
-            features = np.array(
+            features = pd.DataFrame(
                 [[values[name] for name in self._surge_feature_names]],
-                dtype=np.float32,
+                columns=self._surge_feature_names,
             )
             return float(
                 self._surge_classifier.predict_proba(features)[0, 1]

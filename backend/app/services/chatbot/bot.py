@@ -65,6 +65,28 @@ ROUTE_SEARCH_TERMS = {
     "trip",
 }
 
+CROWD_SEARCH_TERMS = {
+    "banyak orang",
+    "busy",
+    "crowd",
+    "crowded",
+    "dami",
+    "dong",
+    "dong duc",
+    "full",
+    "how crowded",
+    "how full",
+    "marami",
+    "matao",
+    "packed",
+    "padat",
+    "peak",
+    "puno",
+    "ramai",
+    "siksikan",
+    "surge",
+}
+
 # ---------------------------------------------------------------------------
 # Intent keyword dictionaries per language (fallback when model unavailable)
 # ---------------------------------------------------------------------------
@@ -328,6 +350,27 @@ class ChatbotService:
 
         settings = get_settings()
         model_path = Path(settings.CHATBOT_MODEL_PATH)
+        if not (model_path.exists() and (model_path / "config.json").exists()):
+            path_suffix = model_path.as_posix().rstrip("/")
+            is_default_model_path = path_suffix.endswith(
+                "app/services/chatbot/artifacts/xlm-roberta-iqueue"
+            )
+            fallback_path = (
+                Path(__file__).resolve().parents[4]
+                / "deployments"
+                / "xlm-roberta-iqueue"
+            )
+            if (
+                is_default_model_path
+                and fallback_path.exists()
+                and (fallback_path / "config.json").exists()
+            ):
+                logger.info(
+                    "Configured chatbot model not found at %s; using fallback %s",
+                    model_path,
+                    fallback_path,
+                )
+                model_path = fallback_path
 
         if model_path.exists() and (model_path / "config.json").exists():
             try:
@@ -591,28 +634,68 @@ class ChatbotService:
                 degradation,
             )
 
-        route_intent, route_confidence = self._detect_route_search_intent(query)
+        deterministic_intent, deterministic_confidence = self._deterministic_intent(query)
+        if deterministic_intent == "greeting":
+            actions = self._get_actions("greeting", detected_lang, query_entities)
+            return (
+                ChatbotResponse(
+                    response_text=GREETING_RESPONSES.get(
+                        detected_lang, GREETING_RESPONSES["en"]
+                    ),
+                    detected_language=detected_lang,
+                    language_confidence=round(lang_confidence, 4),
+                    intent="greeting",
+                    suggested_actions=self._get_suggestions("greeting", detected_lang),
+                    actions=actions,
+                    confidence=deterministic_confidence,
+                    session_id=session_id,
+                    degradation_level=degradation,
+                ),
+                {"intent": "greeting", "entities": {}, "language": detected_lang},
+                degradation,
+            )
+
+        route_intent, route_confidence = (
+            (deterministic_intent, deterministic_confidence)
+            if deterministic_intent in {"get_departure_info", "surge_info"}
+            else self._detect_route_search_intent(query)
+        )
         if route_intent:
             route_degradation = degradation
             route_context: dict[str, Any] = {}
             response_text = ""
             if db:
-                route_degradation, response_text, route_context = (
-                    await self._handle_departure_info(
-                        db,
-                        query,
-                        session_context,
-                        query_entities,
-                        detected_lang,
-                        degradation,
+                if route_intent == "surge_info":
+                    route_degradation, response_text, route_context = (
+                        await self._handle_surge_info(
+                            db,
+                            query,
+                            session_context,
+                            query_entities,
+                            detected_lang,
+                            degradation,
+                        )
                     )
-                )
+                else:
+                    route_degradation, response_text, route_context = (
+                        await self._handle_departure_info(
+                            db,
+                            query,
+                            session_context,
+                            query_entities,
+                            detected_lang,
+                            degradation,
+                        )
+                    )
             if not response_text:
                 response_text = self._route_search_response(
                     query, detected_lang, query_entities
                 )
+            suggestion_intent = self._suggestion_intent(
+                route_intent, query_entities, route_context
+            )
             actions = self._get_actions(
-                route_intent,
+                suggestion_intent,
                 detected_lang,
                 query_entities,
                 session_context,
@@ -624,7 +707,9 @@ class ChatbotService:
                     detected_language=detected_lang,
                     language_confidence=round(lang_confidence, 4),
                     intent=route_intent,
-                    suggested_actions=self._get_suggestions(route_intent, detected_lang),
+                    suggested_actions=self._get_suggestions(
+                        suggestion_intent, detected_lang
+                    ),
                     actions=actions,
                     confidence=route_confidence,
                     session_id=session_id,
@@ -639,7 +724,12 @@ class ChatbotService:
             )
 
         # Step 3: Classify intent
-        if self._model_available:
+        if deterministic_intent in {"check_booking", "request_requeue", "greeting"}:
+            classification = {
+                "intent": deterministic_intent,
+                "confidence": deterministic_confidence,
+            }
+        elif self._model_available:
             classification = await asyncio.to_thread(
                 self.classify_with_context, query, detected_lang, session_context
             )
@@ -718,8 +808,9 @@ class ChatbotService:
             action_context,
         )
 
-        # Step 7: Try LLM enhancement for complex intents (if we have real data)
-        if intent in COMPLEX_INTENTS and response_text and degradation < 2:
+        # Step 7: Keep passenger-critical flows deterministic.  LLM phrasing can
+        # ask for unsupported identifiers, so only unclear fallback gets polished.
+        if intent == "fallback" and response_text and degradation < 2:
             try:
                 from app.services.chatbot.llm import LLMResponder
 
@@ -922,9 +1013,7 @@ class ChatbotService:
         """Query real surge forecast for a route."""
         action_context: dict[str, Any] = {}
         try:
-            from app.services.forecasting.predictor import (
-                ForecastingService,
-            )
+            from app.core.startup import get_forecasting_service
 
             # Determine route from this turn plus accumulated context.
             origin, destination = self._resolve_route_entities(entities, session_context)
@@ -965,7 +1054,9 @@ class ChatbotService:
             }
 
             # Get forecast
-            forecast_service = ForecastingService()
+            forecast_service = get_forecasting_service()
+            if forecast_service is None:
+                return max(degradation, 3), "", action_context
             predictions = forecast_service.predict(route.id, horizon_days=7)
 
             # Format response
@@ -1386,12 +1477,96 @@ class ChatbotService:
         return best_intent, round(confidence, 2)
 
     @staticmethod
+    def _deterministic_intent(query: str) -> tuple[str | None, float]:
+        """Route high-confidence passenger phrases before ML/LLM."""
+        q = " ".join(query.lower().strip().split())
+
+        if q in {"cancel", "stop", "start over", "main menu", "reset", "quit"}:
+            return "greeting", 0.95
+
+        if any(term in q for term in CROWD_SEARCH_TERMS):
+            return "surge_info", 0.93
+
+        rebooking_phrases = (
+            "missed my bus",
+            "missed the bus",
+            "i missed",
+            "rebook",
+            "late for bus",
+            "late for my bus",
+            "left behind",
+            "naiwan",
+            "na-miss",
+            "hindi umabot",
+            "ketinggalan",
+            "terlambat",
+            "lỡ xe",
+            "lo xe",
+            "trễ xe",
+        )
+        if any(phrase in q for phrase in rebooking_phrases):
+            return "request_requeue", 0.94
+
+        new_booking_phrases = (
+            "i want to book",
+            "want to book",
+            "book a ticket",
+            "book ticket",
+            "buy ticket",
+            "buy a ticket",
+            "new booking",
+            "purchase ticket",
+            "get a ticket",
+            "mag book",
+            "pesan tiket",
+            "đặt vé",
+            "dat ve",
+        )
+        if any(phrase in q for phrase in new_booking_phrases):
+            return "get_departure_info", 0.94
+
+        booking_lookup_phrases = (
+            "existing booking",
+            "have an existing booking",
+            "my booking",
+            "check booking",
+            "check my booking",
+            "where is my booking",
+            "where's my booking",
+            "booking status",
+            "my ticket",
+            "my reservation",
+            "find my booking",
+            "look up booking",
+            "do i have a booking",
+            "do i have an existing booking",
+            "booking ko",
+            "pesanan saya",
+            "pemesanan saya",
+            "đặt vé của tôi",
+            "dat ve cua toi",
+        )
+        if any(phrase in q for phrase in booking_lookup_phrases):
+            return "check_booking", 0.94
+
+        if any(term in q for term in KNOWN_ROUTE_TERMS) and any(
+            term in q for term in ROUTE_SEARCH_TERMS
+        ):
+            return "get_departure_info", 0.9
+
+        return None, 0.0
+
+    @staticmethod
     def _detect_route_search_intent(query: str) -> tuple[str | None, float]:
         """Detect route/ticket search phrases before the ML fallback gate."""
 
         query_lower = query.lower().strip()
         has_route_term = any(term in query_lower for term in ROUTE_SEARCH_TERMS)
         has_known_city = any(term in query_lower for term in KNOWN_ROUTE_TERMS)
+        has_crowd_term = any(term in query_lower for term in CROWD_SEARCH_TERMS)
+
+        if has_crowd_term and (has_route_term or has_known_city):
+            return "surge_info", 0.9
 
         if has_route_term and has_known_city:
             return "get_departure_info", 0.9
@@ -1685,6 +1860,7 @@ class ChatbotService:
         if intent == "booking_identify":
             send("send-booking-id", "Enter booking ID", "I have a booking ID")
             send("send-phone", "Use phone number", "I want to use my phone number")
+            send("cancel-flow", "Cancel", "cancel")
 
         if intent == "route_identify":
             send(
@@ -1705,7 +1881,9 @@ class ChatbotService:
             send("check-booking", "Check my booking", "Check my booking")
 
         if intent == "request_requeue" and not actions:
-            send("continue-rebooking", "Continue rebooking", "Continue rebooking")
+            send("send-booking-id", "Enter booking ID", "I have a booking ID")
+            send("send-phone", "Use phone number", "I want to use my phone number")
+            send("cancel-rebooking", "Cancel rebooking", "cancel")
 
         return actions[:4]
 
@@ -1724,10 +1902,10 @@ class ChatbotService:
                 "vi": ["Xem đặt vé", "Xem mã QR", "Kiểm tra giờ lên xe"],
             },
             "booking_identify": {
-                "en": ["Enter booking ID", "Use phone number", "Contact support"],
-                "fil": ["Ilagay booking ID", "Gamitin phone number", "Humingi ng tulong"],
-                "id": ["Masukkan ID pemesanan", "Gunakan nomor telepon", "Hubungi bantuan"],
-                "vi": ["Nhập mã đặt vé", "Dùng số điện thoại", "Liên hệ hỗ trợ"],
+                "en": ["Enter booking ID", "Use phone number", "Cancel"],
+                "fil": ["Ilagay booking ID", "Gamitin phone number", "Cancel"],
+                "id": ["Masukkan ID pemesanan", "Gunakan nomor telepon", "Cancel"],
+                "vi": ["Nhập mã đặt vé", "Dùng số điện thoại", "Cancel"],
             },
             "request_requeue": {
                 "en": ["Find next bus", "Change route", "Contact support"],

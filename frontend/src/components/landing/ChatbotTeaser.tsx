@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { useRouter } from "next/navigation";
 import { MessageCircle, X, Send, Globe, Loader2 } from "lucide-react";
 import { createChatSession, sendChatMessage } from "@/lib/api";
 import type { ChatbotAction, ChatbotResponse } from "@/lib/types";
@@ -35,6 +35,54 @@ interface Message {
   language_confidence?: number | null;
 }
 
+type ActionLike = ChatbotAction | string;
+
+function suggestionToQuery(action: string): string {
+  const normalized = action.toLowerCase();
+  if (
+    normalized.includes("cancel") ||
+    normalized.includes("start over") ||
+    normalized.includes("main menu") ||
+    normalized.includes("reset")
+  ) {
+    return "cancel";
+  }
+  if (normalized.includes("qr") || normalized.includes("boarding")) {
+    return "Check my booking";
+  }
+  if (normalized.includes("book") || normalized.includes("route") || normalized.includes("schedule")) {
+    return "I want to book";
+  }
+  if (normalized.includes("crowd") || normalized.includes("forecast") || normalized.includes("ramai")) {
+    return "Is it crowded?";
+  }
+  if (normalized.includes("phone")) {
+    return "I want to use my phone number";
+  }
+  if (normalized.includes("booking id")) {
+    return "I have a booking ID";
+  }
+  return action;
+}
+
+function isBookNavigation(action: string): boolean {
+  const normalized = action.toLowerCase().trim();
+  return (
+    normalized === "book a ticket" ||
+    normalized === "search and book" ||
+    normalized.includes("search routes")
+  );
+}
+
+function isBookingDetailNavigation(action: string): boolean {
+  const normalized = action.toLowerCase();
+  return (
+    normalized.includes("view booking") ||
+    normalized.includes("qr") ||
+    normalized.includes("boarding time")
+  );
+}
+
 const QUICK_REPLIES: Record<Language, string[]> = {
   en: ["Check my booking", "Is it crowded this weekend?", "When does my bus leave?", "I missed my bus"],
   fil: ["Tingnan ang booking ko", "Marami bang tao ngayong weekend?", "Kailan aalis ang bus ko?", "Naiwan ako ng bus"],
@@ -42,23 +90,32 @@ const QUICK_REPLIES: Record<Language, string[]> = {
   vi: ["Kiểm tra đặt vé của tôi", "Cuối tuần này có đông không?", "Khi nào xe tôi khởi hành?", "Tôi bị lỡ xe"],
 };
 
-function suggestionToQuery(action: string): string {
-  const normalized = action.toLowerCase();
-  const mapping: Record<string, string> = {
-    "view qr code": "Check my booking",
-    "check boarding time": "Check my booking",
-    "cancel booking": "I need help with my booking",
-    "view forecast": "Davao to Cotabato tomorrow",
-    "choose different date": "Davao to Cotabato tomorrow",
-    "book early": "Search routes",
-    "enter booking id": "I have a booking ID",
-    "use phone number": "I want to use my phone number",
-    "check bookings": "Check my booking",
-    "check booking": "Check my booking",
-    "ask about schedules": "When does my bus leave?",
-  };
-  return mapping[normalized] || action;
-}
+const GREETING_ACTIONS: ChatbotAction[] = [
+  {
+    id: "book-ticket",
+    label: "Book a ticket",
+    kind: "send_message",
+    payload: { message: "I want to book" },
+  },
+  {
+    id: "check-booking",
+    label: "Check my booking",
+    kind: "send_message",
+    payload: { message: "Check my booking" },
+  },
+  {
+    id: "crowd-levels",
+    label: "Ask about crowd levels",
+    kind: "send_message",
+    payload: { message: "Is it crowded?" },
+  },
+  {
+    id: "rebook-missed",
+    label: "Rebook missed bus",
+    kind: "send_message",
+    payload: { message: "I missed my bus" },
+  },
+];
 
 export default function ChatbotTeaser() {
   const router = useRouter();
@@ -92,6 +149,7 @@ export default function ChatbotTeaser() {
               role: "bot",
               content: res.greeting,
               intent: "greeting",
+              actions: GREETING_ACTIONS,
             },
           ]);
           scrollToBottom();
@@ -103,6 +161,7 @@ export default function ChatbotTeaser() {
               role: "bot",
               content: "Hi! I'm the IQueue assistant. How can I help you today?",
               intent: "greeting",
+              actions: GREETING_ACTIONS,
             },
           ]);
         });
@@ -171,6 +230,7 @@ export default function ChatbotTeaser() {
           role: "bot",
           content: res.greeting,
           intent: "greeting",
+          actions: GREETING_ACTIONS,
         },
       ]);
     } catch {
@@ -178,27 +238,51 @@ export default function ChatbotTeaser() {
     }
   };
 
-  const handleAction = async (action: string | ChatbotAction) => {
+  const handleAction = async (action: ActionLike) => {
     if (typeof action === "string") {
+      if (isBookNavigation(action)) {
+        router.push("/buy");
+        setIsOpen(false);
+        return;
+      }
+
+      if (isBookingDetailNavigation(action)) {
+        const previousAction = [...messages]
+          .reverse()
+          .flatMap((message) => message.actions || [])
+          .find((item) =>
+            action.toLowerCase().includes("qr")
+              ? item.kind === "open_qr"
+              : item.kind === "open_booking" || item.kind === "open_qr"
+          );
+
+        if (previousAction) {
+          await handleAction(previousAction);
+          return;
+        }
+      }
+
       await handleSend(suggestionToQuery(action));
       return;
     }
 
     if (action.kind === "send_message") {
-      await handleSend(String(action.payload.message || action.label));
+      const message = String(action.payload.message || action.label);
+      if (action.id === "book-ticket" || isBookNavigation(message)) {
+        router.push("/buy");
+        setIsOpen(false);
+        return;
+      }
+      await handleSend(message);
       return;
     }
 
     if (action.kind === "prefill_route_search") {
       const params = new URLSearchParams();
-      const origin = action.payload.origin;
-      const destination = action.payload.destination;
-      const date = action.payload.date;
-      if (typeof origin === "string" && origin) params.set("origin", origin);
-      if (typeof destination === "string" && destination) {
-        params.set("destination", destination);
+      for (const key of ["origin", "destination", "date", "route_id"]) {
+        const value = action.payload[key];
+        if (value != null && value !== "") params.set(key, String(value));
       }
-      if (typeof date === "string" && date) params.set("date", date);
       router.push(`/buy${params.toString() ? `?${params.toString()}` : ""}`);
       setIsOpen(false);
       return;
@@ -206,15 +290,17 @@ export default function ChatbotTeaser() {
 
     if (action.kind === "open_booking" || action.kind === "open_qr") {
       const bookingId = action.payload.booking_id;
-      if (typeof bookingId === "string" && bookingId) {
-        router.push(`/confirmation/${bookingId}`);
+      if (bookingId) {
+        router.push(`/confirmation/${String(bookingId)}`);
         setIsOpen(false);
+      } else {
+        await handleSend("Check my booking");
       }
       return;
     }
 
     if (action.kind === "handoff") {
-      await handleSend("Contact support");
+      await handleSend(String(action.payload.message || "Contact support"));
     }
   };
 
@@ -311,14 +397,16 @@ export default function ChatbotTeaser() {
                       }`}
                     >
                       <p>{msg.content}</p>
-                      {msg.role === "bot" &&
-                        ((msg.actions && msg.actions.length > 0) ||
-                          (msg.suggested_actions && msg.suggested_actions.length > 0)) && (
-                        <div className="mt-2 flex flex-wrap gap-1.5">
-                          {(msg.actions?.length
+
+                      {/* Suggested action buttons */}
+                      {msg.role === "bot" && (() => {
+                        const actionItems: ActionLike[] =
+                          msg.actions && msg.actions.length > 0
                             ? msg.actions
-                            : msg.suggested_actions || []
-                          ).map((action, ai) => (
+                            : msg.suggested_actions || [];
+                        return actionItems.length > 0 ? (
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {actionItems.map((action, ai) => (
                             <button
                               key={ai}
                               onClick={() => handleAction(action)}
@@ -329,7 +417,8 @@ export default function ChatbotTeaser() {
                             </button>
                           ))}
                         </div>
-                      )}
+                        ) : null;
+                      })()}
                     </div>
                   </motion.div>
                 ))}
@@ -353,7 +442,7 @@ export default function ChatbotTeaser() {
                 {QUICK_REPLIES[lang].map((reply, i) => (
                   <button
                     key={i}
-                    onClick={() => handleSend(reply)}
+                    onClick={() => handleAction(reply)}
                     className="flex-shrink-0 text-[11px] px-3 py-1.5 rounded-full bg-slate-700/80 text-slate-300 border border-white/10 hover:bg-blue-700/30 hover:text-blue-200 hover:border-blue-700/30 transition-colors"
                   >
                     {reply}

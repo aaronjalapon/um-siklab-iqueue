@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any, Literal
 from uuid import UUID
-
-from typing import Literal, Any
 
 from pydantic import BaseModel, Field
 
@@ -29,20 +28,20 @@ class ChatbotRequest(BaseModel):
 
 
 class ChatbotAction(BaseModel):
-    """A structured follow-up action the client can execute."""
+    """Structured action a frontend can execute without guessing intent."""
 
     id: str = Field(..., description="Stable action identifier")
-    label: str = Field(..., description="User-facing action label")
+    label: str = Field(..., description="Passenger-facing button label")
     kind: Literal[
         "send_message",
         "prefill_route_search",
         "open_booking",
         "open_qr",
         "handoff",
-    ] = Field(..., description="Client behavior for this action")
+    ] = Field(..., description="Action execution type")
     payload: dict[str, Any] = Field(
         default_factory=dict,
-        description="Action-specific data for the client",
+        description="Action-specific data such as route, date, or booking_id",
     )
 
 
@@ -67,7 +66,7 @@ class ChatbotResponse(BaseModel):
     )
     actions: list[ChatbotAction] = Field(
         default_factory=list,
-        description="Structured actions the client can execute",
+        description="Structured actions the UI can execute directly",
     )
     confidence: float = Field(
         0.0, ge=0.0, le=1.0, description="Confidence score for the detected intent"

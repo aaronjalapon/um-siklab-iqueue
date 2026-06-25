@@ -34,6 +34,10 @@ _ROUTE_CITIES = [
     "mati", "samal", "makati", "pasay", "taguig", "marikina",
 ]
 
+_CITY_PATTERN = "|".join(
+    re.escape(city) for city in sorted(_ROUTE_CITIES, key=len, reverse=True)
+)
+
 _PHONE_RE = re.compile(
     r"(\+63\d{10}|0\d{10}|09\d{2}[-\s]?\d{3}[-\s]?\d{4}|\d{3}[-\s]?\d{3}[-\s]?\d{4})"
 )
@@ -49,16 +53,32 @@ _DATE_PATTERNS: list[tuple[re.Pattern, str]] = [
     ), "date"),
     # YYYY-MM-DD
     (re.compile(r"\d{4}-\d{2}-\d{2}"), "date"),
-    # "today", "tomorrow", "next monday", "this weekend" + ASEAN variants
+    # "today", "tomorrow", "next monday", "this weekend", and local variants
     (re.compile(
-        r"\b(?:today|tomorrow|yesterday|bukas|ngayon|kahapon|besok|hari ini|"
-        r"kemarin|hôm nay|hom nay|ngày mai|ngay mai|hôm qua|hom qua|"
+        r"\b(?:today|tomorrow|yesterday|"
+        r"bukas|ngayon|kahapon|besok|hari ini|kemarin|"
+        r"ngày mai|ngay mai|hôm nay|hom nay|hôm qua|hom qua|"
+        r"akhir pekan ini|cuối tuần này|cuoi tuan nay|"
         r"(?:this|next|last)\s+(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|"
-        r"week(?:end)?|month)|ngayong\s+weekend|akhir\s+pekan\s+ini|cuối\s+tuần\s+này|"
-        r"cuoi\s+tuan\s+nay)\b",
+        r"week(?:end)?|month))\b",
         re.IGNORECASE,
     ), "relative_date"),
 ]
+
+_ROUTE_PAIR_PATTERNS: list[re.Pattern] = [
+    re.compile(rf"\bfrom\s+(?P<origin>{_CITY_PATTERN})\s+to\s+(?P<destination>{_CITY_PATTERN})\b", re.IGNORECASE),
+    re.compile(rf"\b(?P<origin>{_CITY_PATTERN})\s+(?:to|papuntang|punta sa|going to|bound for|ke|đến|den|tới|toi)\s+(?P<destination>{_CITY_PATTERN})\b", re.IGNORECASE),
+    re.compile(rf"\b(?P<origin>{_CITY_PATTERN})\s*[-–—>→]\s*(?P<destination>{_CITY_PATTERN})\b", re.IGNORECASE),
+]
+
+_ORIGIN_ONLY_PATTERN = re.compile(
+    rf"\b(?:from|galing sa|mula sa|taga|dari)\s+(?P<origin>{_CITY_PATTERN})\b",
+    re.IGNORECASE,
+)
+_DESTINATION_ONLY_PATTERN = re.compile(
+    rf"\b(?:to|go to|going to|papuntang|punta sa|ke|đến|den|tới|toi)\s+(?P<destination>{_CITY_PATTERN})\b",
+    re.IGNORECASE,
+)
 
 # Negation words per language (lowercase)
 _NEGATION_WORDS: dict[str, set[str]] = {
@@ -223,15 +243,21 @@ class SessionManager:
                 entities["origin"] = found_cities[0]
                 entities["destination"] = found_cities[-1]
 
-            route_pair = SessionManager._extract_route_pair(text_lower)
-            if route_pair:
-                entities["origin"], entities["destination"] = route_pair
-            elif len(found_cities) == 1:
-                destination = SessionManager._extract_destination_only(
-                    text_lower, found_cities[0]
-                )
-                if destination:
-                    entities["destination"] = destination
+        route_pair = SessionManager._extract_route_pair(text_lower)
+        if route_pair:
+            origin, destination = route_pair
+            entities["origin"] = origin
+            entities["destination"] = destination
+            entities["route_cities"] = [origin, destination]
+        else:
+            origin_only = SessionManager._extract_origin_only(text_lower)
+            destination_only = SessionManager._extract_destination_only(text_lower)
+            if origin_only:
+                entities["origin"] = origin_only
+                entities["route_cities"] = [origin_only]
+            if destination_only:
+                entities["destination"] = destination_only
+                entities["route_cities"] = [destination_only]
 
         # --- Phone numbers ---
         phone_match = _PHONE_RE.search(text)
@@ -272,6 +298,34 @@ class SessionManager:
     # ------------------------------------------------------------------
 
     @staticmethod
+    def _extract_route_pair(text_lower: str) -> tuple[str, str] | None:
+        """Extract an origin/destination pair from common route phrasings."""
+        for pattern in _ROUTE_PAIR_PATTERNS:
+            match = pattern.search(text_lower)
+            if match:
+                origin = match.group("origin").strip()
+                destination = match.group("destination").strip()
+                if origin != destination:
+                    return origin, destination
+        return None
+
+    @staticmethod
+    def _extract_origin_only(text_lower: str) -> str | None:
+        """Extract a standalone origin such as 'I'm from Davao'."""
+        match = _ORIGIN_ONLY_PATTERN.search(text_lower)
+        if match:
+            return match.group("origin").strip()
+        return None
+
+    @staticmethod
+    def _extract_destination_only(text_lower: str) -> str | None:
+        """Extract a standalone destination such as 'go to Cotabato'."""
+        match = _DESTINATION_ONLY_PATTERN.search(text_lower)
+        if match:
+            return match.group("destination").strip()
+        return None
+
+    @staticmethod
     def _parse_date(text: str) -> date | None:
         """Attempt to parse a date string into a date object."""
         today = date.today()
@@ -296,7 +350,6 @@ class SessionManager:
         if rel in (
             "this weekend",
             "this week",
-            "ngayong weekend",
             "akhir pekan ini",
             "cuối tuần này",
             "cuoi tuan nay",
@@ -330,33 +383,6 @@ class SessionManager:
         except (ValueError, TypeError):
             pass
 
-        return None
-
-    @staticmethod
-    def _extract_route_pair(text_lower: str) -> tuple[str, str] | None:
-        """Extract origin/destination from common route phrasings."""
-        city_pattern = "|".join(
-            re.escape(city) for city in sorted(_ROUTE_CITIES, key=len, reverse=True)
-        )
-        patterns = [
-            rf"\bfrom\s+(?P<origin>{city_pattern})\s+to\s+(?P<destination>{city_pattern})\b",
-            rf"\b(?P<origin>{city_pattern})\s*(?:to|[-–—>→])\s*(?P<destination>{city_pattern})\b",
-            rf"\b(?P<origin>{city_pattern})\s+(?:papuntang|punta\s+sa|going\s+to|bound\s+for|ke|đến|den|tới|toi)\s+(?P<destination>{city_pattern})\b",
-        ]
-        for pattern in patterns:
-            match = re.search(pattern, text_lower, re.IGNORECASE)
-            if match:
-                return match.group("origin"), match.group("destination")
-        return None
-
-    @staticmethod
-    def _extract_destination_only(text_lower: str, city: str) -> str | None:
-        """Extract a destination when the user has not provided an origin yet."""
-        prefix_pattern = (
-            r"(?:to|papuntang|punta\s+sa|going\s+to|bound\s+for|ke|đến|den|tới|toi)"
-        )
-        if re.search(rf"\b{prefix_pattern}\s+{re.escape(city)}\b", text_lower):
-            return city
         return None
 
     @staticmethod

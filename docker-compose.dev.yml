@@ -20,11 +20,12 @@ services:
   # --- FastAPI Backend (dev: hot reload, volume mounts) ---
   backend:
     build:
-      target: runtime-base  # lightweight dev image; skips optional ML deps
+      target: runtime-ml  # dev needs full ML deps so forecasting/chatbot can load real models
     volumes:
       - ./backend:/app
       - ./data:/app/data
       - ./ml:/app/ml
+      - ./deployments/xlm-roberta-iqueue:/app/app/services/chatbot/artifacts/xlm-roberta-iqueue:ro
       # Trained champion/candidate bundles — persisted on the host filesystem
       - ./iqueue_artifacts:/app/iqueue_artifacts
     environment:
@@ -45,9 +46,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
-    command: >
-      sh -c "find /app/.next -mindepth 1 -maxdepth 1 -exec rm -rf {} + 2>/dev/null || true;
-             exec npm run dev:webpack"
+    command: npm run dev:docker
     stdin_open: true
     tty: true
     volumes:
@@ -57,8 +56,9 @@ services:
     environment:
       - DOCKER=1
       - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
-      # Opt in to the PWA runtime so the hero install button can be tested locally.
-      - NEXT_PUBLIC_ENABLE_SW=true
+      # Keep the service worker off in normal local development so it does not
+      # interfere with operator/dashboard fetches and Fast Refresh.
+      - NEXT_PUBLIC_ENABLE_SW=false
       - WATCHPACK_POLLING=true  # for macOS file watching inside Docker
     ports:
       - "3000:3000"

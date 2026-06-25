@@ -1,0 +1,144 @@
+# **AI-USE & ETHICS** 
+
+# **REPORT**
+
+**Submission Deadline:**  
+**Format:** PDF  
+**Naming Convention:** Smart Cities\_University of Mindanao\_UM SIKLAB\_AI\_Report.pdf
+
+---
+
+### **TEAM INFORMATION**
+
+| Team Name | UM SIKLAB |
+| :---- | :---- |
+| **Institution** | University of Mindanao |
+| **Country** | Philippines |
+| **Track** | \[X\] Smart Cities |
+| **Project Title** | IQueue |
+
+### 
+
+### **1\. INTRODUCTION**
+
+***(Approx. 100 words)***  
+***Provide a brief overview of the specific regional problem you selected and the primary objectives of your AI solution. State clearly why AI was necessary to solve this challenge.***
+
+As ASEAN experiences rapid urbanization and increasing mobility, inter-provincial transport terminals face persistent challenges including overcrowding, congestion, boarding disputes, and service delays, particularly during peak travel periods when passenger demand can surge several-fold. These inefficiencies undermine commuter safety, travel experience, and operational performance. IQueue is an AI-powered smart boarding platform designed to transform terminal operations through predictive demand forecasting, intelligent seat allocation, automated boarding schedules, and multilingual passenger assistance. AI is fundamental to this solution because traditional systems cannot accurately anticipate passenger flows or optimize complex boarding processes in real time. By leveraging data-driven prediction and automation, IQueue enables proactive terminal management, enhancing efficiency, safety, and passenger satisfaction while supporting the development of smarter, more resilient transportation systems across ASEAN.
+
+### 
+
+### 
+
+### 
+
+### **2\. PROBLEM CONTEXT & SOLUTION OVERVIEW**
+
+***(Approx. 150 words)***  
+***Describe the ASEAN context of your project. Who are the stakeholders? What data or environmental factors were considered? Provide a summary of the AI system’s core functionality.***
+
+IQueue addresses congestion, boarding delays, and seat-assignment disputes in ASEAN inter-provincial bus terminals, with the prototype demonstrated on sample Philippine routes, especially Mindanao corridor routes. Its stakeholders include passengers, bus operators, terminal administrators, transport authorities, LGUs, and tourism sectors that depend on reliable mobility.
+
+The system uses booking records, route schedules, seat preferences, group information, accessibility needs, language preference, travel-habit categories, and holiday/festival calendars to support demand forecasting and seat allocation. Implemented features include offline HMAC-signed QR boarding passes, offline access to saved boarding passes, and holiday/festival-aware forecasting for events such as Holy Week, Eid, Christmas, and regional festivals. In a power outage, already-issued QR passes remain verifiable once battery-powered devices or backup power are available. During major travel surges, IQueue flags high-risk routes so operators can prepare earlier boarding windows, extra lanes, or additional buses. For full deployment, the system will add cached departure manifests and proxy-based forecasting for new routes using similar route profiles, terminal size, distance, demand patterns, and regional event calendars.
+
+### **3\. AI TOOLS & METHODS USED**
+
+***(Approx. 150 words)***  
+***List and describe the specific AI tools, libraries, and frameworks used in your prototype (e.g., GPT-4o, Hugging Face, TensorFlow, Cursor, GitHub Copilot). Detail your*** 
+
+IQueue uses several artificial intelligence tools to improve transportation planning and passenger experience.
+
+**Facebook Prophet** was used to forecast passenger demand for bus routes. It analyzes historical travel patterns and considers important events such as holidays and festivals (e.g., Christmas, Eid, and Tết) that can affect passenger volume.
+
+**PyTorch** was used to develop a Long Short-Term Memory (LSTM) model that improves forecast accuracy by identifying patterns that the Prophet model may miss, especially during periods of unusually high passenger demand.
+
+**Hugging Face Transformers** was used to fine-tune an XLM-RoBERTa language model for the multilingual chatbot. The chatbot can understand and classify passenger requests in Filipino, Bahasa Indonesia, Vietnamese, and English.
+
+**Kaggle** served as the cloud-based environment for training and testing the AI models. Its free GPU resources allowed faster model development and experimentation.
+
+**Claude Code and DeepSeek V4** were used as AI-assisted development tools. These tools helped generate code, suggest system architectures, identify programming issues, and speed up software development.
+
+Additional supporting tools such as **langdetect** and **SentencePiece** were used for language detection and text processing in the chatbot system.
+
+### **4\. ASSESSMENT OF AI OUTPUT (CRITICAL EVALUATION)**
+
+***(Approx. 250 words)***  
+***Critically analyze the results generated by your AI system based on the following:***
+
+* **Accuracy:** *Was the technical output/prediction factually and logically correct?*
+
+  The AI components produced useful prototype results for the demo workflow. The forecasting module follows the architecture presented in the pitch deck: Prophet models route-level seasonality and holiday effects, while the LSTM layer is intended to learn recent passenger-demand patterns that Prophet may miss during unusual surges. In prototype testing, this hybrid design generated 7-day demand forecasts, surge-risk flags, and operator recommendations such as opening extra lanes or preparing standby buses.
+
+  The current evaluation is still based on synthetic benchmarks and prototype datasets, so the team treats the forecasting results as early evidence rather than a completed field validation. The main technical lesson is that the Prophet+LSTM approach is promising for the system design, but it still needs tuning with real ticketing, boarding, dispatch, occupancy, and queue-length data from partner terminals before final deployment.
+
+  The multilingual chatbot achieved 84.43% overall intent accuracy on a curated/MASSIVE holdout set, with per-language accuracy of 91.8% for English, 80.0% for Filipino, 80.33% for Bahasa Indonesia, and 85.48% for Vietnamese. However, the surge_info intent had only 50% recall, showing that surge-related passenger questions need more examples and human review.
+
+* **Technical Bias:** *Did the AI favor certain data types or Western-centric contexts? Were there any groups (gender, age, region) that the model disadvantaged?*
+
+  The system was designed around Philippine and ASEAN transportation contexts by including regional routes, holidays, festivals, and multilingual passenger intents. However, the chatbot training data still partly comes from international datasets, so it may miss local phrasing, dialects, and informal code-switching. The prototype also supports only four languages, leaving many ASEAN languages unsupported.
+
+* **Cultural & Regional Sensitivity:** *Does the AI output respect the cultural diversity and local nuances of the ASEAN region?*
+
+  IQueue includes ASEAN holiday calendars and multilingual responses so the system is not limited to Western travel assumptions. Still, travel behavior, privacy expectations, and boarding practices differ across countries and regions. Local deployment would require consultation with terminal staff, operators, and passengers before expanding beyond the prototype routes.
+
+* **Linguistic Nuance:** *(If using NLP)* *How did the AI handle local languages or dialects?*
+
+  To address Taglish, informal spellings, and code-switched messages, the team will build a domain dictionary for terminal phrases such as “pa-rebook,” “na-miss ko,” “sched,” and “bus no.” The chatbot will normalize abbreviations and common misspellings before classification, then the XLM-RoBERTa model will be fine-tuned using anonymized passenger chats, agent transcripts, and human-reviewed synthetic examples. Evaluation will include a separate Taglish test split, targeting at least 80% overall intent accuracy and improved recall for surge-related questions.
+
+### **5\. HUMAN INTERVENTION & JUSTIFICATION**
+
+*(**Approx. 150 words)***  
+***Describe what the human team members had to revise or override. Why was the AI output insufficient on its own? Detail your decisions on when to use AI-generated content and when to rely on human expertise to ensure integrity.***
+
+Human oversight remained essential because the AI prototype still required validation, correction, and ethical review. During testing, the team found that surge probability sometimes returned zero for routes because a forecasting rule was skipped in the workflow. Human developers traced and corrected the issue. The team also improved short Filipino query handling after some messages were misclassified as English.
+
+For seat allocation, IQueue uses data minimization. Booking ID links the reservation, passenger name is stored for operator visibility, and phone number is stored only in the passenger profile. Seat scoring uses limited service-related attributes: accessibility needs, group ID, seat type, preferred side, language preference, travel habit, and lifestyle interest. Direct identifiers are not used as AI decision features. The platform is designed to align with the Philippine Data Privacy Act of 2012 and ASEAN privacy expectations, with country-specific compliance overlays for deployment.
+
+The prototype currently supports backend-level seat reassignment logic. In full deployment, manual overrides for seats, boarding windows, queue priority, bus assignment, and passenger status will be logged with timestamp, operator ID, original AI recommendation, final decision, reason, and operational context. These logs will form a ground-truth dataset for improving future recommendations. Target KPIs include 10–20% faster boarding time per passenger, 15–25% shorter peak queues, higher on-time departure rates, 90%+ QR validation success, and reduced boarding disputes.
+
+### **6\. REFLECTION ON AI-HUMAN CO-CREATION**
+
+***(Approx. 100 words)***  
+***What were the advantages of using AI for this project (e.g., speed, scalability)? What were the biggest risks or challenges encountered (e.g., hallucinations, loss of nuance)? Reflect on what your team learned about balancing AI power with human oversight.***
+
+AI greatly improved the speed of development. Tasks that normally require days or weeks—such as generating application structures, creating training pipelines, and producing sample datasets—were completed in a fraction of the time. This allowed the team to focus more on solving real transportation challenges rather than writing repetitive code.
+
+However, the project also highlighted important risks. AI-generated outputs sometimes appeared correct but contained hidden errors that affected data accuracy, system reliability, or user experience. These issues demonstrated that AI cannot replace careful testing and human judgment.
+
+The team learned that the most effective approach is collaboration between humans and AI. AI serves as a powerful assistant that accelerates development, while humans provide critical thinking, verification, and ethical decision-making. Success depends not on trusting AI blindly, but on carefully reviewing and improving its outputs.
+
+### **7\. CONCLUSION**
+
+***(Approx. 100 words)***  
+***Summarize your key findings. How does your solution contribute to a more resilient and sustainable ASEAN? What are your final thoughts on the ethical development of AI in our region?***
+
+IQueue demonstrates how AI can help create smarter and more efficient transportation systems across ASEAN. By forecasting passenger demand, improving boarding management, and providing multilingual assistance, the platform helps reduce congestion, improve passenger experience, and support more reliable public transportation.
+
+The project also reinforced the importance of responsible AI development. While AI can improve efficiency and decision-making, it should be used as a support tool rather than a replacement for human judgment. Human oversight remains essential for ensuring fairness, accuracy, and cultural sensitivity.
+
+As ASEAN continues to embrace digital innovation, future AI solutions should prioritize local languages, regional needs, and transparency. By combining technological innovation with ethical responsibility, AI can contribute to more resilient, inclusive, and sustainable transportation systems throughout the region.
+
+### **8\. APPENDICES (IF NEEDED)**
+
+***Provide supporting evidence, including:***
+
+* **Screenshots: *AI tools in use or code snippets.***  
+* **Prompt Samples: *Example of the exact prompts used to generate core logic/content.***  
+* **Data Citations: *Links to datasets used and their respective licenses.***
+
+* **Screenshots:** 
+
+* **Prompt Samples:**  
+  \- I need help figuring out how we can improve the chatbot. Please refer to the .claude files about the chatbot. There was an intent trained for the full classification by XLM RoBERTa, but somehow the front-end rendering and the back-end feel clunky. Some languages don’t work, and the responses are in English when I try to input other languages.
+
+* **Data Citations:**  
+  **\- MASSIVE (Amazon, 2022\) qanastek/MASSIVE → [https://huggingface.co/datasets/qanastek/MASSIVE](https://huggingface.co/datasets/qanastek/MASSIVE)**  
+  **\- Public Bus Transport Dataset**  
+  [**https://www.kaggle.com/datasets/rednivrug/unisys**](https://www.kaggle.com/datasets/rednivrug/unisys)
+
+### **SUBMISSION CHECKLIST FOR TEAMS:**
+
+1. **Word Count:** Ensure the body text is between 800-1,000 words.  
+2. **Ethics First:** Be honest about AI limitations and hallucinations.  
+3. **Naming Convention:** Ensure the file is named correctly before uploading.  
+4. **Submission Link:** Team Leaders must upload to the **Final Submission Folder** [**FINAL SUBMISSION**](https://drive.google.com/drive/folders/1WX7JhiDZBpxQKE7s9wufEUOGZOBqQvKU?usp=sharing) **by June 20, 2026\.**

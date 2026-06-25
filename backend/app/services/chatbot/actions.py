@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
 from sqlalchemy import func, select
@@ -50,19 +50,17 @@ RESPONSES: dict[str, dict[str, dict[str, str]]] = {
         "found": {
             "en": "Found your booking: seat {seat} on Bus {plate} ({date}). Status: {status}. Let me find the next available bus on the {origin} → {destination} route.",
             "fil": "Nakita ko ang booking mo: upuan {seat} sa Bus {plate} ({date}). Status: {status}. Hahanap ako ng susunod na available na bus sa rutang {origin} → {destination}.",
-            "id": "Pemesanan Anda ditemukan: kursi {seat} di Bus {plate} ({date}). Status: {status}. Saya akan mencari bus berikutnya untuk rute {origin} → {destination}.",
-            "vi": "Đã tìm thấy đặt vé của bạn: ghế {seat} trên xe {plate} ({date}). Trạng thái: {status}. Tôi sẽ tìm chuyến tiếp theo cho tuyến {origin} → {destination}.",
         },
         "not_found": {
             "en": "I couldn't find a booking with that information. Please double-check and try again, or type 'cancel' to stop.",
             "fil": "Hindi ko mahanap ang booking. Pakitingnan muli at subukan ulit, o i-type ang 'cancel' para tumigil.",
-            "id": "Saya tidak dapat menemukan pemesanan dengan informasi itu. Silakan periksa kembali dan coba lagi, atau ketik 'cancel' untuk berhenti.",
-            "vi": "Tôi không tìm thấy đặt vé với thông tin đó. Vui lòng kiểm tra lại và thử lại, hoặc nhập 'cancel' để dừng.",
+            "id": "Saya tidak dapat menemukan pemesanan dengan informasi itu. Silakan periksa lagi, atau ketik 'cancel' untuk berhenti.",
+            "vi": "Tôi không tìm thấy đặt vé với thông tin đó. Vui lòng kiểm tra lại, hoặc nhập 'cancel' để dừng.",
         },
         "not_missed": {
             "en": "Your booking is {status}, not missed or cancelled. You don't need to rebook. Is there something else I can help with?",
             "fil": "Ang iyong booking ay {status}, hindi missed o cancelled. Hindi mo kailangang mag-rebook. May iba pa ba akong maitutulong?",
-            "id": "Pemesanan Anda berstatus {status}, bukan terlewat atau dibatalkan. Anda tidak perlu memesan ulang. Ada hal lain yang bisa saya bantu?",
+            "id": "Pemesanan Anda berstatus {status}, bukan terlewat atau dibatalkan. Anda tidak perlu memesan ulang. Ada lagi yang bisa saya bantu?",
             "vi": "Đặt vé của bạn đang ở trạng thái {status}, không phải bị lỡ hoặc đã hủy. Bạn không cần đặt lại. Tôi có thể giúp gì thêm?",
         },
     },
@@ -70,36 +68,26 @@ RESPONSES: dict[str, dict[str, dict[str, str]]] = {
         "no_buses": {
             "en": "Unfortunately, there are no more buses on the {origin} → {destination} route today. Would you like me to check tomorrow?",
             "fil": "Sa kasamaang palad, wala nang bus sa rutang {origin} → {destination} ngayong araw. Gusto mo bang tingnan ko bukas?",
-            "id": "Sayangnya, tidak ada bus lain di rute {origin} → {destination} hari ini. Apakah Anda ingin saya cek besok?",
-            "vi": "Rất tiếc, hôm nay không còn xe nào trên tuyến {origin} → {destination}. Bạn có muốn tôi kiểm tra ngày mai không?",
         },
         "found_buses": {
             "en": "Here are the next available buses:\n{bus_list}\n\nWhich one would you like? (Reply with the plate number or '1', '2', etc.)",
             "fil": "Ito ang mga susunod na available na bus:\n{bus_list}\n\nAlin ang gusto mo? (I-reply ang plate number o '1', '2', atbp.)",
-            "id": "Berikut bus berikutnya yang tersedia:\n{bus_list}\n\nMana yang Anda pilih? (Balas dengan nomor plat atau '1', '2', dst.)",
-            "vi": "Đây là các chuyến còn chỗ tiếp theo:\n{bus_list}\n\nBạn chọn chuyến nào? (Trả lời bằng biển số hoặc '1', '2', v.v.)",
         },
     },
     "select": {
         "confirm": {
             "en": "You selected Bus {plate}. I'll cancel your old booking and book you a seat. Shall I proceed? (Reply 'yes' or 'no')",
             "fil": "Pinili mo ang Bus {plate}. Kakanselahin ko ang lumang booking mo at magbu-book ng upuan para sa iyo. Itutuloy ba? (I-reply ang 'oo' o 'hindi')",
-            "id": "Anda memilih Bus {plate}. Saya akan membatalkan pemesanan lama dan memesan kursi baru. Lanjutkan? (Balas 'yes' atau 'no')",
-            "vi": "Bạn đã chọn xe {plate}. Tôi sẽ hủy đặt vé cũ và đặt ghế mới cho bạn. Tiếp tục chứ? (Trả lời 'yes' hoặc 'no')",
         },
     },
     "confirm": {
         "success": {
             "en": "Done! You're rebooked on Bus {plate}, seat {seat}. Boarding window: {window_start} → {window_end}. Your QR code has been generated. Have a safe trip!",
             "fil": "Tapos na! Naka-rebook ka na sa Bus {plate}, upuan {seat}. Oras ng pagsakay: {window_start} → {window_end}. Nagawa na ang QR code mo. Ligtas na byahe!",
-            "id": "Selesai! Anda sudah dipesan ulang di Bus {plate}, kursi {seat}. Waktu naik: {window_start} → {window_end}. Kode QR Anda sudah dibuat. Selamat jalan!",
-            "vi": "Xong rồi! Bạn đã được đặt lại trên xe {plate}, ghế {seat}. Giờ lên xe: {window_start} → {window_end}. Mã QR đã được tạo. Chúc bạn đi an toàn!",
         },
         "cancelled": {
             "en": "Rebooking cancelled. Your original booking is unchanged. How else can I help?",
             "fil": "Nakansela ang rebooking. Hindi nabago ang orihinal mong booking. Paano pa ako makakatulong?",
-            "id": "Pemesanan ulang dibatalkan. Pemesanan lama Anda tidak berubah. Ada yang bisa saya bantu lagi?",
-            "vi": "Đã hủy đặt lại. Đặt vé ban đầu của bạn không thay đổi. Tôi có thể giúp gì thêm?",
         },
     },
 }
@@ -214,22 +202,8 @@ class RebookingFlow:
                 booking = result.scalars().first()
 
             if not booking and phone:
-                normalized_phone = phone.replace(" ", "").replace("-", "").strip()
-                if normalized_phone.startswith("+63"):
-                    normalized_phone = "0" + normalized_phone[3:]
                 p_result = await db.execute(
-                    select(Passenger).where(
-                        func.replace(
-                            func.replace(
-                                func.replace(Passenger.phone, " ", ""),
-                                "-",
-                                "",
-                            ),
-                            "+63",
-                            "0",
-                        )
-                        == normalized_phone
-                    )
+                    select(Passenger).where(Passenger.phone == phone)
                 )
                 passenger = p_result.scalars().first()
                 if passenger:
@@ -294,7 +268,6 @@ class RebookingFlow:
             "bus_id": str(booking.bus_id),
             "route_origin": route_origin,
             "route_destination": route_destination,
-            "departure_date": booking.departure_date.isoformat(),
             "phone": phone or state.get("phone"),
         }
 
@@ -331,15 +304,6 @@ class RebookingFlow:
         bus_id = state.get("bus_id")
         route_origin = state.get("route_origin", "")
         route_destination = state.get("route_destination", "")
-        departure_date_raw = state.get("departure_date")
-        service_day = datetime.now(timezone.utc).date()
-        if departure_date_raw:
-            try:
-                service_day = datetime.fromisoformat(departure_date_raw).date()
-            except ValueError:
-                pass
-        start_dt = datetime.combine(service_day, datetime.min.time(), tzinfo=timezone.utc)
-        end_dt = start_dt + timedelta(days=1)
 
         try:
             # Get the route from the original bus
@@ -354,7 +318,6 @@ class RebookingFlow:
                     buses_result = await db.execute(
                         select(Bus).where(
                             Bus.route_id == route_id,
-                            Bus.tenant_id == original_bus.tenant_id,
                             Bus.id != uuid.UUID(bus_id),
                         ).limit(5)
                     )
@@ -366,8 +329,6 @@ class RebookingFlow:
                         booked_result = await db.execute(
                             select(func.count()).select_from(Booking).where(
                                 Booking.bus_id == bus.id,
-                                Booking.departure_date >= start_dt,
-                                Booking.departure_date < end_dt,
                                 Booking.status.in_([
                                     BookingStatus.CONFIRMED,
                                     BookingStatus.PENDING,
@@ -467,14 +428,8 @@ class RebookingFlow:
             bus_lines = []
             for i, b in enumerate(candidate_buses, 1):
                 bus_lines.append(f"{i}. Bus {b['plate']} · {b['available']} seats available")
-            prompt_map = {
-                "en": "Please choose one:\n",
-                "fil": "Pumili ng isa:\n",
-                "id": "Silakan pilih salah satu:\n",
-                "vi": "Vui lòng chọn một chuyến:\n",
-            }
             return {
-                "response_text": prompt_map.get(language, prompt_map["en"]) + "\n".join(bus_lines),
+                "response_text": f"Please choose one:\n" + "\n".join(bus_lines),
                 "flow_metadata": state,
                 "is_complete": False,
             }
@@ -522,14 +477,8 @@ class RebookingFlow:
             }
 
         if query_lower not in affirmative:
-            prompt_map = {
-                "en": "Please reply 'yes' to confirm the rebooking or 'no' to cancel.",
-                "fil": "I-reply ang 'yes' para kumpirmahin ang rebooking o 'no' para kanselahin.",
-                "id": "Balas 'yes' untuk mengonfirmasi pemesanan ulang atau 'no' untuk membatalkan.",
-                "vi": "Vui lòng trả lời 'yes' để xác nhận đặt lại hoặc 'no' để hủy.",
-            }
             return {
-                "response_text": prompt_map.get(language, prompt_map["en"]),
+                "response_text": "Please reply 'yes' to confirm the rebooking or 'no' to cancel.",
                 "flow_metadata": state,
                 "is_complete": False,
             }
@@ -546,109 +495,51 @@ class RebookingFlow:
             old_booking = old_result.scalars().first()
 
             if not old_booking:
-                missing_map = {
-                    "en": "Sorry, I couldn't find your original booking. Please start over.",
-                    "fil": "Paumanhin, hindi ko mahanap ang orihinal mong booking. Pakisimulan ulit.",
-                    "id": "Maaf, saya tidak dapat menemukan pemesanan lama Anda. Silakan mulai lagi.",
-                    "vi": "Xin lỗi, tôi không tìm thấy đặt vé ban đầu. Vui lòng bắt đầu lại.",
-                }
                 return {
-                    "response_text": missing_map.get(language, missing_map["en"]),
+                    "response_text": "Sorry, I couldn't find your original booking. Please start over.",
                     "flow_metadata": {"flow": "rebooking", "step": "cancelled"},
                     "is_complete": True,
                 }
 
-            passenger = await db.get(Passenger, old_booking.passenger_id)
-            new_bus = await db.get(Bus, new_bus_id)
-            if passenger is None or new_bus is None:
-                raise ValueError("Passenger or selected bus missing during rebooking")
+            # Mark old booking as cancelled
+            old_booking.status = BookingStatus.CANCELLED
 
-            if passenger.tenant_id != new_bus.tenant_id:
-                raise ValueError("Passenger and selected bus belong to different tenants")
+            # Find an available seat on the new bus
+            # (Simple: just pick the lowest-numbered unbooked seat)
+            existing_seats_result = await db.execute(
+                select(Booking.seat_number).where(
+                    Booking.bus_id == new_bus_id,
+                    Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.PENDING]),
+                )
+            )
+            taken_seats = set(existing_seats_result.scalars().all())
 
-            try:
-                from app.services.seat_assignment.date_aware import assign_for_travel_date
-                from app.services.seat_assignment.scorer import PassengerContext
-
-                pax_ctx = PassengerContext(
-                    booking_id="rebooking",
-                    passenger_name=passenger.name,
-                    language_preference=passenger.language_pref,
-                    travel_habit=passenger.travel_habits,
-                    lifestyle_interest=passenger.lifestyle_interests,
-                    needs_accessibility=passenger.accessibility_needs,
-                    affinity_opt_in=False,
-                )
-                assignment = await assign_for_travel_date(
-                    db,
-                    new_bus_id,
-                    pax_ctx,
-                    old_booking.departure_date,
-                    departure_datetime=old_booking.departure_date,
-                )
-                new_seat = assignment["seat_label"]
-                bw = assignment.get("boarding_window", "")
-                if "–" in bw:
-                    start_text, end_text = bw.split("–", 1)
-                    service_day = old_booking.departure_date.date()
-                    start_hour, start_minute = [int(x) for x in start_text.split(":")]
-                    end_hour, end_minute = [int(x) for x in end_text.split(":")]
-                    boarding_start = datetime(
-                        service_day.year, service_day.month, service_day.day,
-                        start_hour, start_minute, tzinfo=timezone.utc,
-                    )
-                    boarding_end = datetime(
-                        service_day.year, service_day.month, service_day.day,
-                        end_hour, end_minute, tzinfo=timezone.utc,
-                    )
-                else:
-                    boarding_start = old_booking.departure_date
-                    boarding_end = old_booking.departure_date + timedelta(minutes=15)
-            except Exception:
-                existing_seats_result = await db.execute(
-                    select(Booking.seat_number).where(
-                        Booking.bus_id == new_bus_id,
-                        Booking.departure_date >= datetime.combine(
-                            old_booking.departure_date.date(),
-                            datetime.min.time(),
-                            tzinfo=timezone.utc,
-                        ),
-                        Booking.departure_date < datetime.combine(
-                            old_booking.departure_date.date(),
-                            datetime.min.time(),
-                            tzinfo=timezone.utc,
-                        ) + timedelta(days=1),
-                        Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.PENDING]),
-                    )
-                )
-                taken_seats = set(existing_seats_result.scalars().all())
-                new_seat = None
-                for row in range(1, 26):
-                    for col in ["A", "B", "C", "D"]:
-                        seat_candidate = f"{row}{col}"
-                        if seat_candidate not in taken_seats:
-                            new_seat = seat_candidate
-                            break
-                    if new_seat:
+            # Generate possible seat numbers (1A, 1B, 2A, 2B, …)
+            new_seat = None
+            for row in range(1, 26):
+                for col in ["A", "B", "C", "D"]:
+                    seat_candidate = f"{row}{col}"
+                    if seat_candidate not in taken_seats:
+                        new_seat = seat_candidate
                         break
-                boarding_start = old_booking.departure_date
-                boarding_end = old_booking.departure_date + timedelta(minutes=15)
+                if new_seat:
+                    break
 
             if not new_seat:
-                full_map = {
-                    "en": "Sorry, this bus is now fully booked. Let me find another option.",
-                    "fil": "Paumanhin, puno na ang bus na ito. Hahanap ako ng ibang option.",
-                    "id": "Maaf, bus ini sudah penuh. Saya akan mencari pilihan lain.",
-                    "vi": "Xin lỗi, xe này đã hết chỗ. Tôi sẽ tìm lựa chọn khác.",
-                }
                 return {
-                    "response_text": full_map.get(language, full_map["en"]),
+                    "response_text": "Sorry, this bus is now fully booked. Let me find another option.",
                     "flow_metadata": {**state, "step": STEP_FIND_ALTERNATIVES},
                     "is_complete": False,
                 }
 
-            # Mark old booking as cancelled only after a replacement seat is found.
-            old_booking.status = BookingStatus.CANCELLED
+            # Get bus info for the new bus
+            bus_result = await db.execute(select(Bus).where(Bus.id == new_bus_id))
+            new_bus = bus_result.scalars().first()
+
+            # Create new booking
+            now = datetime.now(timezone.utc)
+            boarding_start = now + timedelta(minutes=15)
+            boarding_end = now + timedelta(minutes=30)
 
             new_booking = Booking(
                 passenger_id=old_booking.passenger_id,
@@ -660,26 +551,6 @@ class RebookingFlow:
                 departure_date=old_booking.departure_date,
             )
             db.add(new_booking)
-            await db.flush()
-
-            try:
-                from app.services.qr_service.qr import QRService
-
-                route = None
-                if new_bus:
-                    route_result = await db.execute(
-                        select(BusRoute).where(BusRoute.id == new_bus.route_id)
-                    )
-                    route = route_result.scalars().first()
-                new_booking.qr_token = QRService().generate_token(
-                    new_booking,
-                    route=route,
-                    bus=new_bus,
-                )
-                await db.flush()
-            except Exception:
-                logger.warning("QR generation failed during chatbot rebooking")
-
             await db.commit()
             await db.refresh(new_booking)
 
@@ -699,8 +570,6 @@ class RebookingFlow:
                     "flow": "rebooking",
                     "step": "complete",
                     "new_booking_id": str(new_booking.id),
-                    "booking_id": str(new_booking.id),
-                    "has_qr": bool(new_booking.qr_token),
                 },
                 "is_complete": True,
             }

@@ -8,6 +8,9 @@ this module for backwards compatibility.
 
 from __future__ import annotations
 
-from backend.app.services.forecasting.model import SurgeLSTM
+try:
+    from backend.app.services.forecasting.model import SurgeLSTM
+except ModuleNotFoundError:
+    from app.services.forecasting.model import SurgeLSTM
 
 __all__ = ["SurgeLSTM"]

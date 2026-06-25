@@ -65,6 +65,24 @@ function suggestionToQuery(action: string): string {
   return action;
 }
 
+function isBookNavigation(action: string): boolean {
+  const normalized = action.toLowerCase().trim();
+  return (
+    normalized === "book a ticket" ||
+    normalized === "search and book" ||
+    normalized.includes("search routes")
+  );
+}
+
+function isBookingDetailNavigation(action: string): boolean {
+  const normalized = action.toLowerCase();
+  return (
+    normalized.includes("view booking") ||
+    normalized.includes("qr") ||
+    normalized.includes("boarding time")
+  );
+}
+
 const QUICK_REPLIES: Record<Language, string[]> = {
   en: ["Check my booking", "Is it crowded this weekend?", "When does my bus leave?", "I missed my bus"],
   fil: ["Tingnan ang booking ko", "Marami bang tao ngayong weekend?", "Kailan aalis ang bus ko?", "Naiwan ako ng bus"],
@@ -222,12 +240,40 @@ export default function ChatbotTeaser() {
 
   const handleAction = async (action: ActionLike) => {
     if (typeof action === "string") {
+      if (isBookNavigation(action)) {
+        router.push("/buy");
+        setIsOpen(false);
+        return;
+      }
+
+      if (isBookingDetailNavigation(action)) {
+        const previousAction = [...messages]
+          .reverse()
+          .flatMap((message) => message.actions || [])
+          .find((item) =>
+            action.toLowerCase().includes("qr")
+              ? item.kind === "open_qr"
+              : item.kind === "open_booking" || item.kind === "open_qr"
+          );
+
+        if (previousAction) {
+          await handleAction(previousAction);
+          return;
+        }
+      }
+
       await handleSend(suggestionToQuery(action));
       return;
     }
 
     if (action.kind === "send_message") {
-      await handleSend(String(action.payload.message || action.label));
+      const message = String(action.payload.message || action.label);
+      if (action.id === "book-ticket" || isBookNavigation(message)) {
+        router.push("/buy");
+        setIsOpen(false);
+        return;
+      }
+      await handleSend(message);
       return;
     }
 

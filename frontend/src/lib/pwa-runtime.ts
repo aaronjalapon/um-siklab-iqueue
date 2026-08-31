@@ -5,6 +5,18 @@ export const SHOULD_ENABLE_PWA =
 export const PWA_INSTALL_DISMISS_KEY = "iqueue:pwa-install-dismissed:v1";
 export const PWA_INSTALL_REQUEST_EVENT = "iqueue:request-pwa-install";
 
+export function shouldEnablePwaClientRuntime(): boolean {
+  if (typeof window === "undefined") {
+    return SHOULD_ENABLE_PWA;
+  }
+
+  const isLocalDevHost = ["localhost", "127.0.0.1", "::1"].includes(
+    window.location.hostname
+  );
+
+  return SHOULD_ENABLE_PWA && !isLocalDevHost;
+}
+
 export async function cleanupDevelopmentPwaState(): Promise<void> {
   if (typeof window === "undefined") return;
 

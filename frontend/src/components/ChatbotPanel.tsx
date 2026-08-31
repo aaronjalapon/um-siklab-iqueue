@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { sendChatMessage, createChatSession } from "@/lib/api";
 import { applyFrontendBrand, BRAND } from "@/lib/brand";
-import type { ChatbotResponse } from "@/lib/types";
-import { LANGUAGE_LABELS } from "@/lib/utils";
-import { MessageCircle, Send, X, AlertTriangle } from "lucide-react";
+import type { ChatbotAction, ChatbotResponse } from "@/lib/types";
+import { MessageCircle, Send, X } from "lucide-react";
 
 // ---------------------------------------------------------------------------
 // Language config
@@ -61,6 +61,33 @@ const QUICK_REPLIES: Record<LanguageCode, string[]> = {
   vi: ["Kiểm tra vé", "Có đông không?", "Khi nào khởi hành?", "Bị lỡ xe"],
 };
 
+const GREETING_ACTIONS: ChatbotAction[] = [
+  {
+    id: "book-ticket",
+    label: "Book a ticket",
+    kind: "send_message",
+    payload: { message: "I want to book" },
+  },
+  {
+    id: "check-booking",
+    label: "Check my booking",
+    kind: "send_message",
+    payload: { message: "Check my booking" },
+  },
+  {
+    id: "crowd-levels",
+    label: "Ask about crowd levels",
+    kind: "send_message",
+    payload: { message: "Is it crowded?" },
+  },
+  {
+    id: "rebook-missed",
+    label: "Rebook missed bus",
+    kind: "send_message",
+    payload: { message: "I missed my bus" },
+  },
+];
+
 // ---------------------------------------------------------------------------
 // Browser language detection
 // ---------------------------------------------------------------------------
@@ -85,6 +112,7 @@ interface Message {
   languageConfidence?: number | null;
   intent?: string;
   suggested_actions?: string[];
+  actions?: ChatbotAction[];
   degradation?: number;
 }
 
@@ -92,11 +120,60 @@ interface ChatbotPanelProps {
   bookingId?: string;
 }
 
+type ActionLike = ChatbotAction | string;
+
+function suggestionToQuery(action: string): string {
+  const normalized = action.toLowerCase();
+  if (
+    normalized.includes("cancel") ||
+    normalized.includes("start over") ||
+    normalized.includes("main menu") ||
+    normalized.includes("reset")
+  ) {
+    return "cancel";
+  }
+  if (normalized.includes("qr") || normalized.includes("boarding")) {
+    return "Check my booking";
+  }
+  if (normalized.includes("book") || normalized.includes("route") || normalized.includes("schedule")) {
+    return "I want to book";
+  }
+  if (normalized.includes("crowd") || normalized.includes("forecast") || normalized.includes("ramai")) {
+    return "Is it crowded?";
+  }
+  if (normalized.includes("phone")) {
+    return "I want to use my phone number";
+  }
+  if (normalized.includes("booking id")) {
+    return "I have a booking ID";
+  }
+  return action;
+}
+
+function isBookNavigation(action: string): boolean {
+  const normalized = action.toLowerCase().trim();
+  return (
+    normalized === "book a ticket" ||
+    normalized === "search and book" ||
+    normalized.includes("search routes")
+  );
+}
+
+function isBookingDetailNavigation(action: string): boolean {
+  const normalized = action.toLowerCase();
+  return (
+    normalized.includes("view booking") ||
+    normalized.includes("qr") ||
+    normalized.includes("boarding time")
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
 export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
+  const router = useRouter();
   const initialLang = detectBrowserLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [lang, setLang] = useState<LanguageCode>(initialLang);
@@ -121,7 +198,12 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
         .then((res) => {
           setSessionId(res.session_id);
           setMessages([
-            { role: "bot", text: applyFrontendBrand(res.greeting), intent: "greeting" },
+            {
+              role: "bot",
+              text: applyFrontendBrand(res.greeting),
+              intent: "greeting",
+              actions: GREETING_ACTIONS,
+            },
           ]);
           scrollToBottom();
         })
@@ -131,6 +213,7 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
               role: "bot",
               text: `Hi! I'm the ${BRAND.name} assistant. How can I help?`,
               intent: "greeting",
+              actions: GREETING_ACTIONS,
             },
           ]);
         });
@@ -170,6 +253,7 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
           languageConfidence: response.language_confidence,
           intent: response.intent,
           suggested_actions: response.suggested_actions,
+          actions: response.actions,
           degradation: response.degradation_level,
         },
       ]);
@@ -188,8 +272,70 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
     }
   };
 
-  const handleSuggestionClick = async (action: string) => {
-    await handleSend(action);
+  const handleSuggestionClick = async (action: ActionLike) => {
+    if (typeof action === "string") {
+      if (isBookNavigation(action)) {
+        router.push("/buy");
+        setIsOpen(false);
+        return;
+      }
+
+      if (isBookingDetailNavigation(action)) {
+        const previousAction = [...messages]
+          .reverse()
+          .flatMap((message) => message.actions || [])
+          .find((item) =>
+            action.toLowerCase().includes("qr")
+              ? item.kind === "open_qr"
+              : item.kind === "open_booking" || item.kind === "open_qr"
+          );
+
+        if (previousAction) {
+          await handleSuggestionClick(previousAction);
+          return;
+        }
+      }
+
+      await handleSend(suggestionToQuery(action));
+      return;
+    }
+
+    if (action.kind === "send_message") {
+      const message = String(action.payload.message || action.label);
+      if (action.id === "book-ticket" || isBookNavigation(message)) {
+        router.push("/buy");
+        setIsOpen(false);
+        return;
+      }
+      await handleSend(message);
+      return;
+    }
+
+    if (action.kind === "prefill_route_search") {
+      const params = new URLSearchParams();
+      for (const key of ["origin", "destination", "date", "route_id"]) {
+        const value = action.payload[key];
+        if (value != null && value !== "") params.set(key, String(value));
+      }
+      router.push(`/buy${params.toString() ? `?${params.toString()}` : ""}`);
+      setIsOpen(false);
+      return;
+    }
+
+    if (action.kind === "open_booking" || action.kind === "open_qr") {
+      const targetBookingId = action.payload.booking_id;
+      if (targetBookingId) {
+        router.push(`/confirmation/${String(targetBookingId)}`);
+        setIsOpen(false);
+      } else {
+        await handleSend("Check my booking");
+      }
+      return;
+    }
+
+    if (action.kind === "handoff") {
+      await handleSend(String(action.payload.message || "Contact support"));
+    }
   };
 
   const handleLanguageChange = async (code: LanguageCode) => {
@@ -199,7 +345,12 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
       const res = await createChatSession(code);
       setSessionId(res.session_id);
       setMessages([
-        { role: "bot", text: applyFrontendBrand(res.greeting), intent: "greeting" },
+        {
+          role: "bot",
+          text: applyFrontendBrand(res.greeting),
+          intent: "greeting",
+          actions: GREETING_ACTIONS,
+        },
       ]);
     } catch {
       // Keep existing state
@@ -297,37 +448,16 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
                 >
                   <p>{msg.text}</p>
 
-                  {/* Language & confidence indicator */}
-                  {msg.language && (
-                    <span className="text-xs opacity-70 mt-1 block">
-                      {LANGUAGE_LABELS[msg.language] || msg.language}
-                      {msg.languageConfidence != null && (
-                        <span title={`Detection confidence: ${Math.round(msg.languageConfidence * 100)}%`}>
-                          {" "}· {Math.round(msg.languageConfidence * 100)}% confidence
-                        </span>
-                      )}
-                      {msg.intent &&
-                        msg.intent !== "fallback" &&
-                        msg.intent !== "greeting" && (
-                          <> · {msg.intent.replace(/_/g, " ")}</>
-                        )}
-                    </span>
-                  )}
-
-                  {/* Degradation warning */}
-                  {msg.degradation != null && msg.degradation > 0 && (
-                    <span className="text-xs text-amber-500 mt-1 flex items-center gap-1">
-                      <AlertTriangle className="w-3 h-3" />
-                      Running in reduced mode
-                    </span>
-                  )}
-
                   {/* Suggested action pills */}
-                  {msg.role === "bot" &&
-                    msg.suggested_actions &&
-                    msg.suggested_actions.length > 0 && (
+                  {msg.role === "bot" && (
+                    (() => {
+                      const actionItems: ActionLike[] =
+                        msg.actions && msg.actions.length > 0
+                          ? msg.actions
+                          : msg.suggested_actions || [];
+                      return actionItems.length > 0 ? (
                       <div className="mt-2 flex flex-wrap gap-1.5">
-                        {msg.suggested_actions.map((action, ai) => (
+                        {actionItems.map((action, ai) => (
                           <button
                             type="button"
                             key={ai}
@@ -341,11 +471,13 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
                                        disabled:opacity-50 disabled:cursor-not-allowed
                                        transition-colors"
                           >
-                            {action}
+                            {typeof action === "string" ? action : action.label}
                           </button>
                         ))}
                       </div>
-                    )}
+                      ) : null;
+                    })()
+                  )}
                 </div>
               </div>
             ))}

@@ -161,7 +161,11 @@ def _train_lstm(
 ) -> tuple[Any, int]:
     import torch
     from torch.utils.data import DataLoader, TensorDataset
-    from backend.app.services.forecasting.model import ArtifactLSTMForecaster
+
+    try:
+        from backend.app.services.forecasting.model import ArtifactLSTMForecaster
+    except ModuleNotFoundError:
+        from app.services.forecasting.model import ArtifactLSTMForecaster
 
     torch.manual_seed(seed)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

@@ -13,6 +13,16 @@ class BoardingVerifyRequest(BaseModel):
     token: str = Field(..., min_length=16, max_length=4096)
 
 
+class BoardingMemberStatus(BaseModel):
+    """Operational state for one person represented by a group pass."""
+
+    booking_id: UUID
+    passenger_id: UUID
+    seat: str
+    status: str
+    requires_review: bool = False
+
+
 class BoardingVerifyResponse(BaseModel):
     """Gate decision with cryptographic and operational context."""
 
@@ -20,6 +30,9 @@ class BoardingVerifyResponse(BaseModel):
     reason: str
     signature_valid: bool
     boarding_status: str
+    pass_type: str = "individual"
+    group_id: UUID | None = None
+    members: list[BoardingMemberStatus] = Field(default_factory=list)
     booking_id: UUID | None = None
     passenger_id: UUID | None = None
     route_id: UUID | None = None

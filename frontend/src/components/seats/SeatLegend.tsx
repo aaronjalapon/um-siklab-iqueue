@@ -10,6 +10,7 @@ const PASSENGER_ITEMS = [
   { label: "Selected", className: "bg-sky-500 border border-sky-600" },
   { label: "Occupied", className: "bg-slate-200 border border-slate-400" },
   { label: "Accessibility Priority", className: "bg-amber-200 border border-amber-400" },
+  { label: "Numbered Family Assignment", className: "bg-violet-200 border-2 border-violet-500" },
 ];
 
 const OPERATOR_ITEMS = [

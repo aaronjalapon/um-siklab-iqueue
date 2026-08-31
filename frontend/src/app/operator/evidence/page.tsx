@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { AlertTriangle, CheckCircle2, Database, FileCheck2 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { getEvidenceSummary } from "@/lib/api";
+import { BRAND } from "@/lib/brand";
 import { glassStyles } from "@/lib/design-system";
 import type { EvidenceSummary } from "@/lib/types";
 
@@ -44,7 +45,7 @@ export default function EvidencePage() {
     <div className={glassStyles.pageContainer}>
       <PageHeader
         eyebrow="Validation and governance"
-        title="IQueue Evidence"
+        title={`${BRAND.name} Evidence`}
         description="Reproducible model evidence and transparent prototype limitations."
       />
 

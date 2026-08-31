@@ -10,12 +10,32 @@ import { SeatLegend } from "@/components/seats/SeatLegend";
 import { BookingProgress } from "@/components/ui/BookingProgress";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { useSeatMap } from "@/hooks/useSeatMap";
+import { BRAND } from "@/lib/brand";
 import { glassStyles } from "@/lib/design-system";
 import { DEMO_TENANT_ID } from "@/lib/demo-config";
 import type { SeatMapEntry, SeatAssignmentResult } from "@/types/seat";
 import type { PassengerContext } from "@/types/seat";
+import { GroupSeatSelectionFlow } from "@/components/booking/GroupSeatSelectionFlow";
 
 export default function SeatSelectionPage() {
+  const { busId } = useParams<{ busId: string }>();
+  const params = useSearchParams();
+  const draftId = params.get("draft");
+  if (draftId) {
+    return (
+      <GroupSeatSelectionFlow
+        busId={busId}
+        draftId={draftId}
+        date={params.get("date") || ""}
+        origin={params.get("origin") || ""}
+        destination={params.get("dest") || ""}
+      />
+    );
+  }
+  return <SingleSeatSelectionFlow />;
+}
+
+function SingleSeatSelectionFlow() {
   const { busId } = useParams<{ busId: string }>();
   const params = useSearchParams();
   const router = useRouter();
@@ -292,7 +312,7 @@ export default function SeatSelectionPage() {
             <div className="bg-teal-50 border border-teal-200 rounded-lg p-4 space-y-2">
               <div className="flex items-center gap-2 text-teal-800">
                 <Star className="w-5 h-5" />
-                <span className="font-semibold">IQueue Recommended</span>
+                <span className="font-semibold">{BRAND.name} Recommended</span>
               </div>
               <p className="text-2xl font-bold text-teal-900">
                 Seat {autoAssigned.seat_label}
@@ -339,7 +359,7 @@ export default function SeatSelectionPage() {
                 }}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-amber-300 text-amber-700 rounded-md text-xs font-medium hover:bg-amber-100 hover:border-amber-400 transition"
               >
-                <RefreshCw className="w-3.5 h-3.5" /> Reset to IQueue pick
+                <RefreshCw className="w-3.5 h-3.5" /> Reset to {BRAND.name} pick
               </button>
             </div>
           )}

@@ -12,6 +12,7 @@ import {
   TrendingUp,
   Zap,
 } from "lucide-react";
+import { BRAND } from "@/lib/brand";
 import { PWA_INSTALL_REQUEST_EVENT } from "@/lib/pwa-runtime";
 
 const EASE_OUT = [0.16, 1, 0.3, 1] as const;
@@ -49,7 +50,7 @@ export default function HeroSection() {
             className="inline-flex items-center gap-2 bg-brand-blue/15 border border-brand-blue/30 text-brand-blue text-xs font-bold px-3 py-1.5 rounded-full mb-6 backdrop-blur-sm"
           >
             <Zap className="w-3.5 h-3.5" />
-            AI-Powered Smart Boarding for ASEAN
+            {BRAND.name} · AI-Powered Smart Boarding for ASEAN
           </motion.div>
 
           <motion.h1
@@ -58,9 +59,9 @@ export default function HeroSection() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="mb-5 text-4xl font-extrabold leading-tight text-white sm:text-5xl lg:text-6xl xl:text-7xl"
           >
-            IQueue Smart Boarding{" "}
+            Board smart,{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-blue to-cyan-400">
-              Across ASEAN
+              travel smarter.
             </span>
           </motion.h1>
 
@@ -144,7 +145,7 @@ export default function HeroSection() {
             {/* Card header */}
             <div className="flex justify-between items-center mb-5">
               <div>
-                <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider">IQueue Boarding Pass</p>
+                <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider">{BRAND.name} Boarding Pass</p>
                 <p className="text-white font-bold text-sm mt-0.5">Mon, 19 Feb 2026</p>
               </div>
               <span className="bg-green-500/20 border border-green-500/30 text-green-400 text-xs font-bold px-2.5 py-1 rounded-full">

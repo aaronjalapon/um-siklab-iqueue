@@ -3,6 +3,7 @@ import { config } from "@fortawesome/fontawesome-svg-core";
 import "@fortawesome/fontawesome-svg-core/styles.css";
 import DevelopmentRuntimeGate from "@/components/DevelopmentRuntimeGate";
 import PWARegistrar from "@/components/PWARegistrar";
+import { BRAND } from "@/lib/brand";
 import { SHOULD_ENABLE_PWA } from "@/lib/pwa-runtime";
 import "./globals.css";
 
@@ -10,15 +11,15 @@ config.autoAddCss = false;
 
 export const metadata: Metadata = {
   title: {
-    default: "IQueue — Smart Bus Boarding",
-    template: "%s | IQueue",
+    default: `${BRAND.name} — ${BRAND.tagline}`,
+    template: `%s | ${BRAND.name}`,
   },
-  description: "AI-powered smart boarding platform for inter-provincial bus terminals across ASEAN.",
-  applicationName: SHOULD_ENABLE_PWA ? "IQueue" : undefined,
+  description: BRAND.description,
+  applicationName: SHOULD_ENABLE_PWA ? BRAND.name : undefined,
   appleWebApp: SHOULD_ENABLE_PWA
     ? {
         capable: true,
-        title: "IQueue",
+        title: BRAND.name,
         statusBarStyle: "default",
       }
     : undefined,
@@ -28,14 +29,14 @@ export const metadata: Metadata = {
   icons: SHOULD_ENABLE_PWA
     ? {
         icon: [
-          { url: "/logo.svg", type: "image/svg+xml" },
-          { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
-          { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+          { url: "/tripsync-mark.png", sizes: "512x512", type: "image/png" },
+          { url: "/icons/tripsync-icon-192.png", sizes: "192x192", type: "image/png" },
+          { url: "/icons/tripsync-icon-512.png", sizes: "512x512", type: "image/png" },
         ],
-        shortcut: [{ url: "/logo.svg", type: "image/svg+xml" }],
+        shortcut: [{ url: "/tripsync-mark.png", sizes: "512x512", type: "image/png" }],
         apple: [
           {
-            url: "/icons/apple-touch-icon.png",
+            url: "/icons/tripsync-apple-touch-icon.png",
             sizes: "180x180",
             type: "image/png",
           },

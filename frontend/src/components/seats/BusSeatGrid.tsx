@@ -13,6 +13,12 @@ interface BusSeatGridProps {
   groupId?: string;
   readOnly?: boolean;
   needsAccessibility?: boolean;
+  groupAssignments?: Array<{
+    member_index: number;
+    member_name: string;
+    seat_label: string;
+    is_accessibility: boolean;
+  }>;
 }
 
 export function BusSeatGrid({
@@ -23,7 +29,12 @@ export function BusSeatGrid({
   groupId,
   readOnly = false,
   needsAccessibility = false,
+  groupAssignments = [],
 }: BusSeatGridProps) {
+  const assignmentsBySeat = useMemo(
+    () => new Map(groupAssignments.map((assignment) => [assignment.seat_label, assignment])),
+    [groupAssignments]
+  );
   // Group seats by row
   const rows = useMemo(() => {
     if (seats.length === 0) return [];
@@ -50,6 +61,7 @@ export function BusSeatGrid({
       if (groupId && seat.group_id === groupId) return "group_reserved";
       return "occupied";
     }
+    if (assignmentsBySeat.has(seat.seat_label)) return "group_reserved";
     if (seat.seat_id === selectedSeatId) return "selected";
     if (seat.seat_id === autoAssignedSeatId) return "auto_assigned";
     if (seat.is_accessibility) return "accessibility";
@@ -123,6 +135,7 @@ export function BusSeatGrid({
                         state={getCellState(seat)}
                         onClick={readOnly ? undefined : onSeatSelect}
                         disabled={needsAccessibility && !seat.is_accessibility}
+                        groupAssignment={assignmentsBySeat.get(seat.seat_label)}
                       />
                     ))}
                 </div>
@@ -139,6 +152,7 @@ export function BusSeatGrid({
                         state={getCellState(seat)}
                         onClick={readOnly ? undefined : onSeatSelect}
                         disabled={needsAccessibility && !seat.is_accessibility}
+                        groupAssignment={assignmentsBySeat.get(seat.seat_label)}
                       />
                     ))}
                 </div>

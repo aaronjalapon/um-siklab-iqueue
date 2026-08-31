@@ -16,6 +16,11 @@ interface SeatCellProps {
   onClick?: (seat: SeatMapEntry) => void;
   size?: "sm" | "md";
   disabled?: boolean;
+  groupAssignment?: {
+    member_index: number;
+    member_name: string;
+    is_accessibility: boolean;
+  };
 }
 
 const STATE_STYLES: Record<SeatCellState, string> = {
@@ -48,8 +53,10 @@ export function SeatCell({
   onClick,
   size = "md",
   disabled = false,
+  groupAssignment,
 }: SeatCellProps) {
   const isInteractive =
+    Boolean(onClick) &&
     !disabled &&
     (state === "available" ||
       state === "auto_assigned" ||
@@ -57,7 +64,11 @@ export function SeatCell({
 
   const baseClasses =
     "rounded font-medium transition-all duration-200 flex items-center justify-center relative border";
-  const stateClasses = STATE_STYLES[state] || STATE_STYLES.available;
+  const stateClasses = groupAssignment
+    ? groupAssignment.is_accessibility
+      ? "bg-amber-300 border-amber-600 text-amber-950 ring-2 ring-amber-500"
+      : "bg-violet-200 border-violet-500 text-violet-900 ring-2 ring-violet-300"
+    : STATE_STYLES[state] || STATE_STYLES.available;
   const sizeClasses = SIZE_CLASSES[size];
   const Icon = STATE_ICONS[state];
 
@@ -78,11 +89,15 @@ export function SeatCell({
       onClick={isInteractive ? handleClick : undefined}
       disabled={Component === "button" ? !isInteractive : undefined}
       aria-disabled={!isInteractive || undefined}
-      title={`Seat ${seat.seat_label} · ${seat.seat_type} · ${seat.side}${seat.is_accessibility ? " · accessibility-priority" : ""}${state === "auto_assigned" ? " (AI Recommended)" : ""}${disabled ? " · unavailable for accessibility request" : ""}`}
-      aria-label={`Seat ${seat.seat_label}, ${state.replace("_", " ")}${seat.is_accessibility ? ", accessibility priority" : ""}${disabled ? ", unavailable for accessibility request" : ""}`}
+      title={`Seat ${seat.seat_label} · ${seat.seat_type} · ${seat.side}${seat.is_accessibility ? " · accessibility-priority" : ""}${groupAssignment ? ` · assigned to ${groupAssignment.member_name}` : ""}${state === "auto_assigned" ? " (AI Recommended)" : ""}${disabled ? " · unavailable for accessibility request" : ""}`}
+      aria-label={`Seat ${seat.seat_label}, ${groupAssignment ? `family assignment ${groupAssignment.member_index + 1}, ${groupAssignment.member_name}` : state.replace("_", " ")}${seat.is_accessibility ? ", accessibility priority" : ""}${disabled ? ", unavailable for accessibility request" : ""}`}
     >
       {seat.seat_label}
-      {Icon && (
+      {groupAssignment ? (
+        <span className="absolute -right-1.5 -top-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-slate-950 px-1 text-[9px] font-extrabold text-white shadow-sm" aria-hidden>
+          {groupAssignment.member_index + 1}
+        </span>
+      ) : Icon && (
         <span
           className="absolute -right-1 -top-1 inline-flex h-3.5 w-3.5 items-center justify-center rounded-full bg-white/90 text-[8px] leading-none shadow-sm"
           aria-hidden

@@ -8,11 +8,42 @@ from datetime import datetime, timedelta, timezone
 import pytest
 
 from app.core.security import (
+    create_group_qr_token,
     create_qr_token,
     generate_secret_key,
     validate_qr_timing,
     verify_qr_token,
 )
+
+
+def test_versioned_group_token_has_no_names_and_preserves_legacy_support() -> None:
+    secret = "group-secret"
+    token = create_group_qr_token(
+        group_id="group-1",
+        route_id="route-1",
+        bus_id="bus-1",
+        members=[
+            {"booking_id": "booking-1", "passenger_id": "passenger-1", "seat": "1A"},
+            {"booking_id": "booking-2", "passenger_id": "passenger-2", "seat": "1B"},
+        ],
+        boarding_window_start=datetime.now(timezone.utc).isoformat(),
+        boarding_window_end=datetime.now(timezone.utc).isoformat(),
+        secret=secret,
+    )
+    assert "Maria" not in token
+    valid, payload = verify_qr_token(token, secret)
+    assert valid is True
+    assert payload is not None
+    assert payload["pass_type"] == "group"
+    assert payload["members"][0]["seat"] == "1A"
+
+    tampered = token[:-1] + ("A" if token[-1] != "A" else "B")
+    assert verify_qr_token(tampered, secret) == (False, None)
+
+    legacy = create_qr_token("p", "r", "b", "4A", datetime.now(timezone.utc).isoformat(), secret)
+    legacy_valid, legacy_payload = verify_qr_token(legacy, secret)
+    assert legacy_valid is True
+    assert legacy_payload is not None and legacy_payload["seat"] == "4A"
 from app.services.qr_service.qr import QRService
 
 

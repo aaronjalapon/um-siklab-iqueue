@@ -2,6 +2,7 @@
 
 import { QRCodeSVG } from "qrcode.react";
 import { CheckCircle, Clock, MapPin, Ticket, WifiOff } from "lucide-react";
+import { BRAND } from "@/lib/brand";
 import { glassStyles } from "@/lib/design-system";
 import type { BookingDetail } from "@/lib/types";
 import { formatBoardingWindow, formatDate, statusColorClass } from "@/lib/utils";
@@ -31,7 +32,7 @@ export default function BoardingPassCard({
           <CheckCircle className="h-6 w-6 text-green-600" aria-hidden />
           <div>
             <h2 className="font-semibold text-foreground">
-              IQueue Boarding Pass
+              {BRAND.name} Boarding Pass
             </h2>
             <p className="text-xs text-slate-500">ID {booking.id.slice(0, 8)}</p>
           </div>
@@ -102,7 +103,7 @@ export default function BoardingPassCard({
         <div className="flex flex-col items-center justify-center rounded-2xl bg-white p-4 text-center shadow-sm">
           <QRCodeSVG value={getQrValue(booking)} size={200} level="M" />
           <p className="mt-3 text-xs font-medium text-slate-500">
-            Offline-scannable QR pass
+            Saved pass access works offline; gate verification requires a connection.
           </p>
         </div>
       </div>

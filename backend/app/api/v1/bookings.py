@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
@@ -14,13 +14,322 @@ from app.core.deps import get_db
 from app.models.booking import Booking, BookingStatus
 from app.models.bus import Bus
 from app.models.passenger import Passenger
-from app.schemas.booking import BookingCreate, BookingDetailResponse, BookingResponse
-from app.services.seat_assignment.date_aware import assign_for_travel_date
+from app.models.seat import Seat, SeatStatus
+from app.schemas.booking import (
+    BookingCreate,
+    BookingDetailResponse,
+    BookingResponse,
+    GroupBookingCreate,
+    GroupBookingMemberResponse,
+    GroupBookingPreviewResponse,
+    GroupBookingRequest,
+    GroupBookingResponse,
+    GroupSeatAssignment,
+)
+from app.services.seat_assignment.date_aware import (
+    _bookings_for_service_day,
+    _load_bus_and_seats,
+    assign_for_travel_date,
+)
 from app.services.seat_assignment.engine import SeatUnavailableError
+from app.services.seat_assignment.group import (
+    GroupAllocation,
+    allocate_group_seats,
+    synchronized_boarding_window,
+)
 from app.services.seat_assignment.scorer import PassengerContext
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+
+def _validate_group_people(payload: GroupBookingRequest) -> None:
+    normalized_names = [member.name.strip().casefold() for member in payload.members]
+    normalized_phones = [member.phone.strip() for member in payload.members]
+    if len(set(normalized_names)) != len(normalized_names):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Each family member must have a unique name",
+        )
+    if len(set(normalized_phones)) != len(normalized_phones):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Each family member must have a unique phone number",
+        )
+
+
+async def _group_preview(
+    payload: GroupBookingRequest,
+    db: AsyncSession,
+    *,
+    lock: bool = False,
+):
+    """Load current service-day availability and produce one stable cluster."""
+    _validate_group_people(payload)
+    bus_result = await db.execute(
+        select(Bus)
+        .options(selectinload(Bus.route), selectinload(Bus.layout))
+        .where(Bus.id == payload.bus_id)
+    )
+    bus = bus_result.scalars().first()
+    if bus is None:
+        raise HTTPException(status_code=404, detail=f"Bus {payload.bus_id} not found")
+    if bus.tenant_id != payload.tenant_id:
+        raise HTTPException(
+            status_code=403,
+            detail="Family and bus belong to different tenants",
+        )
+
+    _, seats = await _load_bus_and_seats(db, payload.bus_id)
+    if lock:
+        locked = await db.execute(
+            select(Seat)
+            .where(Seat.bus_id == payload.bus_id)
+            .order_by(Seat.row_number, Seat.col_number)
+            .with_for_update()
+        )
+        seats = list(locked.scalars().all())
+    bookings = await _bookings_for_service_day(
+        db, payload.bus_id, payload.departure_date
+    )
+    occupied = {booking.seat_number for booking in bookings}
+    available = [
+        seat
+        for seat in seats
+        if seat.status != SeatStatus.BLOCKED and seat.seat_label not in occupied
+    ]
+    try:
+        allocations = allocate_group_seats(payload.members, available)
+    except SeatUnavailableError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    window_start, window_end = synchronized_boarding_window(
+        payload.departure_date, allocations
+    )
+    return bus, allocations, window_start, window_end
+
+
+def _preview_response(
+    payload: GroupBookingRequest,
+    allocations: list[GroupAllocation],
+    window_start,
+    window_end,
+) -> GroupBookingPreviewResponse:
+    return GroupBookingPreviewResponse(
+        assignments=[
+            GroupSeatAssignment(
+                member_index=allocation.member_index,
+                member_name=payload.members[allocation.member_index].name,
+                seat_id=allocation.seat.id,
+                seat_label=allocation.seat.seat_label,
+                row_number=allocation.seat.row_number,
+                col_number=allocation.seat.col_number,
+                is_accessibility=allocation.seat.is_accessibility,
+                reasons=list(allocation.reasons),
+            )
+            for allocation in allocations
+        ],
+        accessibility_passenger_count=sum(
+            member.accessibility_needs for member in payload.members
+        ),
+        boarding_window_start=window_start,
+        boarding_window_end=window_end,
+        affinity_opt_in=payload.preferences.affinity_opt_in,
+    )
+
+
+@router.post(
+    "/groups/preview",
+    response_model=GroupBookingPreviewResponse,
+    summary="Preview an accessibility-first family seat cluster",
+)
+async def preview_group_booking(
+    payload: GroupBookingRequest,
+    db: AsyncSession = Depends(get_db),
+) -> GroupBookingPreviewResponse:
+    """Recommend seats without storing passengers, names, or phone numbers."""
+    _, allocations, window_start, window_end = await _group_preview(payload, db)
+    return _preview_response(payload, allocations, window_start, window_end)
+
+
+@router.post(
+    "/groups",
+    response_model=GroupBookingResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Atomically confirm a family booking and combined pass",
+)
+async def create_group_booking(
+    payload: GroupBookingCreate,
+    db: AsyncSession = Depends(get_db),
+) -> GroupBookingResponse:
+    """Upsert all passengers and create every booking, or create none."""
+    from app.core.config import get_settings
+    from app.core.security import create_group_qr_token
+
+    bus, allocations, window_start, window_end = await _group_preview(
+        payload, db, lock=True
+    )
+    expected = {
+        allocation.member_index: allocation.seat.seat_label
+        for allocation in allocations
+    }
+    submitted = {
+        assignment.member_index: assignment.seat_label
+        for assignment in payload.seat_assignments
+    }
+    if (
+        len(submitted) != len(payload.members)
+        or submitted != expected
+        or len(payload.seat_assignments) != len(payload.members)
+    ):
+        raise HTTPException(
+            status_code=409,
+            detail="The family seat recommendation changed; regenerate before confirming",
+        )
+
+    group_id = uuid4()
+    passengers: list[Passenger] = []
+    bookings: list[Booking] = []
+
+    # The request-scoped session commits only after this endpoint succeeds. Any
+    # validation or persistence error rolls back every passenger and booking.
+    for member in payload.members:
+        existing = await db.scalar(
+            select(Passenger).where(
+                Passenger.tenant_id == payload.tenant_id,
+                Passenger.phone == member.phone.strip(),
+            )
+        )
+        if existing is None:
+            existing = Passenger(
+                tenant_id=payload.tenant_id,
+                name=member.name.strip(),
+                phone=member.phone.strip(),
+                language_pref=payload.preferences.language_preference,
+                travel_habits=payload.preferences.travel_habit,
+                lifestyle_interests=payload.preferences.lifestyle_interest,
+                accessibility_needs=member.accessibility_needs,
+            )
+            db.add(existing)
+        else:
+            existing.name = member.name.strip()
+            existing.language_pref = payload.preferences.language_preference
+            existing.travel_habits = payload.preferences.travel_habit
+            existing.lifestyle_interests = payload.preferences.lifestyle_interest
+            existing.accessibility_needs = member.accessibility_needs
+        passengers.append(existing)
+    await db.flush()
+
+    for allocation, passenger in zip(allocations, passengers, strict=True):
+        booking = Booking(
+            group_id=group_id,
+            passenger_id=passenger.id,
+            bus_id=payload.bus_id,
+            seat_number=allocation.seat.seat_label,
+            boarding_window_start=window_start,
+            boarding_window_end=window_end,
+            status=BookingStatus.CONFIRMED,
+            departure_date=payload.departure_date,
+        )
+        db.add(booking)
+        bookings.append(booking)
+    await db.flush()
+
+    token = create_group_qr_token(
+        group_id=str(group_id),
+        route_id=str(bus.route_id),
+        bus_id=str(bus.id),
+        members=[
+            {
+                "booking_id": str(booking.id),
+                "passenger_id": str(booking.passenger_id),
+                "seat": booking.seat_number,
+            }
+            for booking in bookings
+        ],
+        boarding_window_start=window_start.isoformat(),
+        boarding_window_end=window_end.isoformat(),
+        secret=get_settings().QR_HMAC_SECRET,
+    )
+    for booking in bookings:
+        booking.qr_token = token
+    await db.flush()
+
+    return GroupBookingResponse(
+        group_id=group_id,
+        bus_id=bus.id,
+        route_id=bus.route_id,
+        route_origin=bus.route.origin,
+        route_destination=bus.route.destination,
+        departure_date=payload.departure_date,
+        boarding_window_start=window_start,
+        boarding_window_end=window_end,
+        qr_token=token,
+        members=[
+            GroupBookingMemberResponse(
+                booking_id=booking.id,
+                passenger_id=passenger.id,
+                name=passenger.name,
+                seat_label=booking.seat_number,
+                accessibility_needs=passenger.accessibility_needs,
+                status=booking.status.value,
+                reasons=list(allocation.reasons),
+            )
+            for booking, passenger, allocation in zip(
+                bookings, passengers, allocations, strict=True
+            )
+        ],
+    )
+
+
+@router.get(
+    "/groups/{group_id}",
+    response_model=GroupBookingResponse,
+    summary="Recover a confirmed combined family pass",
+)
+async def get_group_booking(
+    group_id: UUID,
+    db: AsyncSession = Depends(get_db),
+) -> GroupBookingResponse:
+    result = await db.execute(
+        select(Booking)
+        .options(
+            selectinload(Booking.passenger),
+            selectinload(Booking.bus).selectinload(Bus.route),
+        )
+        .where(Booking.group_id == group_id)
+        .order_by(Booking.created_at, Booking.id)
+    )
+    bookings = list(result.scalars().all())
+    if not bookings:
+        raise HTTPException(status_code=404, detail=f"Group {group_id} not found")
+    first = bookings[0]
+    return GroupBookingResponse(
+        group_id=group_id,
+        bus_id=first.bus_id,
+        route_id=first.bus.route_id,
+        route_origin=first.bus.route.origin,
+        route_destination=first.bus.route.destination,
+        departure_date=first.departure_date,
+        boarding_window_start=first.boarding_window_start,
+        boarding_window_end=first.boarding_window_end,
+        qr_token=first.qr_token or "",
+        members=[
+            GroupBookingMemberResponse(
+                booking_id=booking.id,
+                passenger_id=booking.passenger_id,
+                name=booking.passenger.name,
+                seat_label=booking.seat_number,
+                accessibility_needs=booking.passenger.accessibility_needs,
+                status=booking.status.value,
+                reasons=(
+                    ["Accessible seat near the exit", "Accessibility requirement met"]
+                    if booking.passenger.accessibility_needs
+                    else ["Kept near family"]
+                ),
+            )
+            for booking in bookings
+        ],
+    )
 
 
 @router.post(
@@ -269,6 +578,7 @@ async def get_booking(
         "id": booking.id,
         "passenger_id": booking.passenger_id,
         "bus_id": booking.bus_id,
+        "group_id": booking.group_id,
         "seat_number": booking.seat_number,
         "boarding_window_start": booking.boarding_window_start,
         "boarding_window_end": booking.boarding_window_end,

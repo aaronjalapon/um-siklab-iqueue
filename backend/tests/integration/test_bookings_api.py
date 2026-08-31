@@ -171,3 +171,101 @@ async def test_create_booking_fully_booked_bus(
     # Actually, let's skip the full-bus test since creating 50 bookings is expensive
     # in integration test context. The unit test covers this case.
     pass  # Covered by unit test: test_raises_when_bus_full
+
+
+@pytest.mark.asyncio
+async def test_accessible_family_preview_confirm_recover_and_verify(
+    client: AsyncClient,
+    db_session,
+    tenant,
+    bus,
+):
+    """The BIDA family receives one atomic booking and one valid group pass."""
+    from app.services.seat_assignment.bus_layout import generate_seats_for_bus
+
+    await generate_seats_for_bus(bus, db_session)
+    departure = datetime.now(timezone.utc) - timedelta(minutes=5)
+    payload = {
+        "tenant_id": str(tenant.id),
+        "bus_id": str(bus.id),
+        "departure_date": departure.isoformat(),
+        "members": [
+            {"name": "Maria Santos", "phone": "+639171234567", "accessibility_needs": True},
+            {"name": "Ana Santos", "phone": "+639171234568", "accessibility_needs": False},
+            {"name": "Luis Santos", "phone": "+639171234569", "accessibility_needs": False},
+        ],
+        "preferences": {
+            "language_preference": "fil",
+            "travel_habit": "family",
+            "affinity_opt_in": False,
+        },
+    }
+    preview = await client.post("/api/v1/bookings/groups/preview", json=payload)
+    assert preview.status_code == 200, preview.text
+    assignments = preview.json()["assignments"]
+    assert [assignment["seat_label"] for assignment in assignments] == ["1A", "1B", "3A"]
+    assert preview.json()["accessibility_passenger_count"] == 1
+
+    confirmed = await client.post(
+        "/api/v1/bookings/groups",
+        json={
+            **payload,
+            "seat_assignments": [
+                {"member_index": assignment["member_index"], "seat_label": assignment["seat_label"]}
+                for assignment in assignments
+            ],
+        },
+    )
+    assert confirmed.status_code == 201, confirmed.text
+    data = confirmed.json()
+    assert len(data["members"]) == 3
+    assert len({member["booking_id"] for member in data["members"]}) == 3
+    assert len({data["boarding_window_start"], data["boarding_window_end"]}) == 2
+    assert "Maria Santos" not in data["qr_token"]
+
+    recovered = await client.get(f"/api/v1/bookings/groups/{data['group_id']}")
+    assert recovered.status_code == 200
+    assert recovered.json()["qr_token"] == data["qr_token"]
+
+    verified = await client.post(
+        "/api/v1/boarding/verify", json={"token": data["qr_token"]}
+    )
+    assert verified.status_code == 200
+    assert verified.json()["pass_type"] == "group"
+    assert verified.json()["valid"] is True
+    assert len(verified.json()["members"]) == 3
+
+
+@pytest.mark.asyncio
+async def test_group_confirmation_conflict_creates_no_partial_passengers(
+    client: AsyncClient,
+    db_session,
+    tenant,
+    bus,
+):
+    """A stale cluster returns 409 without creating any family member."""
+    from sqlalchemy import func, select
+
+    from app.models.passenger import Passenger
+    from app.services.seat_assignment.bus_layout import generate_seats_for_bus
+
+    await generate_seats_for_bus(bus, db_session)
+    before = await db_session.scalar(select(func.count()).select_from(Passenger))
+    payload = {
+        "tenant_id": str(tenant.id),
+        "bus_id": str(bus.id),
+        "departure_date": (datetime.now(timezone.utc) + timedelta(days=11)).isoformat(),
+        "members": [
+            {"name": "Family One", "phone": "+639180000001", "accessibility_needs": False},
+            {"name": "Family Two", "phone": "+639180000002", "accessibility_needs": False},
+        ],
+        "preferences": {"language_preference": "en", "travel_habit": "family", "affinity_opt_in": False},
+        "seat_assignments": [
+            {"member_index": 0, "seat_label": "99A"},
+            {"member_index": 1, "seat_label": "99B"},
+        ],
+    }
+    response = await client.post("/api/v1/bookings/groups", json=payload)
+    assert response.status_code == 409
+    after = await db_session.scalar(select(func.count()).select_from(Passenger))
+    assert after == before

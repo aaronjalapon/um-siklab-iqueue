@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageCircle, X, Send, Globe, Loader2 } from "lucide-react";
 import { createChatSession, sendChatMessage } from "@/lib/api";
+import { applyFrontendBrand, BRAND } from "@/lib/brand";
 import type { ChatbotResponse } from "@/lib/types";
 import { LANGUAGE_LABELS } from "@/lib/utils";
 
@@ -70,7 +71,7 @@ export default function ChatbotTeaser() {
           setMessages([
             {
               role: "bot",
-              content: res.greeting,
+              content: applyFrontendBrand(res.greeting),
               intent: "greeting",
             },
           ]);
@@ -81,7 +82,7 @@ export default function ChatbotTeaser() {
           setMessages([
             {
               role: "bot",
-              content: "Hi! I'm the IQueue assistant. How can I help you today?",
+              content: `Hi! I'm the ${BRAND.name} assistant. How can I help you today?`,
               intent: "greeting",
             },
           ]);
@@ -117,7 +118,7 @@ export default function ChatbotTeaser() {
         ...prev,
         {
           role: "bot",
-          content: response.response_text,
+          content: applyFrontendBrand(response.response_text),
           intent: response.intent,
           suggested_actions: response.suggested_actions,
           detected_language: response.detected_language,
@@ -148,7 +149,7 @@ export default function ChatbotTeaser() {
       setMessages([
         {
           role: "bot",
-          content: res.greeting,
+          content: applyFrontendBrand(res.greeting),
           intent: "greeting",
         },
       ]);
@@ -163,7 +164,7 @@ export default function ChatbotTeaser() {
       <motion.button
         id="chatbot-teaser-toggle"
         onClick={() => setIsOpen((v) => !v)}
-        aria-label="Open IQueue chatbot"
+        aria-label={`Open ${BRAND.name} chatbot`}
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 1.5, type: "spring", stiffness: 260, damping: 20 }}
@@ -201,7 +202,7 @@ export default function ChatbotTeaser() {
             {/* Header */}
             <div className="bg-gradient-to-r from-blue-700 to-blue-600 px-4 py-4 flex items-center justify-between flex-shrink-0">
               <div>
-                <p className="text-white font-bold text-sm">IQueue Assistant</p>
+                <p className="text-white font-bold text-sm">{BRAND.assistantName}</p>
                 <p className="text-blue-200 text-xs mt-0.5">Powered by AI · 4 ASEAN languages</p>
               </div>
               <div className="flex items-center gap-2">

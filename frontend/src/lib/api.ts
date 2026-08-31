@@ -12,6 +12,9 @@ import type {
   ForecastActionCreate,
   ForecastActionResponse,
   ForecastResponse,
+  GroupBookingPreview,
+  GroupBookingRequest,
+  GroupBookingResponse,
   EvidenceSummary,
   LearningLogSummary,
   OperationalOutcomeCreate,
@@ -25,7 +28,7 @@ import type {
 
 function getApiBaseUrl(): string {
   const configured =
-    process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+    process.env.NEXT_PUBLIC_API_URL || "/api/v1";
 
   if (typeof window === "undefined") {
     return configured;
@@ -111,6 +114,30 @@ export async function getBookingQR(bookingId: string): Promise<Blob> {
   const { data } = await api.get(`/bookings/${bookingId}/qr`, {
     responseType: "blob",
   });
+  return data;
+}
+
+export async function previewGroupBooking(
+  payload: GroupBookingRequest
+): Promise<GroupBookingPreview> {
+  const { data } = await api.post<GroupBookingPreview>(
+    "/bookings/groups/preview",
+    payload
+  );
+  return data;
+}
+
+export async function createGroupBooking(
+  payload: GroupBookingRequest & {
+    seat_assignments: Array<{ member_index: number; seat_label: string }>;
+  }
+): Promise<GroupBookingResponse> {
+  const { data } = await api.post<GroupBookingResponse>("/bookings/groups", payload);
+  return data;
+}
+
+export async function getGroupBooking(groupId: string): Promise<GroupBookingResponse> {
+  const { data } = await api.get<GroupBookingResponse>(`/bookings/groups/${groupId}`);
   return data;
 }
 

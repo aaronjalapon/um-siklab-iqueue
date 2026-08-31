@@ -4,11 +4,21 @@ import type { NextConfig } from "next";
 // stale anonymous-volume state there.
 const distDir =
 	process.env.DOCKER === "1" ? ".next-docker" : ".next";
+const apiProxyTarget =
+	process.env.API_PROXY_TARGET ?? "http://localhost:8000";
 
 const nextConfig: NextConfig = {
 	distDir,
 	turbopack: {
 		root: process.cwd(),
+	},
+	async rewrites() {
+		return [
+			{
+				source: "/api/v1/:path*",
+				destination: `${apiProxyTarget}/api/v1/:path*`,
+			},
+		];
 	},
 	async headers() {
 		return [

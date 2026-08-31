@@ -11,6 +11,7 @@ import {
   Marker,
   Sphere,
 } from "react-simple-maps";
+import { BRAND } from "@/lib/brand";
 
 interface City {
   id: string;
@@ -276,7 +277,7 @@ export default function CoveredCitiesSection() {
             </span>
           </h2>
           <p className="mt-4 text-slate-400 text-lg max-w-xl mx-auto">
-            IQueue is expanding across Southeast Asia — from Manila to Jakarta, Kuala Lumpur to Ho Chi Minh City.
+            {BRAND.name} is expanding across Southeast Asia — from Manila to Jakarta, Kuala Lumpur to Ho Chi Minh City.
           </p>
         </motion.div>
 

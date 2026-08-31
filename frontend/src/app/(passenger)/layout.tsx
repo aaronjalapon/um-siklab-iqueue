@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Home, ShoppingCart, Tag, Ticket, User, WifiOff } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
 import ChatbotPanel from "@/components/ChatbotPanel";
+import { BRAND } from "@/lib/brand";
 
 export default function PassengerLayout({
   children,
@@ -50,7 +51,7 @@ export default function PassengerLayout({
             href="/home"
             prefetch={false}
             className="inline-flex"
-            aria-label="IQueue passenger home"
+            aria-label={`${BRAND.name} passenger home`}
           >
             <BrandLogo textClassName="text-2xl font-bold tracking-tight text-slate-900 dark:text-white" />
           </Link>

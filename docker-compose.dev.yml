@@ -57,7 +57,8 @@ services:
       # Keep .next on a container-only volume so webpack doesn't watch its own output.
     environment:
       - DOCKER=1
-      - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+      - NEXT_PUBLIC_API_URL=/api/v1
+      - API_PROXY_TARGET=http://backend:8000
       # Opt in to the PWA runtime so the hero install button can be tested locally.
       - NEXT_PUBLIC_ENABLE_SW=true
       - WATCHPACK_POLLING=true  # for macOS file watching inside Docker

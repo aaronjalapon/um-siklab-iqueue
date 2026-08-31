@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
+import { BRAND } from "@/lib/brand";
 
 const navLinks = [
   { label: "Features", href: "#features" },
@@ -48,7 +49,7 @@ export default function LandingNavbar() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 md:h-20">
             {/* Logo */}
-            <Link href="/" className="group" aria-label="IQueue home">
+            <Link href="/" className="group" aria-label={`${BRAND.name} home`}>
               <BrandLogo
                 className="transition-transform group-hover:scale-105"
                 textClassName="text-xl font-bold text-white tracking-tight"

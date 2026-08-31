@@ -4,6 +4,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Code2, X as XIcon } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
+import { BRAND } from "@/lib/brand";
 
 const footerLinks = [
   {
@@ -49,10 +50,12 @@ export default function LandingFooter() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-14">
           {/* Brand col */}
           <div className="col-span-2 md:col-span-1">
-            <Link href="/" className="mb-4 inline-flex group" aria-label="IQueue home">
+            <Link href="/" className="mb-4 inline-flex group" aria-label={`${BRAND.name} home`}>
               <BrandLogo
+                showTagline
                 className="transition-transform group-hover:scale-105"
                 textClassName="text-xl font-bold text-white tracking-tight"
+                taglineClassName="text-[0.6rem] font-semibold tracking-wide text-slate-400"
               />
             </Link>
             <p className="text-slate-400 text-sm leading-relaxed max-w-[200px]">

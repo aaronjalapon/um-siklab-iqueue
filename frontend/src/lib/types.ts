@@ -61,6 +61,7 @@ export interface BookingResponse {
   id: string;
   passenger_id: string;
   bus_id: string;
+  group_id?: string | null;
   seat_number: string;
   boarding_window_start: string;
   boarding_window_end: string;
@@ -168,6 +169,78 @@ export interface BoardingVerifyResponse {
   bus_id: string | null;
   seat: string | null;
   boarding_window: string | null;
+  pass_type: "individual" | "group";
+  group_id: string | null;
+  members: Array<{
+    booking_id: string;
+    passenger_id: string;
+    seat: string;
+    status: string;
+    requires_review: boolean;
+  }>;
+}
+
+export interface GroupMemberRequest {
+  name: string;
+  phone: string;
+  accessibility_needs: boolean;
+}
+
+export interface GroupSharedPreferences {
+  language_preference: string;
+  travel_habit: string;
+  lifestyle_interest?: string;
+  seat_preference?: string;
+  preferred_side?: string;
+  affinity_opt_in: boolean;
+}
+
+export interface GroupBookingRequest {
+  tenant_id: string;
+  bus_id: string;
+  departure_date: string;
+  members: GroupMemberRequest[];
+  preferences: GroupSharedPreferences;
+}
+
+export interface GroupSeatAssignment {
+  member_index: number;
+  member_name: string;
+  seat_id: string;
+  seat_label: string;
+  row_number: number;
+  col_number: number;
+  is_accessibility: boolean;
+  reasons: string[];
+}
+
+export interface GroupBookingPreview {
+  assignments: GroupSeatAssignment[];
+  accessibility_passenger_count: number;
+  boarding_window_start: string;
+  boarding_window_end: string;
+  affinity_opt_in: boolean;
+}
+
+export interface GroupBookingResponse {
+  group_id: string;
+  bus_id: string;
+  route_id: string;
+  route_origin: string;
+  route_destination: string;
+  departure_date: string;
+  boarding_window_start: string;
+  boarding_window_end: string;
+  qr_token: string;
+  members: Array<{
+    booking_id: string;
+    passenger_id: string;
+    name: string;
+    seat_label: string;
+    accessibility_needs: boolean;
+    status: string;
+    reasons: string[];
+  }>;
 }
 
 export interface EvidenceSummary {

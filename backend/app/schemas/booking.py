@@ -84,6 +84,7 @@ class BookingResponse(BaseModel):
     id: UUID
     passenger_id: UUID
     bus_id: UUID
+    group_id: UUID | None = None
     seat_number: str
     boarding_window_start: datetime
     boarding_window_end: datetime
@@ -102,3 +103,97 @@ class BookingDetailResponse(BookingResponse):
     passenger_name: str | None = None
     route_origin: str | None = None
     route_destination: str | None = None
+
+
+class GroupMemberRequest(BaseModel):
+    """A passenger included in an atomic family booking."""
+
+    name: str = Field(..., min_length=1, max_length=255)
+    phone: str = Field(..., min_length=5, max_length=20)
+    accessibility_needs: bool = False
+
+
+class GroupSharedPreferences(BaseModel):
+    """Trip preferences inherited by every member of the family."""
+
+    language_preference: str = Field("en", min_length=2, max_length=10)
+    travel_habit: str = Field("family", max_length=50)
+    lifestyle_interest: str | None = Field(None, max_length=255)
+    seat_preference: str | None = Field(None, pattern="^(window|aisle)$")
+    preferred_side: str | None = Field(None, pattern="^(left|right)$")
+    affinity_opt_in: bool = False
+
+
+class GroupSeatSelection(BaseModel):
+    """A previewed seat submitted for atomic confirmation."""
+
+    member_index: int = Field(..., ge=0, le=5)
+    seat_label: str = Field(..., min_length=1, max_length=10)
+
+
+class GroupBookingRequest(BaseModel):
+    """Shared request fields for family previews and confirmations."""
+
+    tenant_id: UUID
+    bus_id: UUID
+    departure_date: datetime
+    members: list[GroupMemberRequest] = Field(..., min_length=2, max_length=6)
+    preferences: GroupSharedPreferences = Field(default_factory=GroupSharedPreferences)
+
+
+class GroupBookingCreate(GroupBookingRequest):
+    """Atomic confirmation of the exact server-generated recommendation."""
+
+    seat_assignments: list[GroupSeatSelection] = Field(
+        ..., min_length=2, max_length=6
+    )
+
+
+class GroupSeatAssignment(BaseModel):
+    """One member's deterministic seat recommendation."""
+
+    member_index: int
+    member_name: str
+    seat_id: UUID
+    seat_label: str
+    row_number: int
+    col_number: int
+    is_accessibility: bool
+    reasons: list[str]
+
+
+class GroupBookingPreviewResponse(BaseModel):
+    """Non-persistent family cluster recommendation."""
+
+    assignments: list[GroupSeatAssignment]
+    accessibility_passenger_count: int
+    boarding_window_start: datetime
+    boarding_window_end: datetime
+    affinity_opt_in: bool
+
+
+class GroupBookingMemberResponse(BaseModel):
+    """One individual record represented by a combined group pass."""
+
+    booking_id: UUID
+    passenger_id: UUID
+    name: str
+    seat_label: str
+    accessibility_needs: bool
+    status: str
+    reasons: list[str] = Field(default_factory=list)
+
+
+class GroupBookingResponse(BaseModel):
+    """Confirmation and recovery payload for a combined family pass."""
+
+    group_id: UUID
+    bus_id: UUID
+    route_id: UUID
+    route_origin: str
+    route_destination: str
+    departure_date: datetime
+    boarding_window_start: datetime
+    boarding_window_end: datetime
+    qr_token: str
+    members: list[GroupBookingMemberResponse]

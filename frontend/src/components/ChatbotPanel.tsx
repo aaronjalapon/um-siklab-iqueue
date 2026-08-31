@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { sendChatMessage, createChatSession } from "@/lib/api";
+import { applyFrontendBrand, BRAND } from "@/lib/brand";
 import type { ChatbotResponse } from "@/lib/types";
 import { LANGUAGE_LABELS } from "@/lib/utils";
 import { MessageCircle, Send, X, AlertTriangle } from "lucide-react";
@@ -24,28 +25,28 @@ const UI_STRINGS: Record<
   { title: string; subtitle: string; placeholder: string; thinking: string; error: string }
 > = {
   en: {
-    title: "IQueue Assistant",
+    title: BRAND.assistantName,
     subtitle: "AI-powered · 4 languages",
     placeholder: "Type your question...",
     thinking: "Thinking...",
     error: "Sorry, I'm having trouble connecting. Please try again later.",
   },
   fil: {
-    title: "IQueue Assistant",
+    title: BRAND.assistantName,
     subtitle: "AI-powered · 4 na wika",
     placeholder: "I-type ang iyong tanong...",
     thinking: "Nag-iisip...",
     error: "Paumanhin, may problema sa koneksyon. Pakisubukan muli.",
   },
   id: {
-    title: "Asisten IQueue",
+    title: `Asisten ${BRAND.name}`,
     subtitle: "Chatbot AI · 4 bahasa",
     placeholder: "Ketik pertanyaan Anda...",
     thinking: "Berpikir...",
     error: "Maaf, saya mengalami masalah koneksi. Silakan coba lagi nanti.",
   },
   vi: {
-    title: "Trợ lý IQueue",
+    title: `Trợ lý ${BRAND.name}`,
     subtitle: "Chatbot AI · 4 ngôn ngữ",
     placeholder: "Nhập câu hỏi của bạn...",
     thinking: "Đang suy nghĩ...",
@@ -120,7 +121,7 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
         .then((res) => {
           setSessionId(res.session_id);
           setMessages([
-            { role: "bot", text: res.greeting, intent: "greeting" },
+            { role: "bot", text: applyFrontendBrand(res.greeting), intent: "greeting" },
           ]);
           scrollToBottom();
         })
@@ -128,7 +129,7 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
           setMessages([
             {
               role: "bot",
-              text: "Hi! I'm the IQueue assistant. How can I help?",
+              text: `Hi! I'm the ${BRAND.name} assistant. How can I help?`,
               intent: "greeting",
             },
           ]);
@@ -164,7 +165,7 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
         ...prev,
         {
           role: "bot",
-          text: response.response_text,
+          text: applyFrontendBrand(response.response_text),
           language: response.detected_language,
           languageConfidence: response.language_confidence,
           intent: response.intent,
@@ -198,7 +199,7 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
       const res = await createChatSession(code);
       setSessionId(res.session_id);
       setMessages([
-        { role: "bot", text: res.greeting, intent: "greeting" },
+        { role: "bot", text: applyFrontendBrand(res.greeting), intent: "greeting" },
       ]);
     } catch {
       // Keep existing state
@@ -216,7 +217,7 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
         className="fixed bottom-24 right-4 rounded-full bg-blue-700 p-3 text-white shadow-lg
                    md:bottom-6 md:right-6
                    hover:bg-blue-800 transition z-50"
-        aria-label={isOpen ? "Close IQueue Assistant" : "Chat with IQueue Assistant"}
+        aria-label={isOpen ? `Close ${BRAND.assistantName}` : `Chat with ${BRAND.assistantName}`}
         aria-expanded={isOpen}
         aria-controls="iqueue-chatbot-panel"
       >

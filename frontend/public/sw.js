@@ -15,11 +15,12 @@ const PRECACHE_URLS = [
   "/tickets",
   "/offline",
   "/manifest.webmanifest",
-  "/icons/icon-192.png",
-  "/icons/icon-512.png",
-  "/icons/maskable-192.png",
-  "/icons/maskable-512.png",
-  "/icons/apple-touch-icon.png",
+  "/tripsync-mark.png",
+  "/icons/tripsync-icon-192.png",
+  "/icons/tripsync-icon-512.png",
+  "/icons/tripsync-maskable-192.png",
+  "/icons/tripsync-maskable-512.png",
+  "/icons/tripsync-apple-touch-icon.png",
 ];
 
 self.addEventListener("install", (event) => {

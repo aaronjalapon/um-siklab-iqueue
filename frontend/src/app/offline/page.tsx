@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Home, Ticket, WifiOff } from "lucide-react";
+import { BRAND } from "@/lib/brand";
 import { glassStyles } from "@/lib/design-system";
 
 export const metadata: Metadata = {
   title: "Offline",
-  description: "Offline fallback for IQueue.",
+  description: `Offline fallback for ${BRAND.name}.`,
 };
 
 export default function OfflinePage() {

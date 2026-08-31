@@ -8,6 +8,7 @@ import {
   QrCode,
   type LucideIcon,
 } from "lucide-react";
+import { BRAND } from "@/lib/brand";
 
 type Feature = {
   icon: LucideIcon;
@@ -109,7 +110,7 @@ export default function FeaturesSection() {
             </span>
           </h2>
           <p className="mt-4 text-slate-400 text-lg max-w-2xl mx-auto">
-            IQueue integrates AI forecasting, intelligent seating, verified boarding, and multilingual support into a single cohesive experience.
+            {BRAND.name} integrates AI forecasting, intelligent seating, verified boarding, and multilingual support into a single cohesive experience.
           </p>
         </motion.div>
 

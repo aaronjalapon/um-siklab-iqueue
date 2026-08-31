@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BarChart3, BrainCircuit, Bus, FileCheck2, Home, QrCode, Users } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
+import { BRAND } from "@/lib/brand";
 import { glassStyles } from "@/lib/design-system";
 
 const NAV_ITEMS = [
@@ -33,10 +34,10 @@ export function OperatorShell({ children }: { children: React.ReactNode }) {
           <Link
             href="/operator"
             className="inline-flex"
-            aria-label="IQueue Ops — Operator Dashboard"
+            aria-label={`${BRAND.operatorName} — Operator Dashboard`}
           >
             <BrandLogo
-              label="IQueue Ops"
+              label={BRAND.operatorName}
               textClassName="text-2xl font-bold tracking-tight text-slate-900 dark:text-white"
             />
           </Link>

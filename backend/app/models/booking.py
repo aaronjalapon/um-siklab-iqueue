@@ -42,6 +42,12 @@ class Booking(Base):
         nullable=False,
         index=True,
     )
+    group_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        nullable=True,
+        index=True,
+        comment="Shared identifier for an atomic family booking",
+    )
 
     seat_number: Mapped[str] = mapped_column(
         String(10), nullable=False, comment="e.g. '12A', '3B'"

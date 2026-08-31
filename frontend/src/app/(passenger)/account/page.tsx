@@ -78,7 +78,7 @@ export default function AccountPage() {
                 Demo Passenger
               </h2>
               <p className="text-sm text-slate-500 dark:text-slate-400">
-                passenger.demo@iqueue.local
+                passenger.demo@tripsync.local
               </p>
             </div>
           </div>

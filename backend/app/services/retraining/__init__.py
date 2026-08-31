@@ -17,7 +17,6 @@ import asyncio
 import json
 import logging
 import shutil
-import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -164,6 +163,7 @@ async def run_retraining_job(
         "--epochs", str(epochs),
         "--artifacts", str(candidate_dir),
     ]
+    stdout_text = ""
     try:
         proc = await asyncio.create_subprocess_exec(
             *train_cmd,
@@ -172,13 +172,23 @@ async def run_retraining_job(
             cwd=str(project_root),
         )
         stdout, _ = await proc.communicate()
+        stdout_text = stdout.decode(errors="replace")
         if proc.returncode != 0:
-            raise subprocess.CalledProcessError(proc.returncode, train_cmd, stdout)
-        _update(training_output=stdout.decode(errors="replace")[-2000:])
+            output_tail = "\n".join(stdout_text.strip().splitlines()[-40:])
+            error_message = f"Training command failed with exit code {proc.returncode}."
+            if output_tail:
+                error_message = f"{error_message}\n\n{output_tail}"
+            raise RuntimeError(error_message)
+        _update(training_output=stdout_text[-2000:])
     except Exception as exc:
+        output_tail = "\n".join(stdout_text.strip().splitlines()[-40:])
+        error_message = str(exc)
+        if output_tail and output_tail not in error_message:
+            error_message = f"{error_message}\n\n{output_tail}"
         _update(
             status="failed",
-            error=str(exc),
+            error=error_message,
+            training_output=output_tail or None,
             finished_at=datetime.now(timezone.utc).isoformat(),
         )
         return

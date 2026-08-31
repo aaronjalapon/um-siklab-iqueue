@@ -1,4 +1,4 @@
-const CACHE_VERSION = "iqueue-pwa-v2";
+const CACHE_VERSION = "iqueue-pwa-v3";
 const PRECACHE = `${CACHE_VERSION}-precache`;
 const PAGES = `${CACHE_VERSION}-pages`;
 const ASSETS = `${CACHE_VERSION}-assets`;
@@ -15,11 +15,12 @@ const PRECACHE_URLS = [
   "/tickets",
   "/offline",
   "/manifest.webmanifest",
-  "/icons/icon-192.png",
-  "/icons/icon-512.png",
-  "/icons/maskable-192.png",
-  "/icons/maskable-512.png",
-  "/icons/apple-touch-icon.png",
+  "/tripsync-mark.png",
+  "/icons/tripsync-icon-192.png",
+  "/icons/tripsync-icon-512.png",
+  "/icons/tripsync-maskable-192.png",
+  "/icons/tripsync-maskable-512.png",
+  "/icons/tripsync-apple-touch-icon.png",
 ];
 
 self.addEventListener("install", (event) => {
@@ -95,14 +96,15 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   if (SHOULD_DISABLE_LOCAL_PWA) return;
 
+  // In local development we keep the service worker registered for install/PWA
+  // testing, but we do not proxy fetches. Next.js dev rebuilds can briefly
+  // invalidate requests and noisy fetch interception makes the console look
+  // worse than the app actually is.
+  if (IS_LOCAL_DEV_HOST) return;
+
   const { request } = event;
 
   if (request.method !== "GET") return;
-
-  if (IS_LOCAL_DEV_HOST) {
-    event.respondWith(fetch(request));
-    return;
-  }
 
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;

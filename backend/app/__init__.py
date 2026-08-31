@@ -1,1 +1,0 @@
-"""IQueue backend application."""

@@ -54,10 +54,14 @@ RESPONSES: dict[str, dict[str, dict[str, str]]] = {
         "not_found": {
             "en": "I couldn't find a booking with that information. Please double-check and try again, or type 'cancel' to stop.",
             "fil": "Hindi ko mahanap ang booking. Pakitingnan muli at subukan ulit, o i-type ang 'cancel' para tumigil.",
+            "id": "Saya tidak dapat menemukan pemesanan dengan informasi itu. Silakan periksa lagi, atau ketik 'cancel' untuk berhenti.",
+            "vi": "Tôi không tìm thấy đặt vé với thông tin đó. Vui lòng kiểm tra lại, hoặc nhập 'cancel' để dừng.",
         },
         "not_missed": {
             "en": "Your booking is {status}, not missed or cancelled. You don't need to rebook. Is there something else I can help with?",
             "fil": "Ang iyong booking ay {status}, hindi missed o cancelled. Hindi mo kailangang mag-rebook. May iba pa ba akong maitutulong?",
+            "id": "Pemesanan Anda berstatus {status}, bukan terlewat atau dibatalkan. Anda tidak perlu memesan ulang. Ada lagi yang bisa saya bantu?",
+            "vi": "Đặt vé của bạn đang ở trạng thái {status}, không phải bị lỡ hoặc đã hủy. Bạn không cần đặt lại. Tôi có thể giúp gì thêm?",
         },
     },
     "find_alternatives": {
@@ -178,6 +182,15 @@ class RebookingFlow:
 
         phone = entities.get("phone")
         booking_id_str = entities.get("booking_id")
+
+        if not phone and not booking_id_str and not state.get("old_booking_id"):
+            return {
+                "response_text": RESPONSES["identify"]["ask_phone"].get(
+                    language, RESPONSES["identify"]["ask_phone"]["en"]
+                ),
+                "flow_metadata": {"flow": "rebooking", "step": STEP_IDENTIFY},
+                "is_complete": False,
+            }
 
         booking: Booking | None = None
         passenger: Passenger | None = None

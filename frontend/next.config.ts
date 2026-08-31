@@ -4,11 +4,55 @@ import type { NextConfig } from "next";
 // stale anonymous-volume state there.
 const distDir =
 	process.env.DOCKER === "1" ? ".next-docker" : ".next";
+const apiProxyTarget =
+	process.env.API_PROXY_TARGET ?? "http://localhost:8000";
+
+function buildServiceWorkerCsp() {
+	const apiBase =
+		process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+
+	let connectSources = ["'self'"];
+
+	try {
+		const url = new URL(apiBase);
+		connectSources.push(url.origin);
+	} catch {
+		// Ignore malformed API URLs and keep the worker CSP self-only fallback.
+	}
+
+	if (process.env.NODE_ENV !== "production") {
+		connectSources = [
+			...connectSources,
+			"http://localhost:3000",
+			"http://127.0.0.1:3000",
+			"http://localhost:8000",
+			"http://127.0.0.1:8000",
+			"ws://localhost:3000",
+			"ws://127.0.0.1:3000",
+		];
+	}
+
+	const uniqueSources = Array.from(new Set(connectSources));
+
+	return [
+		"default-src 'self'",
+		"script-src 'self'",
+		`connect-src ${uniqueSources.join(" ")}`,
+	].join("; ");
+}
 
 const nextConfig: NextConfig = {
 	distDir,
 	turbopack: {
 		root: process.cwd(),
+	},
+	async rewrites() {
+		return [
+			{
+				source: "/api/v1/:path*",
+				destination: `${apiProxyTarget}/api/v1/:path*`,
+			},
+		];
 	},
 	async headers() {
 		return [
@@ -42,7 +86,7 @@ const nextConfig: NextConfig = {
 					},
 					{
 						key: "Content-Security-Policy",
-						value: "default-src 'self'; script-src 'self'",
+						value: buildServiceWorkerCsp(),
 					},
 				],
 			},

@@ -18,6 +18,7 @@ import { CapacityMeter } from "@/components/ui/CapacityMeter";
 import { BookingProgress } from "@/components/ui/BookingProgress";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { searchBuses } from "@/lib/api";
+import { BRAND } from "@/lib/brand";
 import { glassStyles } from "@/lib/design-system";
 import type { Bus } from "@/lib/types";
 import { formatDate, surgeColorClass, surgeLabel } from "@/lib/utils";
@@ -155,7 +156,7 @@ function BuyPageInner() {
   const routeSummary =
     hasSearched && canSearch
       ? `${origin.trim()} -> ${destination.trim()} on ${formatDate(travelDate)}`
-      : "Search available inter-provincial buses and let IQueue pick your best seat.";
+      : `Search available inter-provincial buses and let ${BRAND.name} pick your best seat.`;
 
   return (
     <div className={`${glassStyles.pageContainer} max-w-6xl`}>

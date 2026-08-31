@@ -2,11 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Download, Smartphone, WifiOff, Zap, X } from "lucide-react";
+import { BRAND } from "@/lib/brand";
 import {
   cleanupDevelopmentPwaState,
   PWA_INSTALL_DISMISS_KEY,
   PWA_INSTALL_REQUEST_EVENT,
-  SHOULD_ENABLE_PWA,
+  shouldEnablePwaClientRuntime,
 } from "@/lib/pwa-runtime";
 
 const DISMISS_TTL_MS = 1000 * 60 * 60 * 24;
@@ -57,7 +58,7 @@ function getInstallGuide(): InstallGuide {
   if (isAppleMobile) {
     if (!isSafari) {
       return {
-        title: "Open IQueue in Safari first",
+        title: `Open ${BRAND.name} in Safari first`,
         description:
           "iPhone and iPad install web apps through Safari, even when you opened this page in another browser.",
         steps: [
@@ -69,8 +70,8 @@ function getInstallGuide(): InstallGuide {
     }
 
     return {
-      title: "Add IQueue to your Home Screen",
-      description: "Safari installs IQueue from its Share menu:",
+      title: `Add ${BRAND.name} to your Home Screen`,
+      description: `Safari installs ${BRAND.name} from its Share menu:`,
       steps: [
         "Tap the Share button in Safari.",
         "Scroll down and choose Add to Home Screen.",
@@ -81,10 +82,10 @@ function getInstallGuide(): InstallGuide {
 
   if (isAndroid) {
     return {
-      title: "Install IQueue on Android",
+      title: `Install ${BRAND.name} on Android`,
       description: isFirefox
-        ? "Firefox installs IQueue from its browser menu:"
-        : "Your browser installs IQueue from its app menu:",
+        ? `Firefox installs ${BRAND.name} from its browser menu:`
+        : `Your browser installs ${BRAND.name} from its app menu:`,
       steps: [
         "Tap the browser menu (usually ⋮).",
         isFirefox
@@ -97,8 +98,8 @@ function getInstallGuide(): InstallGuide {
 
   if (isSafari) {
     return {
-      title: "Add IQueue to your Mac Dock",
-      description: "Safari can save IQueue as a web app:",
+      title: `Add ${BRAND.name} to your Mac Dock`,
+      description: `Safari can save ${BRAND.name} as a web app:`,
       steps: [
         "Open the File menu in Safari.",
         "Choose Add to Dock.",
@@ -110,25 +111,25 @@ function getInstallGuide(): InstallGuide {
 
   if (isFirefox) {
     return {
-      title: "Open IQueue in Chrome or Edge",
+      title: `Open ${BRAND.name} in Chrome or Edge`,
       description:
         "Desktop Firefox does not currently provide a PWA installation action.",
       steps: [
         "Open this page in Chrome or Microsoft Edge.",
         "Select the install icon in the address bar, or open the browser menu.",
-        "Choose Install IQueue and confirm.",
+        `Choose Install ${BRAND.name} and confirm.`,
       ],
     };
   }
 
   if (isChromium) {
     return {
-      title: "Install IQueue from the browser menu",
+      title: `Install ${BRAND.name} from the browser menu`,
       description:
         "The automatic prompt is not available yet, but you can use the browser menu:",
       steps: [
         "Open the Chrome or Edge menu (⋮).",
-        "Choose Install IQueue or Apps → Install this site as an app.",
+        `Choose Install ${BRAND.name} or Apps → Install this site as an app.`,
         "Confirm Install.",
       ],
     };
@@ -170,6 +171,7 @@ function wasDismissedRecently() {
 }
 
 export default function PWARegistrar() {
+  const shouldEnablePwa = shouldEnablePwaClientRuntime();
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
   const [isInstallVisible, setIsInstallVisible] = useState(false);
@@ -227,7 +229,7 @@ export default function PWARegistrar() {
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
 
-    if (!SHOULD_ENABLE_PWA) {
+    if (!shouldEnablePwa) {
       void cleanupDevelopmentPwaState();
       return;
     }
@@ -248,7 +250,7 @@ export default function PWARegistrar() {
         }
       } catch (error) {
         if (process.env.NODE_ENV !== "production") {
-          console.warn("IQueue service worker registration failed", error);
+          console.warn(`${BRAND.name} service worker registration failed`, error);
         }
       }
     }
@@ -258,10 +260,10 @@ export default function PWARegistrar() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [shouldEnablePwa]);
 
   useEffect(() => {
-    if (!SHOULD_ENABLE_PWA || typeof window === "undefined") return;
+    if (!shouldEnablePwa || typeof window === "undefined") return;
 
     let visibilityTimer: number | null = null;
 
@@ -318,7 +320,7 @@ export default function PWARegistrar() {
       );
       window.removeEventListener("appinstalled", handleInstalled);
     };
-  }, []);
+  }, [shouldEnablePwa]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -394,13 +396,13 @@ export default function PWARegistrar() {
             </div>
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-blue">
-                IQueue mobile app
+                {BRAND.name} mobile app
               </p>
               <h2
                 id="pwa-install-title"
                 className="mt-1 text-xl font-extrabold text-slate-950 dark:text-white sm:text-2xl"
               >
-                Install IQueue on this device
+                Install {BRAND.name} on this device
               </h2>
             </div>
           </div>
@@ -465,7 +467,7 @@ export default function PWARegistrar() {
                   className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-brand-blue px-5 py-3 text-sm font-bold text-white shadow-lg shadow-brand-blue/30 transition hover:bg-blue-600 hover:shadow-brand-blue/45 active:scale-[0.98] disabled:cursor-wait disabled:opacity-70"
                 >
                   <Download className="h-5 w-5" aria-hidden />
-                  {isInstalling ? "Opening install prompt..." : "Install IQueue"}
+                  {isInstalling ? "Opening install prompt..." : `Install ${BRAND.name}`}
                 </button>
                 <button
                   type="button"

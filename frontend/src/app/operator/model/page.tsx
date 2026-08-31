@@ -388,7 +388,9 @@ export default function ModelRetrainingPage() {
             <p className="text-sm text-slate-600 dark:text-slate-300 mb-3">{activeJob.message}</p>
           )}
           {activeJob.error && (
-            <p className="text-sm text-red-600 dark:text-red-400 mb-3">{activeJob.error}</p>
+            <pre className="mb-3 whitespace-pre-wrap break-words rounded-lg bg-red-50/70 p-3 text-xs text-red-700 dark:bg-red-950/30 dark:text-red-300">
+              {activeJob.error}
+            </pre>
           )}
 
           {/* Metrics comparison */}

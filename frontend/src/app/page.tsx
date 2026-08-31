@@ -6,15 +6,15 @@ import HowItWorksSection from "@/components/landing/HowItWorksSection";
 import CoveredCitiesSection from "@/components/landing/CoveredCitiesSection";
 import LandingFooter from "@/components/landing/LandingFooter";
 import ChatbotPanel from "@/components/ChatbotPanel";
+import { BRAND } from "@/lib/brand";
 
 export const metadata: Metadata = {
-  title: "IQueue — Board Smarter Across ASEAN",
+  title: { absolute: `${BRAND.name} — ${BRAND.tagline}` },
   description:
     "AI-powered smart boarding platform for inter-provincial bus terminals. Demand forecasting, QR boarding passes, smart seat allocation, and multilingual chatbot — all in one place.",
   openGraph: {
-    title: "IQueue — Board Smarter Across ASEAN",
-    description:
-      "AI-powered smart boarding platform for inter-provincial bus terminals across ASEAN.",
+    title: `${BRAND.name} — ${BRAND.tagline}`,
+    description: BRAND.description,
     type: "website",
   },
 };

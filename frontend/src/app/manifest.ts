@@ -1,13 +1,13 @@
 import type { MetadataRoute } from "next";
+import { BRAND } from "@/lib/brand";
 import { SHOULD_ENABLE_PWA } from "@/lib/pwa-runtime";
 
 export default function manifest(): MetadataRoute.Manifest {
   if (!SHOULD_ENABLE_PWA) {
     return {
-      name: "IQueue",
-      short_name: "IQueue",
-      description:
-        "AI-powered smart boarding and QR passes for inter-provincial bus terminals.",
+      name: BRAND.name,
+      short_name: BRAND.name,
+      description: BRAND.shortDescription,
       start_url: "/home",
       scope: "/",
       display: "browser",
@@ -19,10 +19,9 @@ export default function manifest(): MetadataRoute.Manifest {
   }
 
   return {
-    name: "IQueue",
-    short_name: "IQueue",
-    description:
-      "AI-powered smart boarding and QR passes for inter-provincial bus terminals.",
+    name: BRAND.name,
+    short_name: BRAND.name,
+    description: BRAND.shortDescription,
     start_url: "/home",
     scope: "/",
     display: "standalone",
@@ -33,25 +32,25 @@ export default function manifest(): MetadataRoute.Manifest {
     lang: "en",
     icons: [
       {
-        src: "/icons/icon-192.png",
+        src: "/icons/tripsync-icon-192.png",
         sizes: "192x192",
         type: "image/png",
         purpose: "any",
       },
       {
-        src: "/icons/icon-512.png",
+        src: "/icons/tripsync-icon-512.png",
         sizes: "512x512",
         type: "image/png",
         purpose: "any",
       },
       {
-        src: "/icons/maskable-192.png",
+        src: "/icons/tripsync-maskable-192.png",
         sizes: "192x192",
         type: "image/png",
         purpose: "maskable",
       },
       {
-        src: "/icons/maskable-512.png",
+        src: "/icons/tripsync-maskable-512.png",
         sizes: "512x512",
         type: "image/png",
         purpose: "maskable",

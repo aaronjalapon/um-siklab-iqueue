@@ -9,6 +9,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import hmac
+import json
 import secrets
 from datetime import datetime, timedelta, timezone
 
@@ -73,6 +74,33 @@ def create_qr_token(
     return f"{payload_b64}.{signature}"
 
 
+def create_group_qr_token(
+    *,
+    group_id: str,
+    route_id: str,
+    bus_id: str,
+    members: list[dict[str, str]],
+    boarding_window_start: str,
+    boarding_window_end: str,
+    secret: str,
+) -> str:
+    """Create a compact versioned group pass without passenger names."""
+    payload_data = {
+        "v": 1,
+        "pass_type": "group",
+        "group_id": group_id,
+        "route_id": route_id,
+        "bus_id": bus_id,
+        "members": members,
+        "boarding_window": boarding_window_start,
+        "boarding_window_end": boarding_window_end,
+        "signed_at": datetime.now(timezone.utc).isoformat(),
+    }
+    payload = json.dumps(payload_data, separators=(",", ":"), sort_keys=True)
+    payload_b64 = base64.urlsafe_b64encode(payload.encode("utf-8")).rstrip(b"=").decode("ascii")
+    return f"{payload_b64}.{create_hmac_signature(payload, secret)}"
+
+
 def verify_qr_token(token: str, secret: str) -> tuple[bool, dict | None]:
     """Verify a QR boarding pass token and extract its payload.
 
@@ -103,7 +131,43 @@ def verify_qr_token(token: str, secret: str) -> tuple[bool, dict | None]:
     if not hmac.compare_digest(expected_sig, signature):
         return False, None
 
-    # Parse payload fields
+    # Parse versioned JSON group payloads first. Legacy individual payloads
+    # remain pipe-delimited and are intentionally unchanged.
+    if payload.startswith("{"):
+        try:
+            group_data = json.loads(payload)
+        except (TypeError, ValueError, json.JSONDecodeError):
+            return False, None
+        required = {
+            "v",
+            "pass_type",
+            "group_id",
+            "route_id",
+            "bus_id",
+            "members",
+            "boarding_window",
+            "boarding_window_end",
+            "signed_at",
+        }
+        if (
+            not isinstance(group_data, dict)
+            or not required.issubset(group_data)
+            or group_data.get("v") != 1
+            or group_data.get("pass_type") != "group"
+            or not isinstance(group_data.get("members"), list)
+            or not 2 <= len(group_data["members"]) <= 6
+        ):
+            return False, None
+        for member in group_data["members"]:
+            if not isinstance(member, dict) or set(member) != {
+                "booking_id",
+                "passenger_id",
+                "seat",
+            }:
+                return False, None
+        return True, group_data
+
+    # Parse legacy individual payload fields.
     fields = payload.split("|")
     if len(fields) != 6:
         return False, None

@@ -38,21 +38,20 @@ const steps = [
 
 export default function HowItWorksSection() {
   return (
-    <section id="how-it-works" className="py-24 lg:py-32 bg-slate-900/50 relative">
-      {/* Top divider */}
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-      <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section
+      id="how-it-works"
+      className="relative flex min-h-[100svh] flex-col justify-center overflow-hidden bg-slate-900/50 px-4 py-16 sm:px-6 lg:px-8"
+    >
+      <div className="mx-auto w-full max-w-7xl">
         {/* Section header */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-20"
+          transition={{ duration: 0.5 }}
+          className="text-center mb-10 lg:mb-12"
         >
-          <span className="inline-block text-brand-orange text-xs font-bold uppercase tracking-[0.2em] mb-3">
+          <span className="inline-block text-brand-orange text-xs font-bold uppercase tracking-[0.2em] mb-2">
             Passenger Flow
           </span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white leading-tight">
@@ -61,7 +60,7 @@ export default function HowItWorksSection() {
               Your Seat
             </span>
           </h2>
-          <p className="mt-4 text-slate-400 text-lg max-w-xl mx-auto">
+          <p className="mt-3 text-slate-400 text-base sm:text-lg max-w-xl mx-auto">
             From search to scan in under a minute. No queuing, no disputes, no stress.
           </p>
         </motion.div>
@@ -69,34 +68,34 @@ export default function HowItWorksSection() {
         {/* Steps */}
         <div className="relative">
           {/* Connecting line on desktop */}
-          <div className="hidden lg:block absolute top-[3.5rem] left-[16.67%] right-[16.67%] h-px bg-gradient-to-r from-brand-blue/40 via-brand-orange/40 to-green-500/40" />
+          <div className="hidden lg:block absolute top-[2.25rem] left-[16.67%] right-[16.67%] h-px bg-gradient-to-r from-brand-blue/40 via-brand-orange/40 to-green-500/40" />
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-10">
             {steps.map((step, index) => {
               const Icon = step.icon;
               return (
                 <motion.div
                   key={step.step}
-                  initial={{ opacity: 0, y: 50 }}
+                  initial={{ opacity: 0, y: 30 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: "-60px" }}
-                  transition={{ duration: 0.6, delay: index * 0.15 }}
-                  className="flex flex-col items-center text-center lg:items-center"
+                  transition={{ duration: 0.5, delay: index * 0.12 }}
+                  className="flex flex-col items-center text-center lg:items-center p-4 sm:p-6 rounded-2xl bg-slate-900/40 border border-white/5 lg:bg-transparent lg:border-none"
                 >
                   {/* Icon circle */}
                   <motion.div
-                    whileHover={{ scale: 1.1 }}
+                    whileHover={{ scale: 1.08 }}
                     transition={{ type: "spring", stiffness: 300 }}
-                    className={`relative w-20 h-20 rounded-2xl border ${step.border} ${step.glow} backdrop-blur-xl flex items-center justify-center mb-6 shadow-lg z-10`}
+                    className={`relative w-18 h-18 sm:w-20 sm:h-20 rounded-2xl border ${step.border} ${step.glow} backdrop-blur-xl flex items-center justify-center mb-5 shadow-lg z-10`}
                   >
-                    <Icon className={`w-9 h-9 ${step.color}`} />
-                    <span className={`absolute -top-2 -right-2 text-[10px] font-extrabold ${step.color} bg-slate-900 border ${step.border} px-1.5 py-0.5 rounded-md`}>
+                    <Icon className={`w-8 h-8 sm:w-9 sm:h-9 ${step.color}`} />
+                    <span className={`absolute -top-2 -right-2 text-xs font-black ${step.color} bg-slate-900 border ${step.border} px-2 py-0.5 rounded-lg shadow-md`}>
                       {step.step}
                     </span>
                   </motion.div>
 
-                  <h3 className="text-white font-bold text-xl mb-3">{step.title}</h3>
-                  <p className="text-slate-400 text-sm leading-relaxed max-w-xs">{step.description}</p>
+                  <h3 className="text-white font-bold text-xl sm:text-2xl mb-2">{step.title}</h3>
+                  <p className="text-slate-300 text-sm sm:text-base leading-relaxed max-w-sm">{step.description}</p>
                 </motion.div>
               );
             })}
@@ -105,15 +104,15 @@ export default function HowItWorksSection() {
 
         {/* CTA nudge */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="text-center mt-16"
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className="text-center mt-10 lg:mt-12"
         >
           <a
             href="/buy"
-            className="inline-flex items-center gap-2 bg-brand-blue hover:bg-blue-600 text-white font-bold px-8 py-4 rounded-xl shadow-xl shadow-brand-blue/25 hover:shadow-brand-blue/40 transition-all hover:scale-105 active:scale-95"
+            className="inline-flex min-h-[52px] w-full sm:w-auto items-center justify-center gap-2 bg-brand-blue hover:bg-blue-600 text-white text-base font-bold px-8 py-4 rounded-xl shadow-xl shadow-brand-blue/30 transition-all hover:scale-105 active:scale-[0.98]"
           >
             Start Booking Now →
           </a>

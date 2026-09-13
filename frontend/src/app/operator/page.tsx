@@ -118,6 +118,12 @@ export default function OperatorDashboard() {
     return `${(avg * 100).toFixed(0)}%`;
   }, [predictions]);
 
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const highSurgeDays = useMemo(
     () => predictions.filter((p) => p.surge_probability >= 0.7).length,
     [predictions]
@@ -177,7 +183,8 @@ export default function OperatorDashboard() {
         final_action: details?.finalAction || prediction.recommended_action,
       });
       setActionState("saved");
-      setActionMessage("Feedback logged for future model retraining.");
+      setActionMessage("Decision recorded: Feedback logged for future model retraining.");
+      setLearningRefresh((value) => value + 1);
       setOverrideMode(null);
       setOverrideReason("");
       setOverrideNotes("");
@@ -369,7 +376,8 @@ export default function OperatorDashboard() {
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
-                disabled={!primaryPrediction || actionState === "saving"}
+                suppressHydrationWarning
+                disabled={!mounted || !primaryPrediction || actionState === "saving"}
                 onClick={() =>
                   primaryPrediction &&
                   void submitForecastAction(primaryPrediction, "accepted")
@@ -380,7 +388,8 @@ export default function OperatorDashboard() {
               </button>
               <button
                 type="button"
-                disabled={!primaryPrediction || actionState === "saving"}
+                suppressHydrationWarning
+                disabled={!mounted || !primaryPrediction || actionState === "saving"}
                 onClick={() => openOverride("modified")}
                 className="inline-flex items-center gap-2 rounded-md bg-amber-500 px-3 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
               >
@@ -388,7 +397,8 @@ export default function OperatorDashboard() {
               </button>
               <button
                 type="button"
-                disabled={!primaryPrediction || actionState === "saving"}
+                suppressHydrationWarning
+                disabled={!mounted || !primaryPrediction || actionState === "saving"}
                 onClick={() => openOverride("rejected")}
                 className="inline-flex items-center gap-2 rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
               >
@@ -397,15 +407,20 @@ export default function OperatorDashboard() {
             </div>
           </div>
           {actionMessage && (
-            <p
-              className={`mt-3 text-sm ${
+            <div
+              className={`mt-4 flex items-center gap-2 rounded-xl border p-3 text-xs sm:text-sm font-medium transition-all ${
                 actionState === "error"
-                  ? "text-red-600"
-                  : "text-green-700 dark:text-green-300"
+                  ? "border-red-500/30 bg-red-500/10 text-red-300"
+                  : "border-green-500/30 bg-green-500/10 text-green-300"
               }`}
             >
-              {actionMessage}
-            </p>
+              {actionState === "error" ? (
+                <AlertTriangle className="h-4 w-4 shrink-0 text-red-400" />
+              ) : (
+                <Check className="h-4 w-4 shrink-0 text-green-400" />
+              )}
+              <span>{actionMessage}</span>
+            </div>
           )}
         </section>
 
@@ -448,16 +463,18 @@ export default function OperatorDashboard() {
           <div className="mt-4 grid gap-2">
             <button
               type="button"
+              suppressHydrationWarning
               onClick={openOutcomeForm}
-              disabled={!primaryPrediction}
+              disabled={!mounted || !primaryPrediction}
               className="inline-flex items-center justify-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold disabled:opacity-50 dark:border-slate-700"
             >
               <ClipboardCheck className="h-4 w-4" /> Record Outcome
             </button>
             <button
               type="button"
+              suppressHydrationWarning
               onClick={() => void runReplay()}
-              disabled={replayState === "loading"}
+              disabled={!mounted || replayState === "loading"}
               className="inline-flex items-center justify-center gap-2 rounded-md bg-brand-blue px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
             >
               <RotateCcw className="h-4 w-4" />
@@ -478,31 +495,40 @@ export default function OperatorDashboard() {
       </div>
 
       {outcomeOpen && primaryPrediction && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">
-          <form onSubmit={submitOutcome} className={`${glassStyles.panel} max-h-[90vh] w-full max-w-xl overflow-y-auto p-5`}>
-            <div className="flex items-start justify-between gap-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <form onSubmit={submitOutcome} className={`${glassStyles.panel} max-h-[90vh] w-full max-w-2xl overflow-y-auto p-6 sm:p-7 shadow-2xl border border-slate-700/60 bg-slate-900/95`}>
+            <div className="flex items-start justify-between gap-4 pb-4 border-b border-slate-800">
               <div>
-                <h2 className={glassStyles.sectionTitle}>Record Route Outcome</h2>
-                <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                  {primaryPrediction.forecast_date} · Synthetic prototype data only
+                <div className="flex items-center gap-2">
+                  <ClipboardCheck className="h-5 w-5 text-brand-blue" />
+                  <h2 className={glassStyles.sectionTitle}>Record Route Outcome</h2>
+                </div>
+                <p className="mt-1 text-xs sm:text-sm text-slate-400">
+                  Service Date: <span className="font-semibold text-slate-200">{primaryPrediction.forecast_date}</span> · Ground-truth collection for AI evaluation
                 </p>
               </div>
-              <button type="button" onClick={() => setOutcomeOpen(false)} className="rounded-md p-2" aria-label="Close">
-                <X className="h-4 w-4" />
+              <button
+                type="button"
+                onClick={() => setOutcomeOpen(false)}
+                className="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+                aria-label="Close"
+              >
+                <X className="h-5 w-5" />
               </button>
             </div>
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+
+            <div className="mt-5 grid gap-5 sm:grid-cols-2">
               {[
-                ["Actual passengers", "actualPassengerCount"],
-                ["Peak queue length", "peakQueueLength"],
-                ["Average wait minutes", "averageWaitTime"],
-                ["P95 wait minutes", "waitTimeP95"],
-                ["Extra buses", "extraBuses"],
-                ["Lanes opened", "lanesOpened"],
-                ["Missed boardings", "missedBoardings"],
-              ].map(([label, key]) => (
-                <label key={key} className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                  {label}
+                ["Actual passenger count", "actualPassengerCount", "e.g. 45"],
+                ["Peak queue length", "peakQueueLength", "e.g. 18"],
+                ["Average wait time (min)", "averageWaitTime", "e.g. 12.5"],
+                ["P95 wait time (min)", "waitTimeP95", "e.g. 24.0"],
+                ["Extra buses dispatched", "extraBuses", "0"],
+                ["Boarding lanes opened", "lanesOpened", "1"],
+                ["Missed boardings count", "missedBoardings", "0"],
+              ].map(([label, key, placeholder]) => (
+                <label key={key} className="flex flex-col gap-1.5 text-xs sm:text-sm font-medium text-slate-300">
+                  <span>{label} {key === "actualPassengerCount" && <span className="text-red-400">*</span>}</span>
                   <input
                     type="number"
                     min="0"
@@ -510,24 +536,39 @@ export default function OperatorDashboard() {
                     required={key === "actualPassengerCount"}
                     value={outcomeForm[key as keyof typeof outcomeForm] as string}
                     onChange={(event) => setOutcomeForm((current) => ({ ...current, [key]: event.target.value }))}
-                    className={`${glassStyles.input} mt-1`}
+                    className={glassStyles.input}
+                    placeholder={placeholder}
                   />
                 </label>
               ))}
             </div>
-            <label className="mt-4 flex items-center gap-2 text-sm">
+
+            <label className="mt-5 flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-900/50 p-3.5 text-sm text-slate-300 cursor-pointer hover:bg-slate-800/50 transition-colors">
               <input
                 type="checkbox"
                 checked={outcomeForm.overcrowdingIncident}
                 onChange={(event) => setOutcomeForm((current) => ({ ...current, overcrowdingIncident: event.target.checked }))}
+                className="h-4 w-4 rounded border-slate-700 text-brand-blue focus:ring-brand-blue/50"
               />
-              Overcrowding incident occurred
+              <span>Terminal overcrowding incident occurred during departure</span>
             </label>
-            {outcomeState === "error" && <p className="mt-3 text-sm text-red-600">Could not save the outcome.</p>}
-            <div className="mt-5 flex justify-end gap-2">
-              <button type="button" onClick={() => setOutcomeOpen(false)} className="rounded-md border px-4 py-2 text-sm font-semibold">Cancel</button>
-              <button type="submit" disabled={outcomeState === "saving"} className="rounded-md bg-brand-blue px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
-                {outcomeState === "saving" ? "Saving" : "Save Outcome"}
+
+            {outcomeState === "error" && <p className="mt-3 text-sm text-red-400">Could not save the outcome. Please check values and retry.</p>}
+            
+            <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => setOutcomeOpen(false)}
+                className="rounded-xl border border-slate-700 px-5 py-2.5 text-sm font-semibold text-slate-300 hover:bg-slate-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={outcomeState === "saving"}
+                className="rounded-xl bg-brand-blue px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 hover:bg-blue-600 disabled:opacity-50 transition-all"
+              >
+                {outcomeState === "saving" ? "Saving..." : "Save Outcome"}
               </button>
             </div>
           </form>
@@ -535,72 +576,87 @@ export default function OperatorDashboard() {
       )}
 
       {overrideMode && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <form
             onSubmit={submitOverride}
-            className={`${glassStyles.panel} w-full max-w-lg p-5`}
+            className={`${glassStyles.panel} w-full max-w-xl p-6 sm:p-7 shadow-2xl border border-slate-700/60 bg-slate-900/95`}
           >
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start justify-between gap-4 pb-4 border-b border-slate-800">
               <div>
-                <h2 className={glassStyles.sectionTitle}>
-                  {overrideMode === "modified" ? "Modify Action" : "Reject Action"}
-                </h2>
-                <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                  A reason is required so the record can become useful
-                  ground-truth after actual operations are logged.
+                <div className="flex items-center gap-2">
+                  <Pencil className="h-5 w-5 text-amber-400" />
+                  <h2 className={glassStyles.sectionTitle}>
+                    {overrideMode === "modified" ? "Modify Forecast Action" : "Reject Forecast Action"}
+                  </h2>
+                </div>
+                <p className="mt-1 text-xs sm:text-sm text-slate-400">
+                  Log operator decision and context for future AI model retraining.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setOverrideMode(null)}
-                className="rounded-md p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
                 aria-label="Close"
               >
-                <X className="h-4 w-4" />
+                <X className="h-5 w-5" />
               </button>
             </div>
-            <label className="mt-4 block text-sm font-medium text-slate-700 dark:text-slate-200">
-              Reason
-              <input
-                value={overrideReason}
-                onChange={(event) => setOverrideReason(event.target.value)}
-                className={`${glassStyles.input} mt-1`}
-                required
-                placeholder="Local event, staff judgment, capacity constraint"
-              />
-            </label>
-            <label className="mt-4 block text-sm font-medium text-slate-700 dark:text-slate-200">
-              Final action
-              <input
-                value={finalAction}
-                onChange={(event) => setFinalAction(event.target.value)}
-                className={`${glassStyles.input} mt-1`}
-                placeholder="What the operator will do"
-              />
-            </label>
-            <label className="mt-4 block text-sm font-medium text-slate-700 dark:text-slate-200">
-              Notes
-              <textarea
-                value={overrideNotes}
-                onChange={(event) => setOverrideNotes(event.target.value)}
-                className={`${glassStyles.input} mt-1 min-h-24`}
-                placeholder="Optional context for review"
-              />
-            </label>
-            <div className="mt-5 flex justify-end gap-2">
+
+            <div className="mt-5 space-y-4">
+              <label className="flex flex-col gap-1.5 text-xs sm:text-sm font-medium text-slate-300">
+                <span>Reason for Decision <span className="text-red-400">*</span></span>
+                <input
+                  value={overrideReason}
+                  onChange={(event) => setOverrideReason(event.target.value)}
+                  className={glassStyles.input}
+                  required
+                  placeholder="e.g. Local festival surge, sudden weather delay, fleet constraint"
+                />
+              </label>
+
+              <label className="flex flex-col gap-1.5 text-xs sm:text-sm font-medium text-slate-300">
+                <span>Final Operational Action</span>
+                <input
+                  value={finalAction}
+                  onChange={(event) => setFinalAction(event.target.value)}
+                  className={glassStyles.input}
+                  placeholder="e.g. Dispatch 1 additional bus, open extra boarding lane"
+                />
+              </label>
+
+              <label className="flex flex-col gap-1.5 text-xs sm:text-sm font-medium text-slate-300">
+                <span>Additional Review Notes (Optional)</span>
+                <textarea
+                  value={overrideNotes}
+                  onChange={(event) => setOverrideNotes(event.target.value)}
+                  className={`${glassStyles.input} min-h-[96px] resize-y`}
+                  placeholder="Provide any additional observations for terminal management..."
+                />
+              </label>
+            </div>
+
+            {actionMessage && actionState === "error" && (
+              <div className="mt-4 flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-400">
+                <AlertTriangle className="h-4 w-4 shrink-0" />
+                <span>{actionMessage}</span>
+              </div>
+            )}
+
+            <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-slate-800">
               <button
                 type="button"
                 onClick={() => setOverrideMode(null)}
-                className="rounded-md border border-slate-200 px-4 py-2 text-sm font-semibold dark:border-slate-700"
+                className="rounded-xl border border-slate-700 px-5 py-2.5 text-sm font-semibold text-slate-300 hover:bg-slate-800 transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={actionState === "saving"}
-                className="rounded-md bg-brand-blue px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-xl bg-brand-blue px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50 transition-all"
               >
-                Save Feedback
+                {actionState === "saving" ? "Saving..." : "Save Feedback"}
               </button>
             </div>
           </form>

@@ -87,20 +87,20 @@ const cardVariants = {
 
 export default function FeaturesSection() {
   return (
-    <section id="features" className="py-24 lg:py-32 bg-slate-950 relative overflow-hidden">
-      {/* Subtle top fade from hero */}
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section
+      id="features"
+      className="relative flex min-h-[100svh] flex-col justify-center overflow-hidden bg-slate-950 px-4 py-16 sm:px-6 lg:px-8"
+    >
+      <div className="mx-auto w-full max-w-7xl">
         {/* Section header */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-16"
+          transition={{ duration: 0.5 }}
+          className="text-center mb-10 lg:mb-12"
         >
-          <span className="inline-block text-brand-blue text-xs font-bold uppercase tracking-[0.2em] mb-3">
+          <span className="inline-block text-brand-blue text-xs font-bold uppercase tracking-[0.2em] mb-2">
             Platform Features
           </span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white leading-tight">
@@ -109,7 +109,7 @@ export default function FeaturesSection() {
               One Platform.
             </span>
           </h2>
-          <p className="mt-4 text-slate-400 text-lg max-w-2xl mx-auto">
+          <p className="mt-3 text-slate-400 text-base sm:text-lg max-w-2xl mx-auto">
             {BRAND.name} integrates AI forecasting, intelligent seating, verified boarding, and multilingual support into a single cohesive experience.
           </p>
         </motion.div>
@@ -130,22 +130,24 @@ export default function FeaturesSection() {
                 variants={cardVariants}
                 whileHover={{ y: -6, scale: 1.02 }}
                 transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                className={`relative rounded-2xl border ${feature.border} bg-gradient-to-br ${feature.accent} backdrop-blur-xl p-6 flex flex-col gap-4 overflow-hidden group cursor-default`}
+                className={`relative rounded-2xl border ${feature.border} bg-gradient-to-br ${feature.accent} backdrop-blur-xl p-6 flex flex-col gap-4 overflow-hidden group cursor-default shadow-lg shadow-black/20`}
               >
                 {/* Subtle glow on hover */}
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-white/3 transition-opacity duration-300 rounded-2xl" />
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-white/5 transition-opacity duration-300 rounded-2xl" />
 
-                <Icon className={`h-8 w-8 ${feature.iconClass}`} aria-hidden />
-
-                <div>
-                  <span className={`inline-block text-[10px] font-bold uppercase tracking-wider border px-2 py-0.5 rounded-full mb-2 ${feature.badge}`}>
-                    {feature.badgeText}
-                  </span>
-                  <h3 className="text-white font-bold text-lg leading-tight">{feature.title}</h3>
-                  <p className="text-slate-400 text-xs font-semibold mt-0.5">{feature.subtitle}</p>
+                <div className="h-12 w-12 rounded-xl bg-slate-900/60 border border-white/10 flex items-center justify-center">
+                  <Icon className={`h-7 w-7 ${feature.iconClass}`} aria-hidden />
                 </div>
 
-                <p className="text-slate-400 text-sm leading-relaxed flex-1">{feature.description}</p>
+                <div>
+                  <span className={`inline-block text-xs font-bold uppercase tracking-wider border px-2.5 py-1 rounded-full mb-2.5 ${feature.badge}`}>
+                    {feature.badgeText}
+                  </span>
+                  <h3 className="text-white font-bold text-xl sm:text-2xl leading-tight">{feature.title}</h3>
+                  <p className="text-slate-300 text-xs sm:text-sm font-semibold mt-1">{feature.subtitle}</p>
+                </div>
+
+                <p className="text-slate-300 text-sm sm:text-base leading-relaxed flex-1">{feature.description}</p>
               </motion.div>
             );
           })}

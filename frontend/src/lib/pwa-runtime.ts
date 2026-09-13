@@ -10,9 +10,12 @@ export function shouldEnablePwaClientRuntime(): boolean {
     return SHOULD_ENABLE_PWA;
   }
 
-  const isLocalDevHost = ["localhost", "127.0.0.1", "::1"].includes(
-    window.location.hostname
-  );
+  const host = window.location.hostname;
+  const isLocalDevHost =
+    ["localhost", "127.0.0.1", "::1", "0.0.0.0"].includes(host) ||
+    host.startsWith("192.168.") ||
+    host.startsWith("10.") ||
+    /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
 
   return SHOULD_ENABLE_PWA && !isLocalDevHost;
 }

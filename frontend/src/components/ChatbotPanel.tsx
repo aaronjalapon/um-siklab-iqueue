@@ -365,17 +365,15 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-24 right-4 rounded-full bg-blue-700 p-3 text-white shadow-lg
-                   md:bottom-6 md:right-6
-                   hover:bg-blue-800 transition z-50"
+        className="fixed bottom-6 right-4 sm:right-6 rounded-full bg-blue-700 h-14 w-14 min-w-[56px] min-h-[56px] flex items-center justify-center text-white shadow-xl shadow-blue-900/40 hover:bg-blue-600 active:scale-95 transition-all z-50 focus:outline-none focus:ring-4 focus:ring-blue-400/40"
         aria-label={isOpen ? `Close ${BRAND.assistantName}` : `Chat with ${BRAND.assistantName}`}
         aria-expanded={isOpen}
         aria-controls="iqueue-chatbot-panel"
       >
         {isOpen ? (
-          <X className="h-5 w-5 md:h-6 md:w-6" />
+          <X className="h-6 w-6" />
         ) : (
-          <MessageCircle className="h-5 w-5 md:h-6 md:w-6" />
+          <MessageCircle className="h-6 w-6" />
         )}
       </button>
 
@@ -386,26 +384,26 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
           role="dialog"
           aria-modal="false"
           aria-label={UI_STRINGS[lang].title}
-          className="fixed bottom-40 left-3 right-3 mx-0 sm:left-auto sm:right-6
-                     w-auto sm:w-96 h-[min(68dvh,520px)] max-h-[calc(100dvh-10rem)]
-                     md:bottom-24
+          className="fixed bottom-24 left-3 right-3 mx-0 sm:left-auto sm:right-6
+                     w-auto sm:w-96 h-[min(72dvh,540px)] max-h-[calc(100dvh-7rem)]
                      bg-white dark:bg-slate-900
-                     rounded-xl shadow-2xl dark:shadow-2xl dark:shadow-black/40
-                     border dark:border-white/10
-                     flex flex-col z-50"
+                     rounded-2xl shadow-2xl dark:shadow-2xl dark:shadow-black/60
+                     border dark:border-white/15
+                     flex flex-col z-50 overflow-hidden"
         >
           {/* Header */}
-          <div className="bg-blue-700 text-white p-4 rounded-t-xl flex items-center justify-between shrink-0">
+          <div className="bg-blue-700 text-white p-4 flex items-center justify-between shrink-0">
             <div>
-              <h3 className="font-semibold">{UI_STRINGS[lang].title}</h3>
+              <h3 className="font-bold text-base">{UI_STRINGS[lang].title}</h3>
               <p className="text-xs text-blue-200">{UI_STRINGS[lang].subtitle}</p>
             </div>
             <button
               type="button"
               onClick={() => setIsOpen(false)}
               aria-label="Close assistant"
+              className="h-10 w-10 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl hover:bg-white/15 active:bg-white/20 transition-colors"
             >
-              <X className="w-4 h-4" />
+              <X className="w-5 h-5" />
             </button>
           </div>
 
@@ -499,7 +497,7 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
                   type="button"
                   key={i}
                   onClick={() => handleSuggestionClick(reply)}
-                  className="flex-shrink-0 text-[11px] px-3 py-1.5 rounded-full bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 border dark:border-white/10 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+                  className="flex-shrink-0 min-h-[38px] text-xs px-3.5 py-1.5 rounded-full bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-200 border dark:border-white/10 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-700 dark:hover:text-blue-300 transition-colors flex items-center"
                 >
                   {reply}
                 </button>
@@ -517,7 +515,7 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
               placeholder={UI_STRINGS[lang].placeholder}
               disabled={loading}
               className="flex-1 border border-gray-300 dark:border-slate-700
-                         rounded-lg px-3 py-2 text-sm
+                         rounded-xl px-3.5 py-2.5 text-base
                          dark:bg-slate-800 dark:text-slate-200 dark:placeholder-slate-500
                          focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400
                          focus:border-blue-500 dark:focus:border-blue-400
@@ -527,12 +525,13 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
               type="button"
               onClick={() => handleSend()}
               disabled={loading || !input.trim()}
-              className="bg-blue-700 text-white p-2 rounded-lg
+              className="bg-blue-700 text-white min-h-[44px] min-w-[44px] rounded-xl flex items-center justify-center p-2.5
                          hover:bg-blue-800
                          disabled:bg-gray-300 dark:disabled:bg-slate-700
-                         disabled:cursor-not-allowed transition"
+                         disabled:cursor-not-allowed active:scale-95 transition"
+              aria-label="Send message"
             >
-              <Send className="w-4 h-4" />
+              <Send className="w-5 h-5" />
             </button>
           </div>
         </div>

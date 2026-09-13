@@ -1,10 +1,24 @@
-"use client";
-
-import { X } from "lucide-react";
+import { useRef, useState } from "react";
+import { Download, X } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { glassStyles } from "@/lib/design-system";
+import { downloadQrAsPng } from "@/lib/qr-download";
 
 export default function TicketModal({ onClose }: { onClose: () => void }) {
+  const qrRef = useRef<HTMLDivElement>(null);
+  const [downloading, setDownloading] = useState(false);
+
+  async function handleDownload() {
+    if (!qrRef.current) return;
+    setDownloading(true);
+    await downloadQrAsPng(qrRef.current, {
+      filename: "TripSync-Eticket-BUS01150224",
+      subtitle: "Booking Code: BUS01150224",
+      seatInfo: "Terminal Gate Pass",
+    });
+    setDownloading(false);
+  }
+
   return (
     <>
       <button
@@ -46,16 +60,26 @@ export default function TicketModal({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className="flex flex-col items-center justify-center py-4">
-          <div className="mb-6 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+          <div ref={qrRef} className="mb-6 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
             <QRCodeSVG value="BUS01150224" size={200} />
           </div>
 
           <p className="mb-1 text-sm font-medium text-slate-500">
             Booking code
           </p>
-          <p className="mb-6 text-2xl font-bold tracking-wider text-slate-900 dark:text-white">
+          <p className="mb-4 text-2xl font-bold tracking-wider text-slate-900 dark:text-white">
             BUS01150224
           </p>
+
+          <button
+            type="button"
+            onClick={handleDownload}
+            disabled={downloading}
+            className="mb-4 flex w-full max-w-xs items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 disabled:opacity-50"
+          >
+            <Download className="h-4 w-4 text-brand-orange" />
+            <span>{downloading ? "Saving..." : "Download QR Pass"}</span>
+          </button>
 
           <p className="px-4 text-center text-sm leading-6 text-slate-500 dark:text-slate-400">
             Scan this QR code at the terminal gate during your assigned

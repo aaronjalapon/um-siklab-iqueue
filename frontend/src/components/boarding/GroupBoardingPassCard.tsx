@@ -1,10 +1,10 @@
-"use client";
-
+import { useRef, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import {
   Accessibility,
   CheckCircle2,
   Clock3,
+  Download,
   MapPin,
   ShieldCheck,
   Users,
@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { BRAND } from "@/lib/brand";
 import { glassStyles } from "@/lib/design-system";
+import { downloadQrAsPng } from "@/lib/qr-download";
 import type { GroupBookingResponse } from "@/lib/types";
 import { formatBoardingWindow, formatDate } from "@/lib/utils";
 
@@ -22,6 +23,21 @@ export default function GroupBoardingPassCard({
   booking: GroupBookingResponse;
   savedCopy?: boolean;
 }) {
+  const qrContainerRef = useRef<HTMLDivElement>(null);
+  const [downloading, setDownloading] = useState(false);
+
+  async function handleDownload() {
+    if (!qrContainerRef.current) return;
+    setDownloading(true);
+    const seatsList = booking.members.map((m) => m.seat_label).join(", ");
+    await downloadQrAsPng(qrContainerRef.current, {
+      filename: `TripSync-Family-Pass-${booking.group_id.slice(0, 8)}`,
+      subtitle: `${booking.route_origin} → ${booking.route_destination} · ${booking.members.length} Passengers`,
+      seatInfo: `Assigned Seats: ${seatsList}`,
+    });
+    setDownloading(false);
+  }
+
   return (
     <section className={`${glassStyles.panel} overflow-hidden`}>
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-glass-border p-5">
@@ -74,11 +90,21 @@ export default function GroupBoardingPassCard({
         </div>
 
         <div className="flex flex-col items-center justify-center rounded-2xl bg-white p-4 text-center shadow-sm">
-          <div role="img" aria-label={`Combined QR boarding pass for ${booking.members.length} family members`}>
+          <div ref={qrContainerRef} role="img" aria-label={`Combined QR boarding pass for ${booking.members.length} family members`}>
             <QRCodeSVG value={booking.qr_token} size={220} level="M" />
           </div>
-          <p className="mt-3 text-xs font-bold text-slate-600">One QR for the whole family</p>
+          <p className="mt-3 text-xs font-bold text-slate-700">One QR for the whole family</p>
           <p className="mt-1 text-[11px] text-slate-500">Saved pass access works offline. Gate verification in this demo is online.</p>
+          
+          <button
+            type="button"
+            onClick={handleDownload}
+            disabled={downloading}
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-bold text-white shadow-md transition-all hover:bg-slate-800 active:scale-95 dark:bg-slate-800 dark:hover:bg-slate-700 disabled:opacity-50"
+          >
+            <Download className="h-4 w-4 text-brand-orange" />
+            <span>{downloading ? "Saving Pass..." : "Download QR Pass"}</span>
+          </button>
         </div>
       </div>
     </section>

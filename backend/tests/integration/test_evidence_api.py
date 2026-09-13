@@ -24,9 +24,15 @@ async def test_evidence_summary_discloses_synthetic_data(
 @pytest.mark.asyncio
 async def test_retraining_replay_is_disabled_outside_demo_mode(
     client: AsyncClient,
+    monkeypatch,
 ) -> None:
-    response = await client.post("/api/v1/demo/retraining-replay")
-    assert response.status_code == 404
+    monkeypatch.setenv("DEMO_MODE", "false")
+    get_settings.cache_clear()
+    try:
+        response = await client.post("/api/v1/demo/retraining-replay")
+        assert response.status_code == 404
+    finally:
+        get_settings.cache_clear()
 
 
 @pytest.mark.asyncio

@@ -1,9 +1,9 @@
-"use client";
-
+import { useRef, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { CheckCircle, Clock, MapPin, Ticket, WifiOff } from "lucide-react";
+import { CheckCircle, Clock, Download, MapPin, Ticket, WifiOff } from "lucide-react";
 import { BRAND } from "@/lib/brand";
 import { glassStyles } from "@/lib/design-system";
+import { downloadQrAsPng } from "@/lib/qr-download";
 import type { BookingDetail } from "@/lib/types";
 import { formatBoardingWindow, formatDate, statusColorClass } from "@/lib/utils";
 
@@ -22,8 +22,21 @@ export default function BoardingPassCard({
   savedCopy = false,
   className = "",
 }: BoardingPassCardProps) {
+  const qrContainerRef = useRef<HTMLDivElement>(null);
+  const [downloading, setDownloading] = useState(false);
   const routeOrigin = booking.route_origin || "Origin";
   const routeDestination = booking.route_destination || "Destination";
+
+  async function handleDownload() {
+    if (!qrContainerRef.current) return;
+    setDownloading(true);
+    await downloadQrAsPng(qrContainerRef.current, {
+      filename: `TripSync-Boarding-Pass-${booking.id.slice(0, 8)}`,
+      subtitle: `${routeOrigin} → ${routeDestination} · Seat ${booking.seat_number}`,
+      seatInfo: `Seat: ${booking.seat_number} · Passenger: ${booking.passenger_name || "Confirmed"}`,
+    });
+    setDownloading(false);
+  }
 
   return (
     <section className={`${glassStyles.panel} overflow-hidden ${className}`}>
@@ -101,10 +114,23 @@ export default function BoardingPassCard({
         </div>
 
         <div className="flex flex-col items-center justify-center rounded-2xl bg-white p-4 text-center shadow-sm">
-          <QRCodeSVG value={getQrValue(booking)} size={200} level="M" />
-          <p className="mt-3 text-xs font-medium text-slate-500">
-            Saved pass access works offline; gate verification requires a connection.
+          <div ref={qrContainerRef} role="img" aria-label={`QR boarding pass for seat ${booking.seat_number}`}>
+            <QRCodeSVG value={getQrValue(booking)} size={200} level="M" />
+          </div>
+          <p className="mt-3 text-xs font-bold text-slate-700">Scan at Terminal Gate</p>
+          <p className="mt-1 text-[11px] text-slate-500">
+            Saved pass access works offline.
           </p>
+          
+          <button
+            type="button"
+            onClick={handleDownload}
+            disabled={downloading}
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-bold text-white shadow-md transition-all hover:bg-slate-800 active:scale-95 dark:bg-slate-800 dark:hover:bg-slate-700 disabled:opacity-50"
+          >
+            <Download className="h-4 w-4 text-brand-orange" />
+            <span>{downloading ? "Saving Pass..." : "Download QR Pass"}</span>
+          </button>
         </div>
       </div>
     </section>

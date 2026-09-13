@@ -20,7 +20,7 @@ export const glassStyles = {
   secondaryButton: 'bg-brand-orange hover:bg-orange-600 text-white border border-orange-500 rounded-xl transition-colors duration-300 shadow-lg shadow-orange-500/20 trim-cap-alpha px-4 py-2',
 
   // Input field (frosted inner inset)
-  input: 'bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border border-glass-border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-blue/50 transition-all text-foreground',
+  input: 'w-full block bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border border-glass-border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-blue/50 transition-all text-foreground',
 
   // Operator dashboard stat card
   statCard:

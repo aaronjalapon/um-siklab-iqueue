@@ -34,22 +34,16 @@ function getApiBaseUrl(): string {
     return configured;
   }
 
-  try {
-    const url = new URL(configured);
-    const isLocalApiHost = ["localhost", "127.0.0.1", "0.0.0.0"].includes(
-      url.hostname
-    );
-    const browserHost = window.location.hostname;
-    const isBrowserOnLocalhost = ["localhost", "127.0.0.1"].includes(
-      browserHost
-    );
-
-    if (isLocalApiHost && !isBrowserOnLocalhost) {
-      url.hostname = browserHost;
-      return url.toString();
-    }
-  } catch {
-    return configured;
+  // In browser, always use relative path if configured as relative or local host
+  // This routes through Next.js proxy on the same port, avoiding all CORS and port issues on mobile
+  if (
+    configured.startsWith("/") ||
+    configured.includes("localhost") ||
+    configured.includes("127.0.0.1") ||
+    configured.includes("0.0.0.0") ||
+    configured.includes("192.168.")
+  ) {
+    return "/api/v1";
   }
 
   return configured;
@@ -147,6 +141,15 @@ export async function verifyBoardingPass(
     token,
   });
   return data;
+}
+
+export async function getDemoBoardingToken(): Promise<string> {
+  try {
+    const { data } = await api.get<{ token: string }>("/boarding/demo-token");
+    return data.token || "";
+  } catch {
+    return "";
+  }
 }
 
 // --- Forecasts ---

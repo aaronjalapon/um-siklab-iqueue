@@ -5,7 +5,9 @@ import DevelopmentRuntimeGate from "@/components/DevelopmentRuntimeGate";
 import PWARegistrar from "@/components/PWARegistrar";
 import { BRAND } from "@/lib/brand";
 import { SHOULD_ENABLE_PWA } from "@/lib/pwa-runtime";
+import "lenis/dist/lenis.css";
 import "./globals.css";
+import SmoothScroll from "@/components/SmoothScroll";
 
 config.autoAddCss = false;
 
@@ -58,11 +60,13 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full antialiased" suppressHydrationWarning>
       <body suppressHydrationWarning className="min-h-full bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 text-foreground flex flex-col font-sans relative overflow-x-hidden">
-        {/* Main Content */}
-        <div className="flex-1 w-full relative z-0">
-          <DevelopmentRuntimeGate>{children}</DevelopmentRuntimeGate>
-        </div>
-        <PWARegistrar />
+        <SmoothScroll>
+          {/* Main Content */}
+          <div className="flex-1 w-full relative z-0">
+            <DevelopmentRuntimeGate>{children}</DevelopmentRuntimeGate>
+          </div>
+          <PWARegistrar />
+        </SmoothScroll>
       </body>
     </html>
   );

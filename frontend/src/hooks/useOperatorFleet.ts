@@ -59,9 +59,7 @@ export function useOperatorFleet({
       }
     }
 
-    queueMicrotask(() => {
-      if (!cancelled) setLoadState("loading");
-    });
+    setLoadState("loading");
     void load();
 
     return () => {

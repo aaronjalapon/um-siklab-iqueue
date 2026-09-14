@@ -7,7 +7,8 @@ import {
   Accessibility,
   Armchair,
   ArrowLeft,
-  ChevronRight,
+  ArrowRight,
+  ChevronDown,
   Languages,
   Minus,
   Phone,
@@ -17,7 +18,11 @@ import {
   Users,
 } from "lucide-react";
 import { BookingProgress } from "@/components/ui/BookingProgress";
-import { PageHeader } from "@/components/ui/PageHeader";
+import {
+  AseanContactInput,
+  NameInput,
+  parseAseanPhone,
+} from "@/components/booking/AseanContactInput";
 import { BRAND } from "@/lib/brand";
 import { glassStyles } from "@/lib/design-system";
 import { saveGroupBookingDraft } from "@/lib/group-booking-drafts";
@@ -32,18 +37,18 @@ const EMPTY_MEMBER: GroupMemberRequest = {
 
 const DEMO_MEMBERS: GroupMemberRequest[] = [
   { name: "Maria Santos", phone: "+639171234567", accessibility_needs: true },
-  { name: "Ana Santos", phone: "+639171234568", accessibility_needs: false },
-  { name: "Luis Santos", phone: "+639171234569", accessibility_needs: false },
+  { name: "Ana Santos", phone: "", accessibility_needs: false },
+  { name: "Luis Santos", phone: "+639171234568", accessibility_needs: false },
 ];
 
 export default function PreferencesPage() {
   const { busId } = useParams<{ busId: string }>();
   const params = useSearchParams();
   const router = useRouter();
-  const date = params.get("date") || "";
+  const date = params.get("date") || params.get("travel_date") || "";
   const origin = params.get("origin") || "";
-  const dest = params.get("dest") || "";
-  const [mode, setMode] = useState<"single" | "family">("single");
+  const dest = params.get("dest") || params.get("destination") || "";
+  const [mode, setMode] = useState<"single" | "group">("single");
   const [formData, setFormData] = useState<PassengerFormData>({
     name: "",
     phone: "",
@@ -77,26 +82,51 @@ export default function PreferencesPage() {
     );
   }
 
-  function validateFamily(): boolean {
+  function validateGroup(): boolean {
     const next: string[] = [];
     const names = members.map((member) => member.name.trim().toLocaleLowerCase());
-    const phones = members.map((member) => member.phone.trim());
+
     if (members.some((member) => !member.name.trim())) {
-      next.push("Every family member needs a name.");
+      next.push("Every group member needs a name.");
+    } else if (members.some((member) => !/^[a-zA-Z\sñÑ]{2,}$/.test(member.name.trim()))) {
+      next.push("Member names may only contain letters and spaces (min. 2 characters).");
     }
-    if (members.some((member) => member.phone.trim().length < 5)) {
-      next.push("Every family member needs a valid phone number.");
+
+    if (new Set(names).size !== names.length) {
+      next.push("Group member names must be unique.");
     }
-    if (new Set(names).size !== names.length) next.push("Family member names must be unique.");
-    if (new Set(phones).size !== phones.length) next.push("Phone numbers must be unique.");
+
+    const leadDigits = parseAseanPhone(members[0]?.phone || "").digits;
+    if (!leadDigits) {
+      next.push("Lead passenger needs a valid mobile number.");
+    } else if (leadDigits.length < 7 || leadDigits.length > 10) {
+      next.push("Lead passenger mobile number must be up to 10 digits (min. 7 digits).");
+    }
+
+    const nonLeadMembers = members.slice(1);
+    for (let i = 0; i < nonLeadMembers.length; i++) {
+      const memberDigits = parseAseanPhone(nonLeadMembers[i].phone || "").digits;
+      if (memberDigits && (memberDigits.length < 7 || memberDigits.length > 10)) {
+        next.push(`Group member ${i + 2} mobile number must be up to 10 digits (min. 7 digits).`);
+      }
+    }
+
+    const allProvidedPhones = members
+      .map((member) => member.phone?.trim() || "")
+      .filter((p) => Boolean(parseAseanPhone(p).digits));
+
+    if (new Set(allProvidedPhones).size !== allProvidedPhones.length) {
+      next.push("Provided mobile numbers must be unique.");
+    }
+
     setErrors(next);
     return next.length === 0;
   }
 
   function submit(event: React.FormEvent) {
     event.preventDefault();
-    if (mode === "family") {
-      if (!validateFamily()) return;
+    if (mode === "group") {
+      if (!validateGroup()) return;
       const draftId = saveGroupBookingDraft({
         busId,
         date,
@@ -105,7 +135,7 @@ export default function PreferencesPage() {
         members,
         preferences: {
           language_preference: formData.language_pref,
-          travel_habit: "family",
+          travel_habit: "group",
           lifestyle_interest: formData.lifestyle_interests || undefined,
           seat_preference: formData.preferred_seat_type || undefined,
           preferred_side: formData.preferred_side || undefined,
@@ -119,8 +149,20 @@ export default function PreferencesPage() {
     }
 
     const singleErrors: string[] = [];
-    if (!formData.name.trim()) singleErrors.push("Name is required.");
-    if (formData.phone.trim().length < 5) singleErrors.push("Enter a valid phone number.");
+    const trimmedName = formData.name.trim();
+    if (!trimmedName) {
+      singleErrors.push("Full name is required.");
+    } else if (!/^[a-zA-Z\sñÑ]{2,}$/.test(trimmedName)) {
+      singleErrors.push("Full name must only contain letters and spaces (min. 2 characters).");
+    }
+
+    const singleDigits = parseAseanPhone(formData.phone).digits;
+    if (!singleDigits) {
+      singleErrors.push("Mobile number is required.");
+    } else if (singleDigits.length < 7 || singleDigits.length > 10) {
+      singleErrors.push("Mobile number must be up to 10 digits (min. 7 digits).");
+    }
+
     setErrors(singleErrors);
     if (singleErrors.length) return;
     router.push(
@@ -128,8 +170,8 @@ export default function PreferencesPage() {
         date,
         origin,
         dest,
-        name: formData.name,
-        phone: formData.phone,
+        name: formData.name.trim(),
+        phone: formData.phone.trim(),
         language_pref: formData.language_pref,
         travel_habits: formData.travel_habits,
         lifestyle_interests: formData.lifestyle_interests,
@@ -142,31 +184,42 @@ export default function PreferencesPage() {
   }
 
   const accessibilityCount =
-    mode === "family"
+    mode === "group"
       ? members.filter((member) => member.accessibility_needs).length
       : Number(formData.accessibility_needs);
 
   return (
-    <div className={`${glassStyles.pageContainer} max-w-4xl`}>
-      <Link
-        href={`/buy?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(dest)}&date=${date}`}
-        prefetch={false}
-        className="inline-flex items-center gap-1 text-sm font-medium text-brand-blue hover:underline"
-      >
-        <ArrowLeft className="h-4 w-4" aria-hidden /> Back to search
-      </Link>
-      <BookingProgress current="preferences" />
-      <PageHeader
-        eyebrow="Passenger profile"
-        title="Who are you booking for?"
-        description={`${BRAND.name} applies assistance needs first, then keeps families close.`}
-      />
+    <div className={`${glassStyles.pageContainer} max-w-4xl !space-y-3 sm:!space-y-5 !px-3 sm:!px-6 !py-3 sm:!py-6`}>
+      <div className="flex items-center justify-between">
+        <Link
+          href={`/buy?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(dest)}&date=${date}`}
+          prefetch={false}
+          className="inline-flex items-center gap-1 text-xs sm:text-sm font-medium text-brand-blue hover:underline"
+        >
+          <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden /> Back to search
+        </Link>
+      </div>
 
-      <form onSubmit={submit} className="space-y-5">
-        <fieldset className={`${glassStyles.panel} p-5`}>
+      <BookingProgress current="preferences" />
+
+      <header className="min-w-0">
+        <p className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.18em] text-brand-blue">
+          Passenger profile
+        </p>
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-foreground tracking-tight">
+          Who are you booking for?
+        </h1>
+        <p className="mt-0.5 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+          {BRAND.name} applies assistance needs first, then keeps groups seated together.
+        </p>
+      </header>
+
+      <form onSubmit={submit} className="space-y-3 sm:space-y-5">
+        {/* Booking mode selector: strictly horizontal side-by-side with no text stacking */}
+        <fieldset className={`${glassStyles.panel} p-2.5 sm:p-4`}>
           <legend className="sr-only">Booking mode</legend>
-          <div className="grid grid-cols-2 gap-3">
-            {(["single", "family"] as const).map((value) => (
+          <div className="grid grid-cols-2 gap-2 sm:gap-3">
+            {(["single", "group"] as const).map((value) => (
               <button
                 key={value}
                 type="button"
@@ -175,27 +228,32 @@ export default function PreferencesPage() {
                   setMode(value);
                   setErrors([]);
                 }}
-                className={`min-h-14 rounded-xl border px-4 py-3 font-semibold capitalize ${
+                className={`min-h-[42px] sm:min-h-12 w-full rounded-xl border px-2 sm:px-4 py-2 sm:py-2.5 font-bold transition-all text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 active:scale-[0.99] ${
                   mode === value
-                    ? "border-brand-blue bg-blue-50 text-brand-blue dark:bg-blue-950/40"
-                    : "border-slate-300 bg-white/60 text-slate-600 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-300"
+                    ? "border-brand-blue bg-blue-50 text-brand-blue dark:bg-blue-950/40 shadow-sm"
+                    : "border-glass-border bg-white/50 text-slate-600 hover:border-brand-blue/40 hover:text-brand-blue dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-300"
                 }`}
               >
-                <span className="inline-flex items-center gap-2">
-                  {value === "family" ? <Users className="h-5 w-5" /> : <UserRound className="h-5 w-5" />}
-                  {value === "family" ? "Family booking" : "Single booking"}
+                {value === "group" ? (
+                  <Users className="h-4 w-4 shrink-0 text-brand-orange" aria-hidden />
+                ) : (
+                  <UserRound className="h-4 w-4 shrink-0 text-brand-blue" aria-hidden />
+                )}
+                <span className="whitespace-nowrap">
+                  {value === "group" ? "Group Booking" : "Single Booking"}
                 </span>
               </button>
             ))}
           </div>
         </fieldset>
 
-        <section className={`${glassStyles.panel} p-5 md:p-6`}>
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold text-foreground">
-              {mode === "family" ? `Family members (${members.length} of 6)` : "Passenger details"}
+        {/* Passenger details section */}
+        <section className={`${glassStyles.panel} p-3.5 sm:p-5 md:p-6`}>
+          <div className="mb-3 sm:mb-4 flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-sm sm:text-base font-bold text-foreground">
+              {mode === "group" ? `Group members (${members.length} of 6)` : "Passenger details"}
             </h2>
-            {mode === "family" && (
+            {mode === "group" && (
               <button
                 type="button"
                 onClick={() => {
@@ -203,128 +261,204 @@ export default function PreferencesPage() {
                   setFormData((current) => ({
                     ...current,
                     language_pref: "fil",
-                    travel_habits: "family",
+                    travel_habits: "group",
                     affinity_opt_in: false,
                   }));
                 }}
-                className="rounded-lg border border-brand-blue px-3 py-2 text-xs font-semibold text-brand-blue hover:bg-blue-50"
+                className="rounded-lg border border-brand-blue/50 px-2.5 py-1 text-[11px] sm:text-xs font-semibold text-brand-blue hover:bg-blue-50 dark:hover:bg-blue-950/30 transition active:scale-95"
               >
-                Load BIDA demo family
+                Load demo group
               </button>
             )}
           </div>
 
           {mode === "single" ? (
-            <div className="grid gap-4 md:grid-cols-2">
-              <TextField id="name" label="Full name" value={formData.name} onChange={(value) => updateField("name", value)} />
-              <TextField id="phone" label="Phone number" type="tel" value={formData.phone} onChange={(value) => updateField("phone", value)} />
+            <div className="grid gap-2.5 sm:gap-4 md:grid-cols-2">
+              <NameInput
+                id="name"
+                label="Full name"
+                value={formData.name}
+                required={true}
+                onChange={(value) => updateField("name", value)}
+              />
+              <AseanContactInput
+                id="phone"
+                label="Mobile number"
+                value={formData.phone}
+                required={true}
+                placeholder=""
+                onChange={(value) => updateField("phone", value)}
+              />
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {members.map((member, index) => (
-                <fieldset key={index} className="rounded-xl border border-slate-200 p-4 dark:border-slate-700">
-                  <legend className="px-1 text-sm font-bold text-slate-700 dark:text-slate-200">
-                    {index === 0 ? "Lead passenger" : `Family member ${index + 1}`}
+                <fieldset key={index} className="rounded-xl border border-glass-border/80 bg-white/30 dark:bg-slate-900/30 p-3 sm:p-4 space-y-2.5">
+                  <legend className="px-1 text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200">
+                    {index === 0 ? "Lead passenger (Primary contact)" : `Group member ${index + 1}`}
                   </legend>
-                  <div className="grid gap-3 md:grid-cols-2">
-                    <TextField id={`member-${index}-name`} label="Full name" value={member.name} onChange={(name) => updateMember(index, { name })} />
-                    <TextField id={`member-${index}-phone`} label="Phone number" type="tel" value={member.phone} onChange={(phone) => updateMember(index, { phone })} />
-                  </div>
-                  <label className="mt-3 flex min-h-12 items-center gap-3 rounded-lg bg-amber-50 px-3 py-2 text-sm font-medium text-amber-950 dark:bg-amber-950/40 dark:text-amber-100">
-                    <input
-                      type="checkbox"
-                      checked={member.accessibility_needs}
-                      onChange={(event) => updateMember(index, { accessibility_needs: event.target.checked })}
-                      aria-label={`${member.name || `Family member ${index + 1}`} needs an accessible seat`}
-                      className="h-5 w-5 rounded border-amber-500"
+                  <div className="grid gap-2.5 sm:gap-3 md:grid-cols-2">
+                    <NameInput
+                      id={`member-${index}-name`}
+                      label="Full name"
+                      value={member.name}
+                      required={true}
+                      onChange={(name) => updateMember(index, { name })}
                     />
-                    <Accessibility className="h-5 w-5" aria-hidden /> Accessible seat required
-                  </label>
+                    <AseanContactInput
+                      id={`member-${index}-phone`}
+                      label="Mobile number"
+                      value={member.phone || ""}
+                      required={index === 0}
+                      placeholder={index === 0 ? "" : "Optional"}
+                      onChange={(phone) => updateMember(index, { phone })}
+                    />
+                  </div>
+                  <div className="flex items-center pt-0.5">
+                    <label
+                      htmlFor={`member-${index}-accessibility`}
+                      className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium border transition-colors cursor-pointer select-none ${
+                        member.accessibility_needs
+                          ? "bg-amber-100/90 dark:bg-amber-900/50 border-amber-400 dark:border-amber-600 text-amber-900 dark:text-amber-100"
+                          : "bg-amber-50/70 dark:bg-amber-950/30 border-amber-200/60 dark:border-amber-900/40 text-amber-800 dark:text-amber-300 hover:bg-amber-100/60"
+                      }`}
+                      title="Accessible / PWD seating required"
+                    >
+                      <input
+                        id={`member-${index}-accessibility`}
+                        type="checkbox"
+                        checked={member.accessibility_needs}
+                        onChange={(event) => updateMember(index, { accessibility_needs: event.target.checked })}
+                        aria-label={`${member.name || `Group member ${index + 1}`} needs an accessible seat`}
+                        className="h-3.5 w-3.5 rounded border-amber-500 text-amber-600 focus:ring-amber-500 cursor-pointer"
+                      />
+                      <Accessibility className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" aria-hidden />
+                    </label>
+                  </div>
                 </fieldset>
               ))}
-              <div className="flex gap-2">
-                <button type="button" disabled={members.length <= 2} onClick={() => setMembers((current) => current.slice(0, -1))} className="inline-flex min-h-11 items-center gap-1 rounded-lg border px-3 text-sm disabled:opacity-40">
-                  <Minus className="h-4 w-4" /> Remove
+              <div className="flex gap-2.5 pt-1">
+                <button
+                  type="button"
+                  disabled={members.length <= 2}
+                  onClick={() => setMembers((current) => current.slice(0, -1))}
+                  className="inline-flex min-h-[36px] sm:min-h-10 items-center justify-center gap-1.5 rounded-xl border border-red-500/30 bg-red-600 hover:bg-red-500 active:bg-red-700 text-white px-3.5 sm:px-4 text-xs sm:text-sm font-bold shadow-md shadow-red-600/20 disabled:opacity-40 disabled:pointer-events-none transition-all duration-200 active:scale-95"
+                >
+                  <Minus className="h-3.5 w-3.5" /> Remove
                 </button>
-                <button type="button" disabled={members.length >= 6} onClick={() => setMembers((current) => [...current, { ...EMPTY_MEMBER }])} className="inline-flex min-h-11 items-center gap-1 rounded-lg border px-3 text-sm disabled:opacity-40">
-                  <Plus className="h-4 w-4" /> Add member
+                <button
+                  type="button"
+                  disabled={members.length >= 6}
+                  onClick={() => setMembers((current) => [...current, { ...EMPTY_MEMBER }])}
+                  className="inline-flex min-h-[36px] sm:min-h-10 items-center justify-center gap-1.5 rounded-xl border border-blue-500/40 bg-brand-blue hover:bg-blue-600 active:bg-blue-700 text-white px-3.5 sm:px-4 text-xs sm:text-sm font-bold shadow-md shadow-brand-blue/20 disabled:opacity-40 disabled:pointer-events-none transition-all duration-200 active:scale-95"
+                >
+                  <Plus className="h-3.5 w-3.5" /> Add member
                 </button>
               </div>
             </div>
           )}
         </section>
 
-        <section aria-labelledby="assistance-title" className="rounded-2xl border-2 border-amber-500 bg-amber-50 p-5 text-amber-950 shadow-sm dark:bg-amber-950/40 dark:text-amber-50">
-          <div className="flex items-start gap-3">
-            <ShieldCheck className="mt-0.5 h-7 w-7 shrink-0" aria-hidden />
-            <div>
-              <h2 id="assistance-title" className="text-lg font-extrabold">Accessibility assistance</h2>
-              <p className="mt-1 text-sm">
-                {accessibilityCount} passenger{accessibilityCount === 1 ? " currently requires" : "s currently require"} priority seating. This is a hard requirement; family proximity is secondary.
+        {/* Accessibility assistance priority box */}
+        <section aria-labelledby="assistance-title" className="rounded-2xl border border-amber-400/80 bg-amber-50/90 p-3.5 sm:p-5 text-amber-950 shadow-sm dark:bg-amber-950/40 dark:border-amber-700/60 dark:text-amber-50">
+          <div className="flex items-start gap-2.5 sm:gap-3">
+            <ShieldCheck className="mt-0.5 h-5 w-5 sm:h-6 sm:w-6 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden />
+            <div className="min-w-0">
+              <h2 id="assistance-title" className="text-xs sm:text-sm font-extrabold text-amber-950 dark:text-amber-100">Accessibility assistance</h2>
+              <p className="mt-0.5 text-[11px] sm:text-xs leading-relaxed text-amber-900/90 dark:text-amber-200/90">
+                {accessibilityCount} passenger{accessibilityCount === 1 ? " currently requires" : "s currently require"} priority seating. This is a hard requirement; group proximity is secondary.
               </p>
               {mode === "single" && (
-                <label className="mt-4 flex min-h-12 items-center gap-3 rounded-lg border border-amber-600 bg-white/70 px-3 py-2 font-semibold">
-                  <input type="checkbox" checked={formData.accessibility_needs} onChange={(event) => updateField("accessibility_needs", event.target.checked)} className="h-5 w-5" />
-                  <Accessibility className="h-5 w-5" /> I require an accessible seat near the exit
+                <label className="mt-2.5 flex min-h-[36px] sm:min-h-10 items-center gap-1.5 sm:gap-2 rounded-xl border border-amber-300 dark:border-amber-800/60 bg-white/80 dark:bg-slate-900/60 px-2 sm:px-3 py-1.5 text-[10px] sm:text-xs font-semibold text-foreground cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.accessibility_needs}
+                    onChange={(event) => updateField("accessibility_needs", event.target.checked)}
+                    className="h-3.5 w-3.5 sm:h-4 sm:w-4 rounded border-amber-500 shrink-0"
+                  />
+                  <Accessibility className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-amber-600 shrink-0" />
+                  <span className="whitespace-nowrap">I require an accessible seat near the exit</span>
                 </label>
               )}
             </div>
           </div>
         </section>
 
-        <section className={`${glassStyles.panel} grid gap-4 p-5 md:grid-cols-2 md:p-6`}>
-          <label className="text-sm font-medium">
-            <span className="mb-1 flex items-center gap-2"><Languages className="h-4 w-4" /> Shared language</span>
-            <select value={formData.language_pref} onChange={(event) => updateField("language_pref", event.target.value)} className={`${glassStyles.input} w-full`}>
-              {Object.entries(LANGUAGE_LABELS).map(([code, label]) => <option key={code} value={code}>{label}</option>)}
-            </select>
+        {/* Shared preferences section */}
+        <section className={`${glassStyles.panel} grid gap-2.5 sm:gap-4 p-3.5 sm:p-5 md:grid-cols-2 md:p-6`}>
+          <label className="text-xs sm:text-sm font-medium">
+            <span className="mb-1 flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
+              <Languages className="h-3.5 w-3.5" /> Shared language
+            </span>
+            <div className="relative">
+              <select
+                value={formData.language_pref}
+                onChange={(event) => updateField("language_pref", event.target.value)}
+                className="w-full appearance-none block bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border border-glass-border rounded-xl pl-3 pr-9 sm:pr-10 py-2 sm:py-2.5 text-xs sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-brand-blue/50 cursor-pointer"
+              >
+                {Object.entries(LANGUAGE_LABELS).map(([code, label]) => (
+                  <option key={code} value={code}>{label}</option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3.5 sm:right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" aria-hidden />
+            </div>
           </label>
-          <label className="text-sm font-medium">
-            <span className="mb-1 flex items-center gap-2"><Armchair className="h-4 w-4" /> Shared seat preference</span>
-            <select value={formData.preferred_seat_type} onChange={(event) => updateField("preferred_seat_type", event.target.value)} className={`${glassStyles.input} w-full`}>
-              <option value="">No preference</option><option value="window">Window</option><option value="aisle">Aisle</option>
-            </select>
+          <label className="text-xs sm:text-sm font-medium">
+            <span className="mb-1 flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
+              <Armchair className="h-3.5 w-3.5" /> Shared seat preference
+            </span>
+            <div className="relative">
+              <select
+                value={formData.preferred_seat_type}
+                onChange={(event) => updateField("preferred_seat_type", event.target.value)}
+                className="w-full appearance-none block bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border border-glass-border rounded-xl pl-3 pr-9 sm:pr-10 py-2 sm:py-2.5 text-xs sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-brand-blue/50 cursor-pointer"
+              >
+                <option value="">No preference</option>
+                <option value="window">Window</option>
+                <option value="aisle">Aisle</option>
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3.5 sm:right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" aria-hidden />
+            </div>
           </label>
-          <label className="md:col-span-2 flex items-start gap-3 rounded-lg border p-3 text-sm">
-            <input type="checkbox" checked={formData.affinity_opt_in} onChange={(event) => updateField("affinity_opt_in", event.target.checked)} className="mt-1" />
-            <span><strong>Optional affinity matching</strong><span className="block text-xs text-slate-500">Left off in the BIDA family demo. It never overrides accessibility or family proximity.</span></span>
+          <label className="md:col-span-2 flex items-start gap-2.5 rounded-xl border border-glass-border bg-white/30 dark:bg-slate-900/30 p-2.5 sm:p-3 text-xs sm:text-sm cursor-pointer hover:bg-white/40 dark:hover:bg-slate-900/40 transition-colors">
+            <input
+              type="checkbox"
+              checked={formData.affinity_opt_in}
+              onChange={(event) => updateField("affinity_opt_in", event.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded accent-brand-blue cursor-pointer"
+            />
+            <div>
+              <strong className="font-semibold text-foreground">
+                Seatmate affinity matching <span className="text-[10px] sm:text-xs font-normal text-slate-400 dark:text-slate-500">(Optional)</span>
+              </strong>
+              <span className="block text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
+                Helps place you beside passengers who share your preferred language and compatible travel preferences for a more comfortable journey.
+              </span>
+            </div>
           </label>
         </section>
 
         {errors.length > 0 && (
-          <div role="alert" className="rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-800">
-            <ul className="list-disc space-y-1 pl-5">{errors.map((error) => <li key={error}>{error}</li>)}</ul>
+          <div role="alert" className="rounded-xl border border-red-300 bg-red-50 p-3 text-xs sm:text-sm text-red-800 dark:bg-red-950/40 dark:border-red-800 dark:text-red-200">
+            <ul className="list-disc space-y-1 pl-5">
+              {errors.map((error) => (
+                <li key={error}>{error}</li>
+              ))}
+            </ul>
           </div>
         )}
 
-        <button type="submit" className={`${glassStyles.primaryButton} flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl text-base font-bold`}>
-          {mode === "family" ? "Recommend Family Seats" : "Find My Best Seat"}
-          <ChevronRight className="h-4 w-4" aria-hidden />
+        {/* Submit action button: Emerald CTA */}
+        <button
+          type="submit"
+          className={`${glassStyles.successButton} flex min-h-[42px] sm:min-h-12 w-full items-center justify-center gap-2 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold group active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2`}
+        >
+          <span>{mode === "group" ? "Recommend Group Seats" : "Find My Best Seat"}</span>
+          <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 transition-transform duration-200 group-hover:translate-x-1" aria-hidden />
         </button>
       </form>
     </div>
   );
 }
 
-function TextField({
-  id,
-  label,
-  value,
-  type = "text",
-  onChange,
-}: {
-  id: string;
-  label: string;
-  value: string;
-  type?: "text" | "tel";
-  onChange: (value: string) => void;
-}) {
-  return (
-    <label htmlFor={id} className="text-sm font-medium text-slate-700 dark:text-slate-300">
-      <span className="mb-1 flex items-center gap-2">
-        {type === "tel" ? <Phone className="h-4 w-4" /> : <UserRound className="h-4 w-4" />}{label}
-      </span>
-      <input id={id} type={type} value={value} onChange={(event) => onChange(event.target.value)} required className={`${glassStyles.input} w-full`} />
-    </label>
-  );
-}
+

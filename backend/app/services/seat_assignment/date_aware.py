@@ -102,7 +102,26 @@ async def _bookings_for_service_day(
             Booking.status.in_(ACTIVE_BOOKING_STATUSES),
         )
     )
-    return list(result.scalars().all())
+    bookings = list(result.scalars().all())
+    if not bookings:
+        from app.api.v1.buses import _ensure_demo_bookings_for_bus_date
+        bus_result = await session.execute(select(Bus).where(Bus.id == bus_uuid))
+        bus = bus_result.scalars().first()
+        if bus:
+            day = travel_date.date() if isinstance(travel_date, datetime) else travel_date
+            await _ensure_demo_bookings_for_bus_date(session, bus, day)
+            result = await session.execute(
+                select(Booking)
+                .options(selectinload(Booking.passenger))
+                .where(
+                    Booking.bus_id == bus_uuid,
+                    Booking.departure_date >= start,
+                    Booking.departure_date < end,
+                    Booking.status.in_(ACTIVE_BOOKING_STATUSES),
+                )
+            )
+            bookings = list(result.scalars().all())
+    return bookings
 
 
 async def get_travel_date_seat_map(

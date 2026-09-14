@@ -86,9 +86,9 @@ export default function ConfirmationPage() {
     <div className={`${glassStyles.pageContainer} max-w-2xl`}>
       <Link
         href="/home"
-        className="inline-flex items-center gap-1 text-sm font-medium text-brand-blue hover:underline"
+        className="hidden md:inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium text-brand-blue hover:underline transition-colors"
       >
-        <ArrowLeft className="h-4 w-4" aria-hidden />
+        <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden />
         Back home
       </Link>
 
@@ -101,7 +101,7 @@ export default function ConfirmationPage() {
       />
 
       {isSavedCopy && (
-        <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
+        <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 p-3 sm:p-4 text-xs sm:text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
           <WifiOff className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
           <p className="font-semibold">
             Showing the saved boarding pass from this device.

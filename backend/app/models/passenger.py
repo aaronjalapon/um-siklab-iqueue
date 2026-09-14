@@ -26,7 +26,7 @@ class Passenger(Base):
     )
 
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    phone: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
+    phone: Mapped[str | None] = mapped_column(String(20), nullable=True, index=True)
     language_pref: Mapped[str] = mapped_column(
         String(10), nullable=False, default="en", comment="ISO 639-1 language code"
     )

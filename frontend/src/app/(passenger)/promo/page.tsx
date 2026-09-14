@@ -1,10 +1,11 @@
 "use client";
 
-import { Gift, TicketPercent } from "lucide-react";
+import Link from "next/link";
+import { Gift, Search, TicketPercent } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { glassStyles } from "@/lib/design-system";
 
-const DEMO_REWARDS = [
+const UPCOMING_REWARDS = [
   "Earn points for on-time boarding",
   "Operator promos can appear here",
   "Discounts stay hidden until available",
@@ -12,37 +13,56 @@ const DEMO_REWARDS = [
 
 export default function PromoPage() {
   return (
-    <div className={`${glassStyles.pageContainer} max-w-4xl`}>
+    <div className={`${glassStyles.pageContainer} max-w-4xl !space-y-3 sm:!space-y-5 !px-3 sm:!px-6 !py-3 sm:!py-6`}>
       <PageHeader
         eyebrow="Promos"
-        title="Rewards and discounts"
+        title="Rewards & Discounts"
         description="Promo inventory is demo-ready and will show live operator offers when connected."
+        actions={
+          <Link
+            href="/buy"
+            className={`${glassStyles.primaryButton} inline-flex min-h-10 sm:min-h-11 items-center justify-center gap-2 text-xs sm:text-sm font-bold shadow-sm`}
+          >
+            <Search className="h-4 w-4" aria-hidden />
+            <span>Find a Bus</span>
+          </Link>
+        }
       />
 
-      <section className={`${glassStyles.panel} grid gap-6 p-6 md:grid-cols-[220px_1fr] md:p-8`}>
-        <div className="flex h-44 items-center justify-center rounded-3xl border border-orange-100 bg-orange-50 dark:border-orange-900/40 dark:bg-orange-950/30">
-          <Gift className="h-16 w-16 text-brand-orange" aria-hidden />
+      <section className={`${glassStyles.panel} flex flex-col items-center justify-center p-5 sm:p-8 text-center`}>
+        {/* Proportionate Responsive Icon Container */}
+        <div className="mb-4 sm:mb-5 flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-2xl sm:rounded-3xl border border-orange-200/80 bg-orange-50/90 shadow-inner dark:border-orange-900/40 dark:bg-orange-950/30">
+          <Gift className="h-8 w-8 sm:h-10 sm:w-10 text-brand-orange" aria-hidden />
         </div>
-        <div className="flex flex-col justify-center">
-          <h2 className="text-xl font-bold text-foreground">
-            No promos available right now
-          </h2>
-          <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
-            The passenger app is ready for rewards, but this prototype keeps
-            promo redemption out of scope.
-          </p>
-          <div className="mt-5 grid gap-2">
-            {DEMO_REWARDS.map((reward) => (
-              <div
-                key={reward}
-                className="flex items-center gap-2 rounded-xl bg-white/55 px-3 py-2 text-sm text-slate-600 dark:bg-slate-900/40 dark:text-slate-300"
-              >
-                <TicketPercent className="h-4 w-4 text-brand-orange" />
-                {reward}
-              </div>
-            ))}
-          </div>
+
+        <h2 className="text-base sm:text-xl font-bold text-foreground">
+          No promos available right now
+        </h2>
+
+        <p className="mt-1.5 max-w-md text-xs sm:text-sm leading-5 sm:leading-6 text-slate-500 dark:text-slate-400">
+          The passenger app is ready for rewards, but this prototype keeps promo redemption out of scope.
+        </p>
+
+        {/* Feature Hints: Responsive compact list */}
+        <div className="mt-4 sm:mt-5 grid w-full max-w-sm gap-2">
+          {UPCOMING_REWARDS.map((reward) => (
+            <div
+              key={reward}
+              className="flex items-center gap-2.5 rounded-xl border border-slate-200/60 bg-white/60 px-3 py-2 text-xs sm:text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-300 shadow-2xs text-left"
+            >
+              <TicketPercent className="h-4 w-4 text-brand-orange shrink-0" />
+              <span>{reward}</span>
+            </div>
+          ))}
         </div>
+
+        <Link
+          href="/buy"
+          className={`${glassStyles.primaryButton} mt-5 sm:mt-6 inline-flex min-h-10 items-center justify-center gap-2 text-xs sm:text-sm font-bold text-center active:scale-[0.98] transition-all`}
+        >
+          <Search className="h-4 w-4" aria-hidden />
+          <span>Search & Book Buses</span>
+        </Link>
       </section>
     </div>
   );

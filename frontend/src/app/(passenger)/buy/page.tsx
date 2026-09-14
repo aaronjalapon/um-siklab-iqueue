@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import {
   AlertCircle,
   ArrowLeft,
+  ArrowRight,
   Accessibility,
   BusFront,
   CalendarDays,
@@ -40,28 +41,96 @@ function getErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
 }
 
+const ROUTE_BASE_FARES: Record<string, number> = {
+  "davao city->cagayan de oro": 670,
+  "cagayan de oro->davao city": 670,
+  "davao city->general santos": 540,
+  "general santos->davao city": 540,
+  "davao city->cotabato city": 500,
+  "cotabato city->davao city": 500,
+  "cagayan de oro->iligan city": 400,
+  "iligan city->cagayan de oro": 400,
+  "davao city->butuan city": 620,
+  "butuan city->davao city": 620,
+  "cotabato city->zamboanga city": 750,
+  "zamboanga city->cotabato city": 750,
+};
+
+function calculateFareFallback(
+  origin: string,
+  destination: string,
+  capacity: number
+): number {
+  const orig = origin.toLowerCase().trim();
+  const dest = destination.toLowerCase().trim();
+  let baseFare = ROUTE_BASE_FARES[`${orig}->${dest}`];
+
+  if (!baseFare) {
+    if (
+      (orig.includes("davao") && dest.includes("cagayan")) ||
+      (orig.includes("cagayan") && dest.includes("davao"))
+    ) {
+      baseFare = 670;
+    } else if (
+      (orig.includes("davao") &&
+        (dest.includes("gensan") || dest.includes("general santos"))) ||
+      ((orig.includes("gensan") || orig.includes("general santos")) &&
+        dest.includes("davao"))
+    ) {
+      baseFare = 540;
+    } else if (
+      (orig.includes("davao") && dest.includes("cotabato")) ||
+      (orig.includes("cotabato") && dest.includes("davao"))
+    ) {
+      baseFare = 500;
+    } else if (
+      (orig.includes("cagayan") && dest.includes("iligan")) ||
+      (orig.includes("iligan") && dest.includes("cagayan"))
+    ) {
+      baseFare = 400;
+    } else if (
+      (orig.includes("davao") && dest.includes("butuan")) ||
+      (orig.includes("butuan") && dest.includes("davao"))
+    ) {
+      baseFare = 620;
+    } else if (
+      (orig.includes("cotabato") && dest.includes("zamboanga")) ||
+      (orig.includes("zamboanga") && dest.includes("cotabato"))
+    ) {
+      baseFare = 750;
+    } else {
+      baseFare = 500;
+    }
+  }
+
+  if (capacity >= 45) {
+    return baseFare;
+  }
+  return Math.round((baseFare * 0.9) / 10) * 10;
+}
+
 function estimateFare(bus: Bus): number {
-  return Math.round(200 + (bus.surge_probability ?? 0) * 150);
+  if (bus.fare && bus.fare > 0) return bus.fare;
+  return calculateFareFallback(bus.origin, bus.destination, bus.capacity);
 }
 
 function BusResultSkeleton() {
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 sm:gap-4">
       {Array.from({ length: 4 }).map((_, index) => (
         <div
           key={index}
-          className={`${glassStyles.panel} min-h-[280px] p-5 animate-pulse motion-reduce:animate-none`}
+          className={`${glassStyles.panel} min-h-[150px] p-3.5 sm:p-5 animate-pulse motion-reduce:animate-none flex flex-col justify-between`}
         >
-          <div className="mb-6 flex items-start justify-between">
-            <div className="h-7 w-32 rounded-lg bg-slate-200 dark:bg-slate-700" />
-            <div className="h-6 w-20 rounded-lg bg-slate-200 dark:bg-slate-700" />
+          <div className="flex items-start justify-between">
+            <div className="space-y-2">
+              <div className="h-4 w-28 rounded bg-slate-200 dark:bg-slate-700" />
+              <div className="h-5 w-44 rounded bg-slate-200 dark:bg-slate-700" />
+            </div>
+            <div className="h-6 w-16 rounded bg-slate-200 dark:bg-slate-700" />
           </div>
-          <div className="space-y-4">
-            <div className="h-4 w-3/4 rounded bg-slate-200 dark:bg-slate-700" />
-            <div className="h-4 w-2/3 rounded bg-slate-200 dark:bg-slate-700" />
-            <div className="h-3 w-full rounded-full bg-slate-200 dark:bg-slate-700" />
-          </div>
-          <div className="mt-8 h-11 rounded-xl bg-slate-200 dark:bg-slate-700" />
+          <div className="h-4 w-full rounded bg-slate-200 dark:bg-slate-700" />
+          <div className="h-9 w-full rounded-xl bg-slate-200 dark:bg-slate-700" />
         </div>
       ))}
     </div>
@@ -143,11 +212,14 @@ function BuyPageInner() {
     void performSearch(routeOrigin, routeDestination, travelDate);
   }
 
-  function buildPreferencesHref(bus: Bus) {
+  function buildPreferencesHref(bus: Bus): string {
     const params = new URLSearchParams({
-      date: travelDate,
-      origin: bus.origin,
-      dest: bus.destination,
+      origin: origin.trim(),
+      destination: destination.trim(),
+      travel_date: travelDate,
+      plate: bus.plate_number,
+      capacity: String(bus.capacity),
+      fare: String(estimateFare(bus)),
     });
 
     return `/book/${bus.id}/preferences?${params.toString()}`;
@@ -159,63 +231,73 @@ function BuyPageInner() {
       : `Search available inter-provincial buses and let ${BRAND.name} pick your best seat.`;
 
   return (
-    <div className={`${glassStyles.pageContainer} max-w-6xl`}>
-      <Link
-        href="/home"
-        className="inline-flex items-center gap-1 text-sm font-medium text-brand-blue hover:underline"
-      >
-        <ArrowLeft className="h-4 w-4" aria-hidden />
-        Back home
-      </Link>
+    <div className={`${glassStyles.pageContainer} max-w-6xl !space-y-3 sm:!space-y-5 !px-3 sm:!px-6 !py-3 sm:!py-6`}>
+      <div className="hidden md:flex items-center justify-between">
+        <Link
+          href="/home"
+          className="inline-flex items-center gap-1 text-xs sm:text-sm font-medium text-brand-blue hover:underline"
+        >
+          <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden />
+          Back home
+        </Link>
+      </div>
 
       <BookingProgress current="search" />
 
-      <PageHeader
-        eyebrow="Passenger booking"
-        title="Find Your Bus"
-        description={routeSummary}
-      />
+      <header className="min-w-0">
+        <p className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.18em] text-brand-blue">
+          Passenger booking
+        </p>
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-foreground tracking-tight">
+          Find Your Bus
+        </h1>
+        <p className="mt-0.5 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+          {routeSummary}
+        </p>
+      </header>
 
-      <section className={`${glassStyles.panel} p-4 md:p-5`}>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_1fr_180px]">
-          <label className="flex items-center gap-3 rounded-xl border border-glass-border bg-white/50 px-3 py-3 dark:bg-slate-900/50">
-            <span className="h-3 w-3 shrink-0 rounded-full border-2 border-green-500" />
+      {/* Filter / Search Card — Compact on mobile */}
+      <section className={`${glassStyles.panel} p-3 sm:p-4 md:p-5`}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-[1fr_1fr_180px] gap-2 sm:gap-3">
+          <label className="flex items-center gap-2.5 rounded-xl border border-glass-border bg-white/50 px-3 py-2 sm:py-2.5 dark:bg-slate-900/50">
+            <span className="h-2.5 w-2.5 shrink-0 rounded-full border-2 border-green-500" />
             <input
               type="text"
               placeholder="Origin city"
               value={origin}
               onChange={(e) => setOrigin(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && void performSearch()}
-              className="w-full bg-transparent text-sm font-medium text-slate-900 outline-none placeholder:text-slate-400 dark:text-white"
+              className="w-full bg-transparent text-xs sm:text-sm font-medium text-slate-900 outline-none placeholder:text-slate-400 dark:text-white"
             />
           </label>
 
-          <label className="flex items-center gap-3 rounded-xl border border-glass-border bg-white/50 px-3 py-3 dark:bg-slate-900/50">
-            <span className="h-3 w-3 shrink-0 rounded-full border-2 border-brand-orange" />
+          <label className="flex items-center gap-2.5 rounded-xl border border-glass-border bg-white/50 px-3 py-2 sm:py-2.5 dark:bg-slate-900/50">
+            <span className="h-2.5 w-2.5 shrink-0 rounded-full border-2 border-brand-orange" />
             <input
               type="text"
               placeholder="Destination city"
               value={destination}
               onChange={(e) => setDestination(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && void performSearch()}
-              className="w-full bg-transparent text-sm font-medium text-slate-900 outline-none placeholder:text-slate-400 dark:text-white"
+              className="w-full bg-transparent text-xs sm:text-sm font-medium text-slate-900 outline-none placeholder:text-slate-400 dark:text-white"
             />
           </label>
 
-          <label className="flex items-center gap-3 rounded-xl border border-glass-border bg-white/50 px-3 py-3 dark:bg-slate-900/50">
+          <label className="flex items-center gap-2.5 rounded-xl border border-glass-border bg-white/50 px-3 py-2 sm:py-2.5 dark:bg-slate-900/50 sm:col-span-2 md:col-span-1">
             <CalendarDays className="h-4 w-4 shrink-0 text-slate-400" />
             <input
               type="date"
               value={travelDate}
               onChange={(e) => setTravelDate(e.target.value)}
-              className="w-full bg-transparent text-sm font-medium text-slate-900 outline-none dark:text-white"
+              className="w-full bg-transparent text-xs sm:text-sm font-medium text-slate-900 outline-none dark:text-white"
             />
           </label>
         </div>
 
-        <div className="mt-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex flex-wrap gap-2">
-            <span className="self-center text-xs font-medium text-slate-400">
+        {/* Quick Routes + Search Action Row */}
+        <div className="mt-2.5 sm:mt-3.5 flex flex-col gap-2 sm:gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 whitespace-nowrap min-w-0">
+            <span className="shrink-0 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400 mr-0.5">
               Quick routes
             </span>
             {QUICK_ROUTES.map((route) => (
@@ -223,7 +305,7 @@ function BuyPageInner() {
                 key={route.label}
                 type="button"
                 onClick={() => handleQuickRoute(route.origin, route.destination)}
-                className="rounded-full border border-glass-border bg-white/60 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-brand-blue/40 hover:text-brand-blue dark:bg-slate-900/50 dark:text-slate-300"
+                className="shrink-0 rounded-full border border-glass-border bg-white/60 px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:border-brand-blue/40 hover:text-brand-blue dark:bg-slate-900/50 dark:text-slate-300 active:scale-95"
               >
                 {route.label}
               </button>
@@ -234,51 +316,51 @@ function BuyPageInner() {
             type="button"
             onClick={() => void performSearch()}
             disabled={loading || !canSearch}
-            className={`${glassStyles.primaryButton} inline-flex min-h-11 items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-50`}
+            className={`${glassStyles.primaryButton} inline-flex min-h-[38px] sm:min-h-11 items-center justify-center gap-2 text-xs sm:text-sm font-bold w-full lg:w-auto shrink-0 disabled:cursor-not-allowed disabled:opacity-50`}
           >
-            <Search className="h-4 w-4" aria-hidden />
+            <Search className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden />
             {loading ? "Searching..." : "Search Tickets"}
           </button>
         </div>
       </section>
 
       {hasSearched && (
-        <section className="space-y-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <section className="space-y-3 sm:space-y-4">
+          <div className="flex items-center justify-between gap-2">
             <div>
-              <p className="text-lg font-bold text-foreground">
+              <p className="text-sm sm:text-base font-bold text-foreground">
                 {loading
-                  ? "Checking available buses"
+                  ? "Checking available buses..."
                   : `${buses.length} ${buses.length === 1 ? "bus" : "buses"} found`}
               </p>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[200px] sm:max-w-none">
                 {origin.trim()} {"->"} {destination.trim()}
               </p>
             </div>
 
             {buses.length > 0 && (
-              <label className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
-                <ListFilter className="h-4 w-4" aria-hidden />
+              <div className="flex items-center gap-1.5 shrink-0">
+                <ListFilter className="h-3.5 w-3.5 text-slate-400" aria-hidden />
                 <select
                   value={sortMode}
                   onChange={(e) => setSortMode(e.target.value as SortMode)}
-                  className={`${glassStyles.input} py-2 text-sm`}
+                  className="rounded-xl border border-glass-border bg-white/60 dark:bg-slate-900/60 px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none"
                 >
                   <option value="recommended">Recommended</option>
                   <option value="seats">Most seats</option>
                   <option value="surge">Highest surge</option>
                   <option value="price">Lowest fare</option>
                 </select>
-              </label>
+              </div>
             )}
           </div>
 
           {error && !loading && (
-            <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
+            <div className="flex items-start gap-2.5 rounded-2xl border border-amber-200 bg-amber-50 p-3 sm:p-4 text-xs sm:text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
               <div>
                 <p className="font-semibold">{error}</p>
-                <p className="mt-1 text-amber-700 dark:text-amber-200">
+                <p className="mt-0.5 text-amber-700 dark:text-amber-200">
                   Try another date, nearby terminal, or one of the quick routes.
                 </p>
               </div>
@@ -288,7 +370,7 @@ function BuyPageInner() {
           {loading ? (
             <BusResultSkeleton />
           ) : sortedBuses.length > 0 ? (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 sm:gap-4">
               {sortedBuses.map((bus) => {
                 const booked = bus.capacity - bus.available_seats;
                 const isFull = bus.available_seats <= 0;
@@ -296,82 +378,88 @@ function BuyPageInner() {
                 return (
                   <article
                     key={bus.id}
-                    className={`${glassStyles.panel} flex min-h-[300px] flex-col p-5`}
+                    className={`${glassStyles.panel} relative flex flex-col justify-between p-3.5 sm:p-5 transition-all hover:border-brand-blue/40`}
                   >
-                    <div className="mb-5 flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="mb-2 flex flex-wrap items-center gap-2">
-                          <span className="rounded-lg bg-slate-100 px-2 py-1 font-mono text-xs font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                    {/* Top Row: Badges, Route & Price */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
+                          <span className="rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
                             {bus.plate_number}
                           </span>
+                          <span className="rounded-md bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/50 dark:border-blue-800/40 px-1.5 py-0.5 text-[11px] font-semibold text-brand-blue dark:text-blue-300">
+                            {bus.capacity >= 45 ? "Regular Aircon Bus" : "Express Mini Bus"}
+                          </span>
                           <span
-                            className={`${glassStyles.badge} ${surgeColorClass(
+                            className={`inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-bold ${surgeColorClass(
                               bus.surge_probability
                             )}`}
                           >
                             {surgeLabel(bus.surge_probability)} demand
                           </span>
+                          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400">
+                            <Clock className="h-3 w-3 text-brand-blue" />
+                            Today window
+                          </span>
                         </div>
-                        <h2 className="text-lg font-bold text-foreground">
-                          {bus.origin} {"->"} {bus.destination}
+                        <h2 className="text-base sm:text-lg font-bold text-foreground truncate">
+                          {bus.origin} <span className="text-brand-blue font-semibold">→</span> {bus.destination}
                         </h2>
                       </div>
-                      <p className="shrink-0 text-right text-lg font-bold text-brand-blue">
-                        PHP {estimateFare(bus)}
-                      </p>
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-3 text-sm min-[420px]:grid-cols-2">
-                      <div className="rounded-xl bg-white/50 p-3 dark:bg-slate-900/40">
-                        <p className="text-xs text-slate-400">Departure</p>
-                        <p className="mt-1 flex items-center gap-1.5 font-semibold text-foreground">
-                          <Clock className="h-4 w-4 text-brand-blue" />
-                          Today window
+                      <div className="shrink-0 text-right">
+                        <p className="text-lg sm:text-xl font-extrabold text-brand-blue leading-tight">
+                          PHP {estimateFare(bus)}
                         </p>
-                      </div>
-                      <div className="rounded-xl bg-white/50 p-3 dark:bg-slate-900/40">
-                        <p className="text-xs text-slate-400">Terminal bus</p>
-                        <p className="mt-1 flex items-center gap-1.5 font-semibold text-foreground">
-                          <BusFront className="h-4 w-4 text-brand-orange" />
-                          {bus.plate_number}
-                        </p>
-                      </div>
-                      <div className="rounded-xl bg-amber-50 p-3 text-amber-900 dark:bg-amber-950/30 dark:text-amber-100 min-[420px]:col-span-2">
-                        <p className="text-xs text-amber-700/80 dark:text-amber-200/80">
-                          Accessibility priority
-                        </p>
-                        <p className="mt-1 flex items-center gap-1.5 font-semibold">
-                          <Accessibility className="h-4 w-4" aria-hidden />
-                          {bus.accessibility_available_count} of{" "}
-                          {bus.accessibility_seat_count} seats open
-                        </p>
+                        <span className="text-[10px] text-slate-400 font-medium">per seat</span>
                       </div>
                     </div>
 
-                    <CapacityMeter
-                      booked={booked}
-                      capacity={bus.capacity}
-                      label={`${bus.available_seats} seats available`}
-                      className="mt-5"
-                    />
+                    {/* Middle strip: Capacity & Accessibility in one sleek horizontal row */}
+                    <div className="mt-2.5 pt-2.5 border-t border-glass-border/60 flex flex-wrap items-center justify-between gap-2 text-xs">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="flex items-center gap-1 font-semibold text-slate-700 dark:text-slate-200">
+                          <BusFront className="h-3.5 w-3.5 text-brand-orange shrink-0" />
+                          <span className="truncate">{bus.available_seats} of {bus.capacity} seats left</span>
+                        </span>
+                        {/* Inline mini capacity bar */}
+                        <div className="hidden xs:block h-1.5 w-16 sm:w-20 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                          <div
+                            className={`h-full rounded-full ${
+                              booked / bus.capacity > 0.8
+                                ? "bg-red-500"
+                                : booked / bus.capacity > 0.5
+                                ? "bg-amber-500"
+                                : "bg-emerald-500"
+                            }`}
+                            style={{ width: `${Math.min(100, Math.round((booked / bus.capacity) * 100))}%` }}
+                          />
+                        </div>
+                      </div>
 
-                    <div className="mt-auto pt-5">
+                      <div className="flex items-center gap-1 text-[11px] font-medium text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-900/40 rounded-lg px-2 py-0.5">
+                        <Accessibility className="h-3 w-3 shrink-0" />
+                        <span>{bus.accessibility_available_count} priority seats open</span>
+                      </div>
+                    </div>
+
+                    {/* Bottom Row: Compact action button */}
+                    <div className="mt-3">
                       {isFull ? (
                         <span
-                          className={`${glassStyles.primaryButton} flex min-h-11 w-full items-center justify-center gap-2 text-sm font-bold disabled:cursor-not-allowed disabled:border-slate-300 disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none dark:disabled:bg-slate-700`}
+                          className="flex min-h-[38px] sm:min-h-10 w-full items-center justify-center gap-2 rounded-xl text-xs sm:text-sm font-bold bg-slate-200/80 text-slate-400 dark:bg-slate-800/80 dark:text-slate-500 cursor-not-allowed border border-transparent select-none"
                           aria-disabled="true"
                         >
-                          <MapPin className="h-4 w-4" aria-hidden />
+                          <MapPin className="h-3.5 w-3.5" aria-hidden />
                           Bus Full
                         </span>
                       ) : (
                         <Link
                           href={buildPreferencesHref(bus)}
                           prefetch={false}
-                          className={`${glassStyles.primaryButton} flex min-h-11 w-full items-center justify-center gap-2 text-sm font-bold`}
+                          className={`${glassStyles.successButton} flex min-h-[38px] sm:min-h-10 w-full items-center justify-center gap-2 text-xs sm:text-sm font-bold group active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2`}
                         >
-                          <MapPin className="h-4 w-4" aria-hidden />
-                          Continue to Preferences
+                          <span>Continue to Preferences</span>
+                          <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-1" aria-hidden />
                         </Link>
                       )}
                     </div>
@@ -381,10 +469,10 @@ function BuyPageInner() {
             </div>
           ) : (
             !error && (
-              <div className={`${glassStyles.panel} py-12 text-center`}>
-                <MapPin className="mx-auto mb-3 h-12 w-12 text-slate-300" />
-                <p className="font-semibold text-foreground">No buses found</p>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+              <div className={`${glassStyles.panel} py-8 text-center`}>
+                <MapPin className="mx-auto mb-2 h-10 w-10 text-slate-300" />
+                <p className="font-semibold text-foreground text-sm sm:text-base">No buses found</p>
+                <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
                   Try a different origin, destination, or date.
                 </p>
               </div>

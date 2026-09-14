@@ -127,11 +127,11 @@ test("accessible family receives adjacent seats, one pass, and online group veri
   await expect(page.getByText("Maria Santos")).toBeVisible();
   await expect(page.getByText("Companion seated beside accessibility passenger")).toBeVisible();
   await expect(page.getByText("Nearest available standard seat")).toBeVisible();
-  await page.getByRole("button", { name: "Confirm Family Booking" }).click();
+  await page.getByRole("button", { name: "Confirm Group Booking" }).click();
 
-  await expect(page.getByRole("heading", { name: "Family Booking Confirmed" })).toBeVisible();
-  await expect(page.getByText("TripSync Combined Family Pass")).toBeVisible();
-  await expect(page.getByText("One QR for the whole family")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Group Booking Confirmed" })).toBeVisible();
+  await expect(page.getByText("TripSync Combined Group Pass")).toBeVisible();
+  await expect(page.getByText("One QR for the whole group")).toBeVisible();
   const token = await page.evaluate(() => {
     const raw = localStorage.getItem("iqueue:group-boarding-passes:v1");
     const passes = raw ? JSON.parse(raw) : [];

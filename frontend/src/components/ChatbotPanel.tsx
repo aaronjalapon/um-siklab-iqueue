@@ -184,6 +184,125 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
   const initializedRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Floating trigger position and dragging state
+  const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const dragStartRef = useRef<{
+    pointerX: number;
+    pointerY: number;
+    elemX: number;
+    elemY: number;
+    hasMoved: boolean;
+  }>({ pointerX: 0, pointerY: 0, elemX: 0, elemY: 0, hasMoved: false });
+  const justDraggedRef = useRef(false);
+
+  // Pointer drag handlers for mobile touch and desktop mouse
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return; // Only primary button
+    const el = triggerRef.current;
+    if (!el) return;
+
+    const rect = el.getBoundingClientRect();
+    dragStartRef.current = {
+      pointerX: e.clientX,
+      pointerY: e.clientY,
+      elemX: rect.left,
+      elemY: rect.top,
+      hasMoved: false,
+    };
+
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // Safe fallback if pointer capture is not supported
+    }
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!e.currentTarget.hasPointerCapture(e.pointerId)) return;
+
+    const dx = e.clientX - dragStartRef.current.pointerX;
+    const dy = e.clientY - dragStartRef.current.pointerY;
+
+    if (!dragStartRef.current.hasMoved) {
+      if (Math.hypot(dx, dy) > 5) {
+        dragStartRef.current.hasMoved = true;
+        setIsDragging(true);
+      } else {
+        return;
+      }
+    }
+
+    const buttonSize = 56;
+    const margin = 8;
+    const maxX = Math.max(margin, window.innerWidth - buttonSize - margin);
+    const maxY = Math.max(margin, window.innerHeight - buttonSize - margin);
+
+    const newX = Math.max(margin, Math.min(maxX, dragStartRef.current.elemX + dx));
+    const newY = Math.max(margin, Math.min(maxY, dragStartRef.current.elemY + dy));
+
+    setPosition({ x: newX, y: newY });
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {
+        // Safe fallback
+      }
+    }
+
+    if (dragStartRef.current.hasMoved) {
+      setIsDragging(false);
+      justDraggedRef.current = true;
+      setTimeout(() => {
+        justDraggedRef.current = false;
+      }, 150);
+    }
+  };
+
+  const handlePointerCancel = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {
+        // Safe fallback
+      }
+    }
+    setIsDragging(false);
+  };
+
+  const handleButtonClick = (e: React.MouseEvent) => {
+    if (justDraggedRef.current) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    setIsOpen((prev) => !prev);
+  };
+
+  // Re-clamp position on window resize or device orientation change
+  useEffect(() => {
+    const handleResize = () => {
+      setPosition((prev) => {
+        if (!prev) return null;
+        const buttonSize = 56;
+        const margin = 8;
+        const maxX = Math.max(margin, window.innerWidth - buttonSize - margin);
+        const maxY = Math.max(margin, window.innerHeight - buttonSize - margin);
+        const clampedX = Math.max(margin, Math.min(maxX, prev.x));
+        const clampedY = Math.max(margin, Math.min(maxY, prev.y));
+        if (clampedX === prev.x && clampedY === prev.y) return prev;
+        return { x: clampedX, y: clampedY };
+      });
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const scrollToBottom = useCallback(() => {
     setTimeout(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -361,21 +480,68 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
 
   return (
     <>
-      {/* Toggle Button */}
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-4 sm:right-6 rounded-full bg-blue-700 h-14 w-14 min-w-[56px] min-h-[56px] flex items-center justify-center text-white shadow-xl shadow-blue-900/40 hover:bg-blue-600 active:scale-95 transition-all z-50 focus:outline-none focus:ring-4 focus:ring-blue-400/40"
-        aria-label={isOpen ? `Close ${BRAND.assistantName}` : `Chat with ${BRAND.assistantName}`}
-        aria-expanded={isOpen}
-        aria-controls="iqueue-chatbot-panel"
+      {/* Floating Chatbot Button — Placed by default on the upper right side of the bottom navbar on mobile; freely draggable */}
+      <div
+        ref={triggerRef}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
+        onDragStart={(e) => e.preventDefault()}
+        style={
+          position
+            ? {
+                left: `${position.x}px`,
+                top: `${position.y}px`,
+                bottom: "auto",
+                right: "auto",
+              }
+            : undefined
+        }
+        className={`fixed z-40 touch-none select-none ${
+          position
+            ? ""
+            : "bottom-24 right-4 md:bottom-6 md:right-6"
+        } ${isDragging ? "cursor-grabbing scale-105" : "cursor-grab"}`}
       >
-        {isOpen ? (
-          <X className="h-6 w-6" />
-        ) : (
-          <MessageCircle className="h-6 w-6" />
+        {!isOpen && !isDragging && (
+          <>
+            {/* Primary background pulse wave */}
+            <span
+              className="absolute inset-0 rounded-full bg-blue-500/40 animate-sonar-wave pointer-events-none"
+              aria-hidden="true"
+            />
+            {/* Secondary staggered pulse wave for continuous silky aura */}
+            <span
+              className="absolute inset-0 rounded-full bg-blue-400/30 animate-sonar-wave [animation-delay:1.2s] pointer-events-none"
+              aria-hidden="true"
+            />
+          </>
         )}
-      </button>
+        <button
+          type="button"
+          onClick={handleButtonClick}
+          className={`relative rounded-full bg-blue-700 h-14 w-14 min-w-[56px] min-h-[56px] flex items-center justify-center text-white shadow-xl shadow-blue-900/40 hover:bg-blue-600 ${
+            isDragging
+              ? "ring-4 ring-blue-400/60 shadow-2xl shadow-blue-900/70"
+              : "active:scale-95 transition-colors duration-200"
+          } focus:outline-none focus:ring-4 focus:ring-blue-400/40`}
+          aria-label={isOpen ? `Close ${BRAND.assistantName}` : `Chat with ${BRAND.assistantName} (drag to reposition)`}
+          title={isOpen ? `Close ${BRAND.assistantName}` : `Chat with ${BRAND.assistantName} (drag to reposition)`}
+          aria-expanded={isOpen}
+          aria-controls="iqueue-chatbot-panel"
+        >
+          {isOpen ? (
+            <X className="h-6 w-6 pointer-events-none" />
+          ) : (
+            <>
+              <MessageCircle className="h-6 w-6 pointer-events-none" />
+              {/* Online indicator dot */}
+              <span className="absolute top-3 right-3 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-blue-700 pointer-events-none" />
+            </>
+          )}
+        </button>
+      </div>
 
       {/* Chat Panel */}
       {isOpen && (

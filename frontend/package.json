@@ -6,6 +6,7 @@
     "dev": "next dev",
     "dev:docker": "sh ./scripts/start-dev-docker.sh",
     "dev:webpack": "next dev --webpack -H 0.0.0.0",
+    "sync-ip": "sh ../scripts/sync-lan-ip.sh",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",

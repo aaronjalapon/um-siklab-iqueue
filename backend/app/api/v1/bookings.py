@@ -44,17 +44,49 @@ logger = logging.getLogger(__name__)
 
 
 def _validate_group_people(payload: GroupBookingRequest) -> None:
+    if not payload.members:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="At least one group member is required",
+        )
+
+    for i, member in enumerate(payload.members):
+        if not (member.name or "").strip():
+            label = "Lead passenger" if i == 0 else f"Group member {i + 1}"
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"{label} must have a name",
+            )
+
     normalized_names = [member.name.strip().casefold() for member in payload.members]
-    normalized_phones = [member.phone.strip() for member in payload.members]
     if len(set(normalized_names)) != len(normalized_names):
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Each family member must have a unique name",
+            detail="Each group member must have a unique name",
         )
-    if len(set(normalized_phones)) != len(normalized_phones):
+
+    lead_phone = (payload.members[0].phone or "").strip()
+    if len(lead_phone) < 5:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Each family member must have a unique phone number",
+            detail="Lead passenger must provide a valid phone number (at least 5 characters)",
+        )
+
+    non_empty_phones = [
+        member.phone.strip()
+        for member in payload.members
+        if member.phone and member.phone.strip()
+    ]
+    for phone in non_empty_phones:
+        if len(phone) < 5:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Provided phone numbers must be at least 5 characters",
+            )
+    if len(set(non_empty_phones)) != len(non_empty_phones):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Provided phone numbers must be unique",
         )
 
 
@@ -193,17 +225,30 @@ async def create_group_booking(
     # The request-scoped session commits only after this endpoint succeeds. Any
     # validation or persistence error rolls back every passenger and booking.
     for member in payload.members:
-        existing = await db.scalar(
-            select(Passenger).where(
-                Passenger.tenant_id == payload.tenant_id,
-                Passenger.phone == member.phone.strip(),
+        member_name = member.name.strip()
+        member_phone = member.phone.strip() if member.phone and member.phone.strip() else None
+        existing = None
+        if member_phone:
+            existing = await db.scalar(
+                select(Passenger).where(
+                    Passenger.tenant_id == payload.tenant_id,
+                    Passenger.phone == member_phone,
+                )
             )
-        )
+        else:
+            existing = await db.scalar(
+                select(Passenger).where(
+                    Passenger.tenant_id == payload.tenant_id,
+                    Passenger.name == member_name,
+                    Passenger.phone.is_(None),
+                )
+            )
+
         if existing is None:
             existing = Passenger(
                 tenant_id=payload.tenant_id,
-                name=member.name.strip(),
-                phone=member.phone.strip(),
+                name=member_name,
+                phone=member_phone,
                 language_pref=payload.preferences.language_preference,
                 travel_habits=payload.preferences.travel_habit,
                 lifestyle_interests=payload.preferences.lifestyle_interest,
@@ -211,7 +256,7 @@ async def create_group_booking(
             )
             db.add(existing)
         else:
-            existing.name = member.name.strip()
+            existing.name = member_name
             existing.language_pref = payload.preferences.language_preference
             existing.travel_habits = payload.preferences.travel_habit
             existing.lifestyle_interests = payload.preferences.lifestyle_interest

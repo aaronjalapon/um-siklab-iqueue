@@ -318,79 +318,80 @@ export default function CoveredCitiesSection() {
   return (
     <section
       id="cities"
-      className="relative flex min-h-[100svh] flex-col justify-center overflow-hidden bg-slate-950 px-4 pt-20 pb-6 sm:px-6 lg:px-8 md:pt-24 md:pb-8"
+      className="relative flex min-h-[100svh] w-full max-w-full flex-col justify-center overflow-hidden bg-slate-950 px-3.5 pt-16 pb-8 sm:px-6 sm:py-16 lg:px-8 md:pt-24 md:pb-8"
     >
       {/* Background illumination grid */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(14,165,233,0.12),rgba(255,255,255,0))]" />
 
-      <div className="relative mx-auto w-full max-w-7xl">
-        {/* Section Header */}
+      <div className="relative mx-auto w-full min-w-0 max-w-7xl">
+        {/* Section Header: Clean typography aligned with all landing sections */}
         <motion.div
-          initial={{ opacity: 0, y: 24 }}
+          initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
+          viewport={{ once: true, margin: "-20px" }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-3 lg:mb-4"
+          className="text-center mb-2.5 sm:mb-4"
         >
-          <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-0.5 text-xs font-bold uppercase tracking-[0.2em] text-cyan-400 mb-2 backdrop-blur-sm">
-            <Radio className="h-3.5 w-3.5 animate-pulse" />
+          <div className="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-[10px] xs:text-xs font-bold uppercase tracking-wider text-cyan-400 mb-2 backdrop-blur-sm">
+            <Radio className="h-3 w-3 sm:h-3.5 sm:w-3.5 animate-pulse" />
             Live Terminal Telemetry
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight">
+          <h2 className="text-2xl xs:text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-[1.2] sm:leading-tight">
             Connecting{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-blue via-cyan-400 to-teal-300">
               ASEAN Smart Terminals
             </span>
           </h2>
-          <p className="mt-1.5 text-slate-400 text-xs sm:text-sm max-w-xl mx-auto">
+          <p className="mt-1.5 text-slate-400 text-xs xs:text-sm sm:text-base max-w-xl mx-auto leading-relaxed font-normal">
             {BRAND.name} powers real-time passenger queuing, capacity forecasting, and dynamic boarding passes across major transport hubs.
           </p>
 
-          {/* Region filter tabs */}
-          <div className="mt-3.5 inline-flex flex-wrap sm:flex-nowrap justify-center gap-1.5 rounded-2xl border border-white/10 bg-slate-900/80 p-1.5 backdrop-blur-md">
+          {/* Region filter tabs: Clean inline-flex on desktop with full width, single-row on mobile */}
+          <div className="mt-2.5 sm:mt-3.5 flex w-full max-w-md overflow-x-auto no-scrollbar items-center justify-start gap-1 sm:inline-flex sm:w-auto sm:max-w-none sm:overflow-visible sm:justify-center sm:gap-1.5 rounded-xl sm:rounded-2xl border border-white/10 bg-slate-900/80 p-1 sm:p-1.5 backdrop-blur-md mx-auto">
             {[
-              { key: "all", label: "All Network Hubs (7)" },
-              { key: "philippines", label: "Philippine Corridors (3)" },
-              { key: "asean", label: "Cross-Border ASEAN (4)" },
+              { key: "all", label: "All Hubs (7)", fullLabel: "All Network Hubs (7)" },
+              { key: "philippines", label: "PH Corridors (3)", fullLabel: "Philippine Corridors (3)" },
+              { key: "asean", label: "Cross-Border (4)", fullLabel: "Cross-Border ASEAN (4)" },
             ].map((tab) => (
               <button
                 key={tab.key}
                 type="button"
                 onClick={() => handleRegionChange(tab.key as typeof regionFilter)}
-                className={`min-h-[44px] rounded-xl px-4 py-2 text-xs sm:text-sm font-bold transition-all flex items-center justify-center ${
+                className={`min-h-[36px] sm:min-h-[44px] rounded-lg sm:rounded-xl px-2.5 py-1.5 sm:px-4 sm:py-2 text-[11px] xs:text-xs sm:text-sm font-bold whitespace-nowrap shrink-0 transition-all flex items-center justify-center ${
                   regionFilter === tab.key
                     ? "bg-brand-blue text-white shadow-md shadow-brand-blue/30"
                     : "text-slate-300 hover:text-white hover:bg-white/5"
                 }`}
               >
-                {tab.label}
+                <span className="sm:hidden">{tab.label}</span>
+                <span className="hidden sm:inline">{tab.fullLabel}</span>
               </button>
             ))}
           </div>
         </motion.div>
 
         {/* Main Map & Telemetry Grid */}
-        <div className="grid lg:grid-cols-3 gap-8 items-start">
+        <div className="grid w-full min-w-0 max-w-full grid-cols-1 lg:grid-cols-3 gap-3.5 sm:gap-6 lg:gap-8 items-start">
           {/* Map Column */}
           <motion.div
             initial={{ opacity: 0, scale: 0.98 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.7 }}
-            className="lg:col-span-2 relative lg:h-[450px] overflow-hidden rounded-3xl border border-cyan-500/20 bg-[#050e1a] shadow-[0_20px_70px_-15px_rgba(2,132,199,0.25)]"
+            className="w-full min-w-0 max-w-full lg:col-span-2 relative h-[250px] xs:h-[270px] sm:h-[360px] lg:h-[450px] overflow-hidden rounded-2xl sm:rounded-3xl border border-cyan-500/20 bg-[#050e1a] shadow-[0_20px_70px_-15px_rgba(2,132,199,0.25)]"
           >
             {/* Command-Center Ambient Glows */}
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_35%,rgba(14,165,233,0.18),transparent_50%),radial-gradient(circle_at_20%_80%,rgba(13,148,136,0.12),transparent_40%)]" />
 
-            {/* Status Overlays */}
-            <div className="absolute left-4 top-4 z-10 flex flex-wrap items-center gap-2">
-              <div className="flex items-center gap-2 rounded-full border border-white/10 bg-slate-950/70 px-3 py-1.5 text-xs font-semibold text-cyan-200 backdrop-blur-md shadow-lg">
-                <Navigation className="h-3.5 w-3.5 text-brand-orange" aria-hidden />
-                <span>Natural Earth 50m Vector Network</span>
+            {/* Status Overlays: Compact and non-intrusive on mobile */}
+            <div className="absolute left-2.5 top-2.5 sm:left-4 sm:top-4 z-10 flex flex-wrap items-center gap-1.5 sm:gap-2 pointer-events-none">
+              <div className="flex items-center gap-1.5 rounded-full border border-white/10 bg-slate-950/80 px-2.5 py-1 text-[10px] sm:text-xs font-semibold text-cyan-200 backdrop-blur-md shadow-lg">
+                <Navigation className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-brand-orange" aria-hidden />
+                <span>Vector Network</span>
               </div>
-              <div className="flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-[11px] font-bold text-emerald-400 backdrop-blur-md">
-                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                Live Hub Sync
+              <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[10px] sm:text-[11px] font-bold text-emerald-400 backdrop-blur-md">
+                <span className="h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-emerald-400 animate-pulse" />
+                Live Sync
               </div>
             </div>
 
@@ -401,7 +402,8 @@ export default function CoveredCitiesSection() {
                 projectionConfig={ASEAN_PROJECTION_CONFIG}
                 width={800}
                 height={450}
-                className="relative z-[1] h-[330px] w-full sm:h-[390px] md:h-[450px]"
+                style={{ width: "100%", height: "100%", maxWidth: "100%" }}
+                className="relative z-[1] h-full w-full max-w-full"
               >
                 <defs>
                   {/* Glowing SVG filter for terminal beacons */}
@@ -596,24 +598,24 @@ export default function CoveredCitiesSection() {
                 })}
               </ComposableMap>
             ) : (
-              <div className="relative z-[1] h-[330px] w-full sm:h-[390px] md:h-[450px] flex items-center justify-center">
+              <div className="relative z-[1] h-full w-full flex items-center justify-center">
                 <div className="h-8 w-8 animate-spin rounded-full border-2 border-cyan-400 border-t-transparent" />
               </div>
             )}
 
-            {/* Bottom Left Legend */}
-            <div className="absolute bottom-3.5 left-3.5 z-10 flex flex-wrap items-center gap-2.5 rounded-xl border border-white/10 bg-slate-950/85 px-3 py-1.5 text-[11px] text-slate-300 backdrop-blur-md shadow-xl">
-              <span className="flex items-center gap-1.5 font-medium">
-                <span className="h-2 w-2 rounded-full bg-brand-orange shadow-[0_0_8px_#f97316]" />
-                Terminal Hub
+            {/* Bottom Left Legend: Compact on mobile */}
+            <div className="absolute bottom-2 left-2 sm:bottom-3.5 sm:left-3.5 z-10 flex items-center gap-2 sm:gap-2.5 rounded-lg sm:rounded-xl border border-white/10 bg-slate-950/85 px-2 py-1 sm:px-3 sm:py-1.5 text-[9px] sm:text-[11px] text-slate-300 backdrop-blur-md shadow-xl pointer-events-none">
+              <span className="flex items-center gap-1 font-medium">
+                <span className="h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-brand-orange shadow-[0_0_8px_#f97316]" />
+                Hub
               </span>
-              <span className="flex items-center gap-1.5 font-medium">
-                <span className="h-2 w-2 rounded-full bg-cyan-400 shadow-[0_0_8px_#38bdf8]" />
-                Selected Hub
+              <span className="flex items-center gap-1 font-medium">
+                <span className="h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-cyan-400 shadow-[0_0_8px_#38bdf8]" />
+                Selected
               </span>
-              <span className="flex items-center gap-1.5 font-medium border-l border-white/10 pl-2 text-slate-400">
-                <span className="inline-block h-0.5 w-3.5 bg-cyan-400" />
-                Live Route Arc
+              <span className="hidden xs:flex items-center gap-1 font-medium border-l border-white/10 pl-1.5 text-slate-400">
+                <span className="inline-block h-0.5 w-2.5 sm:w-3.5 bg-cyan-400" />
+                Live Route
               </span>
             </div>
 
@@ -649,20 +651,20 @@ export default function CoveredCitiesSection() {
           </motion.div>
 
           {/* Right Column: Terminal Directory & Telemetry Inspector */}
-          <div className="flex flex-col lg:h-[450px]">
-            <div className="flex shrink-0 items-center justify-between px-1 mb-2.5">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                  <Layers className="h-3.5 w-3.5 text-brand-blue" />
-                  Terminal Directory
+          <div className="flex flex-col w-full min-w-0 max-w-full lg:h-[450px]">
+            <div className="flex w-full min-w-0 shrink-0 items-center justify-between px-0.5 sm:px-1 mb-2">
+              <div className="flex items-center gap-1.5 xs:gap-2 min-w-0">
+                <span className="text-[11px] xs:text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1 sm:gap-1.5 truncate">
+                  <Layers className="h-3.5 w-3.5 text-brand-blue shrink-0" />
+                  <span className="truncate">Terminal Directory</span>
                 </span>
-                <span className="text-[10px] font-semibold text-cyan-400/90 bg-cyan-950/60 border border-cyan-500/20 px-2 py-0.5 rounded-full">
+                <span className="text-[10px] font-semibold text-cyan-400/90 bg-cyan-950/60 border border-cyan-500/20 px-1.5 py-0.5 rounded-full shrink-0">
                   {filteredCities.length} Hubs
                 </span>
               </div>
 
-              {/* Up / Down Navigation Controls */}
-              <div className="flex items-center gap-1">
+              {/* Up / Down Navigation Controls: Touch-friendly */}
+              <div className="flex items-center gap-1 shrink-0">
                 <button
                   type="button"
                   suppressHydrationWarning
@@ -670,9 +672,9 @@ export default function CoveredCitiesSection() {
                   disabled={mounted ? !canScrollUp : true}
                   title="Scroll terminals up"
                   aria-label="Scroll terminals up"
-                  className="flex h-9 w-9 min-w-[36px] min-h-[36px] items-center justify-center rounded-xl border border-white/10 bg-slate-900/90 text-slate-200 transition-all hover:border-cyan-400/40 hover:bg-slate-800 hover:text-white active:scale-95 disabled:pointer-events-none disabled:opacity-25"
+                  className="flex h-7 w-7 min-w-[28px] min-h-[28px] sm:h-9 sm:w-9 sm:min-w-[36px] sm:min-h-[36px] items-center justify-center rounded-lg sm:rounded-xl border border-white/10 bg-slate-900/90 text-slate-200 transition-all hover:border-cyan-400/40 hover:bg-slate-800 hover:text-white active:scale-95 disabled:pointer-events-none disabled:opacity-25"
                 >
-                  <ChevronUp className="h-4 w-4" />
+                  <ChevronUp className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 </button>
                 <button
                   type="button"
@@ -681,16 +683,16 @@ export default function CoveredCitiesSection() {
                   disabled={mounted ? !canScrollDown : false}
                   title="Scroll terminals down"
                   aria-label="Scroll terminals down"
-                  className="flex h-9 w-9 min-w-[36px] min-h-[36px] items-center justify-center rounded-lg border border-white/10 bg-slate-900/90 text-slate-200 transition-all hover:border-cyan-400/40 hover:bg-slate-800 hover:text-white active:scale-95 disabled:pointer-events-none disabled:opacity-25"
+                  className="flex h-7 w-7 min-w-[28px] min-h-[28px] sm:h-9 sm:w-9 sm:min-w-[36px] sm:min-h-[36px] items-center justify-center rounded-lg sm:rounded-xl border border-white/10 bg-slate-900/90 text-slate-200 transition-all hover:border-cyan-400/40 hover:bg-slate-800 hover:text-white active:scale-95 disabled:pointer-events-none disabled:opacity-25"
                 >
-                  <ChevronDown className="h-4 w-4" />
+                  <ChevronDown className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 </button>
               </div>
             </div>
 
             <div
               ref={directoryRef}
-              className="terminal-scroll flex-1 min-h-0 overflow-y-auto pr-1.5 space-y-2.5 scroll-smooth max-h-[380px] sm:max-h-[410px] lg:max-h-none"
+              className="terminal-scroll w-full min-w-0 max-w-full flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-1 sm:pr-1.5 space-y-2 sm:space-y-2.5 scroll-smooth max-h-[320px] sm:max-h-[410px] lg:max-h-none"
             >
               {filteredCities.map((city, i) => {
                 const isSelected = activeCity?.id === city.id;
@@ -706,29 +708,29 @@ export default function CoveredCitiesSection() {
                     onClick={() =>
                       setActiveCity((prev) => (prev?.id === city.id ? null : city))
                     }
-                    className={`w-full text-left p-4 sm:p-5 rounded-2xl border transition-all duration-200 ${
+                    className={`w-full min-w-0 max-w-full text-left p-2.5 xs:p-3 sm:p-5 rounded-xl sm:rounded-2xl border transition-all duration-200 ${
                       isSelected
                         ? "bg-slate-900 border-cyan-400/50 shadow-xl shadow-cyan-950/50 ring-1 ring-cyan-400/30"
                         : "bg-slate-900/60 border-white/10 hover:bg-slate-900/90 hover:border-white/20"
                     }`}
                   >
-                    <div className="flex justify-between items-start">
+                    <div className="flex w-full min-w-0 justify-between items-start gap-2">
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 sm:gap-2">
                           <MapPin
-                            className={`h-4 w-4 shrink-0 ${
+                            className={`h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0 ${
                               isSelected ? "text-cyan-400" : "text-slate-400"
                             }`}
                           />
-                          <p className="text-white font-bold text-base sm:text-lg tracking-tight truncate">
+                          <p className="text-white font-bold text-sm xs:text-base sm:text-lg tracking-tight truncate">
                             {city.name}
                           </p>
                         </div>
-                        <p className="text-slate-300 text-xs sm:text-sm mt-0.5 truncate pl-6 font-normal">
+                        <p className="text-slate-300 text-[11px] xs:text-xs sm:text-sm mt-0.5 truncate pl-5 xs:pl-6 font-normal">
                           {city.country} · <span className="text-slate-200">{city.terminal}</span>
                         </p>
                       </div>
-                      <span className="shrink-0 ml-2 rounded-full border border-brand-orange/30 bg-brand-orange/15 px-3 py-1 text-xs font-bold text-brand-orange">
+                      <span className="shrink-0 whitespace-nowrap rounded-full border border-brand-orange/30 bg-brand-orange/15 px-2 py-0.5 sm:px-3 sm:py-1 text-[10px] xs:text-xs font-bold text-brand-orange">
                         {city.routes} routes
                       </span>
                     </div>
@@ -741,41 +743,41 @@ export default function CoveredCitiesSection() {
                           animate={{ opacity: 1, height: "auto" }}
                           exit={{ opacity: 0, height: 0 }}
                           transition={{ duration: 0.25 }}
-                          className="overflow-hidden mt-3 pt-3 border-t border-white/10"
+                          className="overflow-hidden mt-2.5 pt-2.5 sm:mt-3 sm:pt-3 border-t border-white/10 w-full min-w-0"
                         >
-                          <p className="text-slate-200 text-xs sm:text-sm leading-relaxed mb-3.5 font-normal">
+                          <p className="text-slate-200 text-[11px] xs:text-xs sm:text-sm leading-relaxed mb-2.5 sm:mb-3.5 font-normal">
                             {city.description}
                           </p>
 
-                          <div className="grid grid-cols-2 gap-2 text-xs mb-3.5">
-                            <div className="rounded-xl bg-slate-950/60 border border-white/5 p-2.5">
-                              <span className="text-slate-400 text-[11px] block font-semibold uppercase">
+                          <div className="grid grid-cols-2 gap-1.5 sm:gap-2 text-xs mb-2.5 sm:mb-3.5 w-full min-w-0">
+                            <div className="rounded-lg sm:rounded-xl bg-slate-950/60 border border-white/5 p-2 sm:p-2.5 min-w-0">
+                              <span className="text-slate-400 text-[9px] xs:text-[10px] sm:text-[11px] block font-semibold uppercase truncate">
                                 Demand Status
                               </span>
-                              <span className="font-bold text-cyan-300 flex items-center gap-1 mt-0.5 text-xs sm:text-sm">
-                                <Activity className="h-3.5 w-3.5" />
-                                {city.surgeStatus}
+                              <span className="font-bold text-cyan-300 flex items-center gap-1 mt-0.5 text-[10px] xs:text-xs sm:text-sm truncate">
+                                <Activity className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0" />
+                                <span className="truncate">{city.surgeStatus}</span>
                               </span>
                             </div>
-                            <div className="rounded-xl bg-slate-950/60 border border-white/5 p-2.5">
-                              <span className="text-slate-400 text-[11px] block font-semibold uppercase">
+                            <div className="rounded-lg sm:rounded-xl bg-slate-950/60 border border-white/5 p-2 sm:p-2.5 min-w-0">
+                              <span className="text-slate-400 text-[9px] xs:text-[10px] sm:text-[11px] block font-semibold uppercase truncate">
                                 Daily Volume
                               </span>
-                              <span className="font-bold text-white flex items-center gap-1 mt-0.5 text-xs sm:text-sm">
-                                <TrendingUp className="h-3.5 w-3.5 text-emerald-400" />
-                                {city.dailyPassengers}
+                              <span className="font-bold text-white flex items-center gap-1 mt-0.5 text-[10px] xs:text-xs sm:text-sm truncate">
+                                <TrendingUp className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-emerald-400 shrink-0" />
+                                <span className="truncate">{city.dailyPassengers}</span>
                               </span>
                             </div>
                           </div>
 
-                          <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-                            <span className="text-xs text-slate-300 flex items-center gap-1.5 font-medium">
-                              <ShieldCheck className="h-4 w-4 text-emerald-400" />
+                          <div className="flex flex-wrap items-center justify-between gap-2 pt-1 w-full min-w-0">
+                            <span className="text-[11px] xs:text-xs text-slate-300 flex items-center gap-1.5 font-medium">
+                              <ShieldCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-400 shrink-0" />
                               Smart Queue Active
                             </span>
                             <Link
                               href={`/buy?from=${city.id}`}
-                              className="min-h-[44px] inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-cyan-300 hover:text-white transition-all group/link px-3.5 py-2 rounded-xl bg-cyan-950/60 border border-cyan-500/30 hover:bg-cyan-900/50"
+                              className="min-h-[34px] xs:min-h-[38px] sm:min-h-[44px] inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-cyan-300 hover:text-white transition-all group/link px-2.5 py-1 xs:px-3 xs:py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-cyan-950/60 border border-cyan-500/30 hover:bg-cyan-900/50 shrink-0"
                             >
                               Book departures
                               <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5" />

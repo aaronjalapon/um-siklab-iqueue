@@ -76,23 +76,23 @@ ROUTES = [
 
 BUSES = [
     # davao-cagayan
-    {"plate": "DAV-001", "route_slug": "davao-cagayan", "capacity": 50},
-    {"plate": "DAV-002", "route_slug": "davao-cagayan", "capacity": 45},
+    {"plate": "DAV-001", "route_slug": "davao-cagayan", "capacity": 49},
+    {"plate": "DAV-002", "route_slug": "davao-cagayan", "capacity": 28},
     # davao-cotabato
-    {"plate": "DAV-003", "route_slug": "davao-cotabato", "capacity": 50},
-    {"plate": "DAV-004", "route_slug": "davao-cotabato", "capacity": 40},
+    {"plate": "DAV-003", "route_slug": "davao-cotabato", "capacity": 49},
+    {"plate": "DAV-004", "route_slug": "davao-cotabato", "capacity": 28},
     # davao-general-santos
-    {"plate": "GEN-001", "route_slug": "davao-general-santos", "capacity": 50},
-    {"plate": "GEN-002", "route_slug": "davao-general-santos", "capacity": 45},
+    {"plate": "GEN-001", "route_slug": "davao-general-santos", "capacity": 49},
+    {"plate": "GEN-002", "route_slug": "davao-general-santos", "capacity": 28},
     # cagayan-iligan
-    {"plate": "CDO-001", "route_slug": "cagayan-iligan", "capacity": 40},
-    {"plate": "CDO-002", "route_slug": "cagayan-iligan", "capacity": 40},
+    {"plate": "CDO-001", "route_slug": "cagayan-iligan", "capacity": 49},
+    {"plate": "CDO-002", "route_slug": "cagayan-iligan", "capacity": 28},
     # davao-butuan
-    {"plate": "BUT-001", "route_slug": "davao-butuan", "capacity": 50},
-    {"plate": "BUT-002", "route_slug": "davao-butuan", "capacity": 45},
+    {"plate": "BUT-001", "route_slug": "davao-butuan", "capacity": 49},
+    {"plate": "BUT-002", "route_slug": "davao-butuan", "capacity": 28},
     # cotabato-zambo
-    {"plate": "ZAM-001", "route_slug": "cotabato-zambo", "capacity": 40},
-    {"plate": "ZAM-002", "route_slug": "cotabato-zambo", "capacity": 45},
+    {"plate": "ZAM-001", "route_slug": "cotabato-zambo", "capacity": 49},
+    {"plate": "ZAM-002", "route_slug": "cotabato-zambo", "capacity": 28},
 ]
 
 PASSENGER_ID = uuid.uuid5(_ROUTE_NAMESPACE, "iqueue.passenger.demo-maria")

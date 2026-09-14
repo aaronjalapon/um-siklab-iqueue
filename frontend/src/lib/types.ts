@@ -13,6 +13,7 @@ export interface Bus {
   accessibility_available_count: number;
   surge_probability: number | null;
   surge_3day: { date: string; surge: number }[];
+  fare?: number;
 }
 
 export interface BusListResponse {
@@ -182,7 +183,7 @@ export interface BoardingVerifyResponse {
 
 export interface GroupMemberRequest {
   name: string;
-  phone: string;
+  phone?: string;
   accessibility_needs: boolean;
 }
 

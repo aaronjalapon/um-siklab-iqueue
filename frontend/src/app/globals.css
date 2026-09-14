@@ -207,6 +207,39 @@ textarea {
   animation: radar-ring 2.2s cubic-bezier(0.1, 0.8, 0.2, 1) infinite;
 }
 
+/* =============================================
+   CHATBOT BACKGROUND PULSE WAVE ANIMATION
+   The button itself stays completely FIXED in size.
+   The pulse animation runs strictly BEHIND the icon
+   via outward-expanding, smoothly-fading sonar rings.
+   100% GPU-composited (scale3d & opacity only).
+   ============================================= */
+@keyframes sonar-wave {
+  0% {
+    transform: scale3d(1, 1, 1);
+    opacity: 0.55;
+  }
+  100% {
+    transform: scale3d(1.75, 1.75, 1);
+    opacity: 0;
+  }
+}
+
+.animate-sonar-wave {
+  animation: sonar-wave 2.4s cubic-bezier(0.15, 0.45, 0.25, 1) infinite;
+  will-change: transform, opacity;
+  transform-origin: center center;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-sonar-wave {
+    animation: none !important;
+  }
+}
+
 /* Custom discreet scrollbar for terminal list */
 .terminal-scroll {
   scrollbar-width: thin;

@@ -69,6 +69,16 @@ export default function LandingNavbar() {
     }
   };
 
+  useEffect(() => {
+    if (mobileOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [mobileOpen]);
+
   return (
     <>
       <motion.header
@@ -130,55 +140,97 @@ export default function LandingNavbar() {
             {/* Mobile hamburger */}
             <button
               id="mobile-menu-toggle"
-              onClick={() => setMobileOpen(!mobileOpen)}
+              onClick={() => setMobileOpen(true)}
               className="md:hidden text-white flex items-center justify-center min-h-[48px] min-w-[48px] p-2.5 rounded-xl hover:bg-white/10 active:bg-white/15 transition-colors"
-              aria-label="Toggle menu"
+              aria-label="Open menu"
               aria-expanded={mobileOpen}
             >
-              {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              <Menu className="w-6 h-6" />
             </button>
           </div>
         </div>
       </motion.header>
 
-      {/* Mobile Menu */}
+      {/* Full-Screen Mobile Menu: Occupies 100% of the screen */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-x-0 top-16 z-40 bg-slate-950/98 backdrop-blur-2xl border-b border-white/10 shadow-2xl shadow-black/80 md:hidden"
+            className="fixed inset-0 z-50 bg-slate-950 flex flex-col justify-between md:hidden"
           >
-            <nav className="max-w-7xl mx-auto px-5 py-6 flex flex-col gap-2">
-              {navLinks.map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  onClick={(e) => handleAnchorClick(e, link.href)}
-                  className="text-slate-200 hover:text-white text-lg font-semibold min-h-[50px] flex items-center px-3 rounded-xl hover:bg-white/5 border-b border-white/5 transition-colors"
-                >
-                  {link.label}
-                </a>
-              ))}
-              <div className="flex flex-col gap-3 pt-4 mt-2">
-                <Link
-                  href="/operator"
-                  onClick={() => setMobileOpen(false)}
-                  className="text-center text-slate-200 text-base font-semibold min-h-[50px] flex items-center justify-center px-4 rounded-xl border border-white/20 hover:border-white/40 active:scale-[0.98] transition-all"
-                >
-                  Operator Login
-                </Link>
+            {/* Top Bar inside Full-Screen Menu */}
+            <div className="h-16 px-4 flex items-center justify-between border-b border-white/10 shrink-0">
+              <Link
+                href="/#hero"
+                onClick={(e) => {
+                  handleLogoClick(e);
+                  setMobileOpen(false);
+                }}
+                className="group"
+                aria-label={`${BRAND.name} home`}
+              >
+                <BrandLogo
+                  className="transition-transform group-hover:scale-105"
+                  textClassName="text-xl font-bold text-white tracking-tight"
+                />
+              </Link>
+              <button
+                type="button"
+                onClick={() => setMobileOpen(false)}
+                className="text-white flex items-center justify-center min-h-[48px] min-w-[48px] p-2.5 rounded-xl hover:bg-white/10 active:bg-white/15 transition-colors"
+                aria-label="Close menu"
+              >
+                <X className="w-6 h-6 text-white" />
+              </button>
+            </div>
+
+            {/* Middle: Spacious Touch-Friendly Nav Links */}
+            <div className="flex-1 overflow-y-auto px-5 py-6 flex flex-col justify-between">
+              <nav className="flex flex-col gap-2.5">
+                {navLinks.map((link) => (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    onClick={(e) => handleAnchorClick(e, link.href)}
+                    className="text-slate-100 hover:text-white text-xl font-bold min-h-[56px] flex items-center justify-between px-4 rounded-2xl hover:bg-white/5 border border-white/5 transition-all group"
+                  >
+                    <span>{link.label}</span>
+                    <span className="text-brand-blue group-hover:translate-x-1 transition-transform text-lg">→</span>
+                  </a>
+                ))}
+              </nav>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col gap-3 pt-6 mt-4 border-t border-white/10">
                 <Link
                   href="/buy"
                   onClick={() => setMobileOpen(false)}
-                  className="text-center bg-brand-blue hover:bg-blue-600 text-white text-base font-bold min-h-[50px] flex items-center justify-center px-4 rounded-xl shadow-lg shadow-brand-blue/30 active:scale-[0.98] transition-all"
+                  className="text-center bg-brand-blue hover:bg-blue-600 text-white text-base font-bold min-h-[52px] flex items-center justify-center px-6 rounded-xl shadow-xl shadow-brand-blue/30 active:scale-[0.98] transition-all"
                 >
-                  Book Now →
+                  Book Your Seat →
+                </Link>
+                <Link
+                  href="/operator"
+                  onClick={() => setMobileOpen(false)}
+                  className="text-center text-slate-200 text-base font-semibold min-h-[50px] flex items-center justify-center px-6 rounded-xl border border-white/20 bg-slate-900/60 hover:border-white/40 active:scale-[0.98] transition-all"
+                >
+                  Operator Dashboard
                 </Link>
               </div>
-            </nav>
+            </div>
+
+            {/* Bottom Footer Info inside Full-Screen Menu */}
+            <div className="p-4 border-t border-white/10 shrink-0 bg-slate-900/40 text-center">
+              <p className="text-xs text-slate-400 font-medium">
+                {BRAND.name} · AI-Powered Smart Boarding for ASEAN
+              </p>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                Serving 7 terminals across Southeast Asia
+              </p>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

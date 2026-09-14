@@ -5,6 +5,7 @@ import { useEffect, useState, useRef, useMemo } from "react";
 import Link from "next/link";
 import { Accessibility, ArrowLeft, Check, Star, RefreshCw } from "lucide-react";
 import { createBooking, createPassenger } from "@/lib/api";
+import { saveBoardingPass } from "@/lib/boarding-passes";
 import { BusSeatGrid } from "@/components/seats/BusSeatGrid";
 import { SeatLegend } from "@/components/seats/SeatLegend";
 import { BookingProgress } from "@/components/ui/BookingProgress";
@@ -179,6 +180,12 @@ function SingleSeatSelectionFlow() {
         needs_accessibility: accessibilityNeeds,
         preferred_side: preferredSide || undefined,
       });
+      saveBoardingPass({
+        ...booking,
+        passenger_name: name || null,
+        route_origin: null,
+        route_destination: null,
+      });
       router.push(`/confirmation/${booking.id}`);
     } catch (err: unknown) {
       setSubmitError(
@@ -207,24 +214,24 @@ function SingleSeatSelectionFlow() {
           title="Finding Your Best Seat"
           description="Loading the seat map and applying your preferences before anything is shown."
         />
-        <div className={`${glassStyles.panel} p-6`}>
-          <div className="space-y-2 max-w-xs mx-auto">
+        <div className={`${glassStyles.panel} p-3 sm:p-6`}>
+          <div className="space-y-1.5 sm:space-y-2 max-w-xs mx-auto">
             {Array.from({ length: 6 }).map((_, ri) => (
-              <div key={ri} className="flex justify-center gap-2">
+              <div key={ri} className="flex justify-center gap-1.5 sm:gap-2">
                 <div className="flex gap-1">
                   {Array.from({ length: 2 }).map((_, ci) => (
                     <div
                       key={ci}
-                      className="w-10 h-10 rounded bg-slate-200 animate-pulse"
+                      className="w-8 h-8 sm:w-10 sm:h-10 rounded bg-slate-200 dark:bg-slate-800 animate-pulse"
                     />
                   ))}
                 </div>
-                <div className="w-6" />
+                <div className="w-4 sm:w-6" />
                 <div className="flex gap-1">
                   {Array.from({ length: 2 }).map((_, ci) => (
                     <div
                       key={ci}
-                      className="w-10 h-10 rounded bg-slate-200 animate-pulse"
+                      className="w-8 h-8 sm:w-10 sm:h-10 rounded bg-slate-200 dark:bg-slate-800 animate-pulse"
                       style={{ animationDelay: `${ci * 100}ms` }}
                     />
                   ))}
@@ -240,14 +247,14 @@ function SingleSeatSelectionFlow() {
   // Error state
   if (error && seats.length === 0) {
     return (
-      <div className="text-center py-12">
-        <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-6 max-w-md mx-auto">
-          <p className="font-semibold">Could not load seat map</p>
-          <p className="text-sm mt-1">{error}</p>
+      <div className="text-center py-8 sm:py-12">
+        <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 sm:p-6 max-w-md mx-auto text-xs sm:text-sm">
+          <p className="font-semibold text-sm sm:text-base">Could not load seat map</p>
+          <p className="mt-1">{error}</p>
           <Link
             href={`/buy?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(dest)}&date=${date}`}
             prefetch={false}
-            className="text-blue-600 hover:underline text-sm mt-3 inline-block"
+            className="text-blue-600 hover:underline mt-3 inline-block font-semibold"
           >
             Back to search
           </Link>
@@ -262,9 +269,9 @@ function SingleSeatSelectionFlow() {
       <Link
         href={`/book/${busId}/preferences?${new URLSearchParams({ date, origin, dest })}`}
         prefetch={false}
-        className="text-sm text-blue-600 hover:underline inline-flex items-center gap-1"
+        className="text-xs sm:text-sm text-brand-blue hover:underline inline-flex items-center gap-1"
       >
-        <ArrowLeft className="w-3 h-3" /> Back to preferences
+        <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Back to preferences
       </Link>
 
       <BookingProgress current="seat" />
@@ -272,21 +279,21 @@ function SingleSeatSelectionFlow() {
       <PageHeader
         eyebrow="Seat assignment"
         title="Select Your Seat"
-        description={`${origin || "Origin"} -> ${dest || "Destination"}${date ? ` · ${date}` : ""}`}
+        description={`${origin || "Origin"} → ${dest || "Destination"}${date ? ` · ${date}` : ""}`}
       />
 
       {submitError && (
-        <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4">
+        <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg sm:rounded-xl p-2.5 sm:p-4 text-xs sm:text-sm">
           {submitError}
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 relative items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 relative items-start">
         {/* Seat Grid */}
-        <div className={`lg:col-span-2 ${glassStyles.panel} p-6`}>
-          <div className="mb-4 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
-            <Accessibility className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-            <p>
+        <div className={`lg:col-span-2 ${glassStyles.panel} p-2.5 sm:p-5 md:p-6`}>
+          <div className="mb-3 sm:mb-4 flex items-start gap-2.5 sm:gap-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
+            <Accessibility className="mt-0.5 h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0 text-amber-700 dark:text-amber-300" aria-hidden />
+            <p className="leading-snug sm:leading-normal">
               {accessibilityNeeds
                 ? "Accessibility-priority seats are highlighted near the front door."
                 : "Front priority seats are held for passengers who need easier access while other seats are available."}
@@ -299,47 +306,47 @@ function SingleSeatSelectionFlow() {
             onSeatSelect={handleManualSelect}
             needsAccessibility={accessibilityNeeds}
           />
-          <div className="mt-4">
+          <div className="mt-3 sm:mt-4">
             <SeatLegend variant="passenger" />
           </div>
         </div>
 
         {/* Confirmation Card */}
-        <div className={`${glassStyles.panel} p-6 lg:sticky lg:top-24 space-y-4`}>
-          <h2 className="font-semibold text-lg">Your Seat</h2>
+        <div className={`${glassStyles.panel} p-3 sm:p-5 md:p-6 space-y-3 sm:space-y-4`}>
+          <h2 className="font-semibold text-base sm:text-lg">Your Seat</h2>
 
           {autoAssigned && !manualMode && (
-            <div className="bg-teal-50 border border-teal-200 rounded-lg p-4 space-y-2">
-              <div className="flex items-center gap-2 text-teal-800">
-                <Star className="w-5 h-5" />
-                <span className="font-semibold">{BRAND.name} Recommended</span>
+            <div className="bg-teal-50 border border-teal-200 rounded-lg sm:rounded-xl p-3 sm:p-4 space-y-1.5 sm:space-y-2">
+              <div className="flex items-center gap-1.5 sm:gap-2 text-teal-800">
+                <Star className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="text-xs sm:text-sm font-semibold">{BRAND.name} Recommended</span>
               </div>
-              <p className="text-2xl font-bold text-teal-900">
+              <p className="text-xl sm:text-2xl font-bold text-teal-900">
                 Seat {autoAssigned.seat_label}
               </p>
-              <p className="text-sm text-teal-700 capitalize">
+              <p className="text-xs sm:text-sm text-teal-700 capitalize">
                 {autoAssigned.seat_type} · {autoAssigned.side} side
               </p>
               {autoAssigned.is_accessibility && (
-                <p className="inline-flex items-center gap-1.5 rounded-full bg-white/70 px-2 py-1 text-xs font-semibold text-teal-800">
-                  <Accessibility className="h-3.5 w-3.5" aria-hidden />
+                <p className="inline-flex items-center gap-1.5 rounded-full bg-white/70 px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs font-semibold text-teal-800">
+                  <Accessibility className="h-3 w-3 sm:h-3.5 sm:w-3.5" aria-hidden />
                   Accessibility-priority seat
                 </p>
               )}
               {autoAssigned.affinity_score > 0 && (
-                <p className="text-sm text-teal-700">
+                <p className="text-xs sm:text-sm text-teal-700">
                   Decision score: {autoAssigned.affinity_score.toFixed(0)}
                 </p>
               )}
               {autoAssigned.assignment_reasons.length > 0 && (
-                <ul className="space-y-1 text-xs text-teal-700">
+                <ul className="space-y-0.5 sm:space-y-1 text-[11px] sm:text-xs text-teal-700">
                   {autoAssigned.assignment_reasons.map((reason) => (
                     <li key={reason}>• {reason}</li>
                   ))}
                 </ul>
               )}
               {autoAssigned.boarding_window && (
-                <p className="text-xs text-teal-600">
+                <p className="text-[10px] sm:text-xs text-teal-600">
                   Boarding: {autoAssigned.boarding_window}
                 </p>
               )}
@@ -347,7 +354,7 @@ function SingleSeatSelectionFlow() {
           )}
 
           {manualMode && selectedSeatId && (
-            <div className="bg-amber-50 border border-amber-300 rounded-lg p-3 text-sm space-y-2">
+            <div className="bg-amber-50 border border-amber-300 rounded-lg sm:rounded-xl p-2.5 sm:p-3 text-xs sm:text-sm space-y-2">
               <p className="font-semibold text-amber-800">
                 Manually selected seat {activeSeatLabel ? ` ${activeSeatLabel}` : ""}
               </p>
@@ -357,9 +364,9 @@ function SingleSeatSelectionFlow() {
                   setManualMode(false);
                   if (autoAssigned) setSelectedSeatId(autoAssigned.seat_id);
                 }}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-amber-300 text-amber-700 rounded-md text-xs font-medium hover:bg-amber-100 hover:border-amber-400 transition"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 bg-white border border-amber-300 text-amber-700 rounded-md text-xs font-medium hover:bg-amber-100 hover:border-amber-400 transition active:scale-95"
               >
-                <RefreshCw className="w-3.5 h-3.5" /> Reset to {BRAND.name} pick
+                <RefreshCw className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Reset to {BRAND.name} pick
               </button>
             </div>
           )}
@@ -369,7 +376,7 @@ function SingleSeatSelectionFlow() {
               type="button"
               onClick={handleConfirm}
               disabled={!canConfirm}
-              className="w-full bg-blue-700 text-white font-semibold py-2.5 rounded-lg hover:bg-blue-800 disabled:bg-gray-300 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
+              className="w-full min-h-11 sm:min-h-12 bg-blue-700 text-white font-semibold py-2 sm:py-2.5 text-xs sm:text-sm rounded-xl hover:bg-blue-800 disabled:bg-gray-300 disabled:cursor-not-allowed transition flex items-center justify-center gap-2 shadow-sm active:scale-95"
             >
               {submitting ? (
                 "Booking..."
@@ -384,7 +391,7 @@ function SingleSeatSelectionFlow() {
               <button
                 type="button"
                 onClick={() => setManualMode(true)}
-                className="w-full text-sm text-blue-600 hover:underline py-1"
+                className="w-full text-xs sm:text-sm text-blue-600 hover:underline py-1"
               >
                 Choose a different seat
               </button>

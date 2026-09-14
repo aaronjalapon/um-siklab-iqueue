@@ -28,10 +28,16 @@ from app.models.bus import Bus
 from app.models.bus_layout import BusLayout
 from app.models.seat import Seat, SeatType
 
-# Column label mapping: 1→A, 2→B, 3→C, 4→D
-_COL_LABELS = {1: "A", 2: "B", 3: "C", 4: "D"}
-_SIDE_MAP = {1: "left", 2: "left", 3: "right", 4: "right"}
-_TYPE_MAP = {1: SeatType.WINDOW, 2: SeatType.AISLE, 3: SeatType.AISLE, 4: SeatType.WINDOW}
+# Column label mapping: 1→A, 2→B, 3→C, 4→D, 5→E
+_COL_LABELS = {1: "A", 2: "B", 3: "C", 4: "D", 5: "E"}
+_SIDE_MAP = {1: "left", 2: "left", 3: "right", 4: "right", 5: "right"}
+_TYPE_MAP = {
+    1: SeatType.WINDOW,
+    2: SeatType.AISLE,
+    3: SeatType.AISLE,
+    4: SeatType.WINDOW,
+    5: SeatType.WINDOW,
+}
 
 
 def get_default_layout(
@@ -41,12 +47,44 @@ def get_default_layout(
 ) -> dict:
     """Return a standard Mindanao bus layout config.
 
-    Used as the default when no custom layout_config is provided.
+    In standard Philippine provincial buses (49-passenger coaches):
+      Rows 1 to 11: 4 seats per row (2 left + aisle + 2 right: A, B, C, D) = 44 seats
+      Row 12 (back bench): 5 seats across (A, B, C, D, E) = 5 seats
+      Total = 44 + 5 = 49 seats.
     """
     config: dict[str, dict] = {}
     max_seats = total_capacity or total_rows * seats_per_row
-    generated = 0
 
+    if max_seats == 49:
+        for row in range(1, 12):
+            for col in range(1, 5):
+                label = f"{row}{_COL_LABELS[col]}"
+                config[label] = {
+                    "type": _TYPE_MAP[col].value,
+                    "side": _SIDE_MAP[col],
+                    "is_near_exit": row == 1,
+                    "is_accessibility": row <= 2,
+                }
+
+        row_12_types = {
+            1: SeatType.WINDOW.value,
+            2: SeatType.AISLE.value,
+            3: SeatType.MIDDLE.value,
+            4: SeatType.AISLE.value,
+            5: SeatType.WINDOW.value,
+        }
+        row_12_sides = {1: "left", 2: "left", 3: "middle", 4: "right", 5: "right"}
+        for col in range(1, 6):
+            label = f"12{_COL_LABELS[col]}"
+            config[label] = {
+                "type": row_12_types[col],
+                "side": row_12_sides[col],
+                "is_near_exit": True,
+                "is_accessibility": False,
+            }
+        return config
+
+    generated = 0
     for row in range(1, total_rows + 1):
         for col in range(1, seats_per_row + 1):
             if generated >= max_seats:
@@ -54,8 +92,8 @@ def get_default_layout(
 
             label = f"{row}{_COL_LABELS[col]}"
             config[label] = {
-                "type": _TYPE_MAP[col].value,
-                "side": _SIDE_MAP[col],
+                "type": _TYPE_MAP.get(col, SeatType.AISLE).value,
+                "side": _SIDE_MAP.get(col, "left"),
                 "is_near_exit": row in (1, total_rows),
                 "is_accessibility": row <= 2,
             }
@@ -173,4 +211,4 @@ def _extract_col_letter(seat_label: str) -> str:
     return match.group(0)
 
 
-_COL_LETTER_TO_NUM = {"A": 1, "B": 2, "C": 3, "D": 4}
+_COL_LETTER_TO_NUM = {"A": 1, "B": 2, "C": 3, "D": 4, "E": 5}

@@ -11,8 +11,13 @@ interface SmoothScrollProps {
 function subscribe(callback: () => void) {
   if (typeof window === "undefined") return () => {};
   const mql = window.matchMedia("(display-mode: standalone)");
+  const pointerMql = window.matchMedia("(pointer: coarse)");
   mql.addEventListener("change", callback);
-  return () => mql.removeEventListener("change", callback);
+  pointerMql.addEventListener("change", callback);
+  return () => {
+    mql.removeEventListener("change", callback);
+    pointerMql.removeEventListener("change", callback);
+  };
 }
 
 function getSnapshot(): boolean {
@@ -23,8 +28,9 @@ function getSnapshot(): boolean {
   const isStandalone =
     window.matchMedia("(display-mode: standalone)").matches ||
     navigatorWithStandalone.standalone === true;
-  // In standalone PWA mode on mobile devices, preserve native momentum scrolling
-  return !isStandalone;
+  const isTouchDevice = window.matchMedia("(pointer: coarse)").matches;
+  // On mobile touch devices and standalone PWA mode, preserve native momentum scrolling
+  return !isStandalone && !isTouchDevice;
 }
 
 function getServerSnapshot(): boolean {

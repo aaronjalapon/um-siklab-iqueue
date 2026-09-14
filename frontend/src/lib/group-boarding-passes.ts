@@ -1,8 +1,10 @@
 import type { GroupBookingResponse } from "./types";
+import { saveSessionGroupBooking } from "./session-bookings";
 
 export const GROUP_PASS_STORAGE_KEY = "iqueue:group-boarding-passes:v1";
 
 export function saveGroupBoardingPass(pass: GroupBookingResponse): void {
+  saveSessionGroupBooking(pass);
   if (typeof window === "undefined") return;
   const saved = getSavedGroupBoardingPasses();
   const next = [pass, ...saved.filter((item) => item.group_id !== pass.group_id)].slice(0, 10);

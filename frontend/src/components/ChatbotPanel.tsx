@@ -184,6 +184,125 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
   const initializedRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Floating trigger position and dragging state
+  const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const dragStartRef = useRef<{
+    pointerX: number;
+    pointerY: number;
+    elemX: number;
+    elemY: number;
+    hasMoved: boolean;
+  }>({ pointerX: 0, pointerY: 0, elemX: 0, elemY: 0, hasMoved: false });
+  const justDraggedRef = useRef(false);
+
+  // Pointer drag handlers for mobile touch and desktop mouse
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return; // Only primary button
+    const el = triggerRef.current;
+    if (!el) return;
+
+    const rect = el.getBoundingClientRect();
+    dragStartRef.current = {
+      pointerX: e.clientX,
+      pointerY: e.clientY,
+      elemX: rect.left,
+      elemY: rect.top,
+      hasMoved: false,
+    };
+
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // Safe fallback if pointer capture is not supported
+    }
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!e.currentTarget.hasPointerCapture(e.pointerId)) return;
+
+    const dx = e.clientX - dragStartRef.current.pointerX;
+    const dy = e.clientY - dragStartRef.current.pointerY;
+
+    if (!dragStartRef.current.hasMoved) {
+      if (Math.hypot(dx, dy) > 5) {
+        dragStartRef.current.hasMoved = true;
+        setIsDragging(true);
+      } else {
+        return;
+      }
+    }
+
+    const buttonSize = 56;
+    const margin = 8;
+    const maxX = Math.max(margin, window.innerWidth - buttonSize - margin);
+    const maxY = Math.max(margin, window.innerHeight - buttonSize - margin);
+
+    const newX = Math.max(margin, Math.min(maxX, dragStartRef.current.elemX + dx));
+    const newY = Math.max(margin, Math.min(maxY, dragStartRef.current.elemY + dy));
+
+    setPosition({ x: newX, y: newY });
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {
+        // Safe fallback
+      }
+    }
+
+    if (dragStartRef.current.hasMoved) {
+      setIsDragging(false);
+      justDraggedRef.current = true;
+      setTimeout(() => {
+        justDraggedRef.current = false;
+      }, 150);
+    }
+  };
+
+  const handlePointerCancel = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {
+        // Safe fallback
+      }
+    }
+    setIsDragging(false);
+  };
+
+  const handleButtonClick = (e: React.MouseEvent) => {
+    if (justDraggedRef.current) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    setIsOpen((prev) => !prev);
+  };
+
+  // Re-clamp position on window resize or device orientation change
+  useEffect(() => {
+    const handleResize = () => {
+      setPosition((prev) => {
+        if (!prev) return null;
+        const buttonSize = 56;
+        const margin = 8;
+        const maxX = Math.max(margin, window.innerWidth - buttonSize - margin);
+        const maxY = Math.max(margin, window.innerHeight - buttonSize - margin);
+        const clampedX = Math.max(margin, Math.min(maxX, prev.x));
+        const clampedY = Math.max(margin, Math.min(maxY, prev.y));
+        if (clampedX === prev.x && clampedY === prev.y) return prev;
+        return { x: clampedX, y: clampedY };
+      });
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const scrollToBottom = useCallback(() => {
     setTimeout(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -361,23 +480,68 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
 
   return (
     <>
-      {/* Toggle Button */}
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-24 right-4 rounded-full bg-blue-700 p-3 text-white shadow-lg
-                   md:bottom-6 md:right-6
-                   hover:bg-blue-800 transition z-50"
-        aria-label={isOpen ? `Close ${BRAND.assistantName}` : `Chat with ${BRAND.assistantName}`}
-        aria-expanded={isOpen}
-        aria-controls="iqueue-chatbot-panel"
+      {/* Floating Chatbot Button — Placed by default on the upper right side of the bottom navbar on mobile; freely draggable */}
+      <div
+        ref={triggerRef}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
+        onDragStart={(e) => e.preventDefault()}
+        style={
+          position
+            ? {
+                left: `${position.x}px`,
+                top: `${position.y}px`,
+                bottom: "auto",
+                right: "auto",
+              }
+            : undefined
+        }
+        className={`fixed z-40 touch-none select-none ${
+          position
+            ? ""
+            : "bottom-24 right-4 md:bottom-6 md:right-6"
+        } ${isDragging ? "cursor-grabbing scale-105" : "cursor-grab"}`}
       >
-        {isOpen ? (
-          <X className="h-5 w-5 md:h-6 md:w-6" />
-        ) : (
-          <MessageCircle className="h-5 w-5 md:h-6 md:w-6" />
+        {!isOpen && !isDragging && (
+          <>
+            {/* Primary background pulse wave */}
+            <span
+              className="absolute inset-0 rounded-full bg-blue-500/40 animate-sonar-wave pointer-events-none"
+              aria-hidden="true"
+            />
+            {/* Secondary staggered pulse wave for continuous silky aura */}
+            <span
+              className="absolute inset-0 rounded-full bg-blue-400/30 animate-sonar-wave [animation-delay:1.2s] pointer-events-none"
+              aria-hidden="true"
+            />
+          </>
         )}
-      </button>
+        <button
+          type="button"
+          onClick={handleButtonClick}
+          className={`relative rounded-full bg-blue-700 h-14 w-14 min-w-[56px] min-h-[56px] flex items-center justify-center text-white shadow-xl shadow-blue-900/40 hover:bg-blue-600 ${
+            isDragging
+              ? "ring-4 ring-blue-400/60 shadow-2xl shadow-blue-900/70"
+              : "active:scale-95 transition-colors duration-200"
+          } focus:outline-none focus:ring-4 focus:ring-blue-400/40`}
+          aria-label={isOpen ? `Close ${BRAND.assistantName}` : `Chat with ${BRAND.assistantName} (drag to reposition)`}
+          title={isOpen ? `Close ${BRAND.assistantName}` : `Chat with ${BRAND.assistantName} (drag to reposition)`}
+          aria-expanded={isOpen}
+          aria-controls="iqueue-chatbot-panel"
+        >
+          {isOpen ? (
+            <X className="h-6 w-6 pointer-events-none" />
+          ) : (
+            <>
+              <MessageCircle className="h-6 w-6 pointer-events-none" />
+              {/* Online indicator dot */}
+              <span className="absolute top-3 right-3 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-blue-700 pointer-events-none" />
+            </>
+          )}
+        </button>
+      </div>
 
       {/* Chat Panel */}
       {isOpen && (
@@ -386,26 +550,26 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
           role="dialog"
           aria-modal="false"
           aria-label={UI_STRINGS[lang].title}
-          className="fixed bottom-40 left-3 right-3 mx-0 sm:left-auto sm:right-6
-                     w-auto sm:w-96 h-[min(68dvh,520px)] max-h-[calc(100dvh-10rem)]
-                     md:bottom-24
+          className="fixed bottom-24 left-3 right-3 mx-0 sm:left-auto sm:right-6
+                     w-auto sm:w-96 h-[min(72dvh,540px)] max-h-[calc(100dvh-7rem)]
                      bg-white dark:bg-slate-900
-                     rounded-xl shadow-2xl dark:shadow-2xl dark:shadow-black/40
-                     border dark:border-white/10
-                     flex flex-col z-50"
+                     rounded-2xl shadow-2xl dark:shadow-2xl dark:shadow-black/60
+                     border dark:border-white/15
+                     flex flex-col z-50 overflow-hidden"
         >
           {/* Header */}
-          <div className="bg-blue-700 text-white p-4 rounded-t-xl flex items-center justify-between shrink-0">
+          <div className="bg-blue-700 text-white p-4 flex items-center justify-between shrink-0">
             <div>
-              <h3 className="font-semibold">{UI_STRINGS[lang].title}</h3>
+              <h3 className="font-bold text-base">{UI_STRINGS[lang].title}</h3>
               <p className="text-xs text-blue-200">{UI_STRINGS[lang].subtitle}</p>
             </div>
             <button
               type="button"
               onClick={() => setIsOpen(false)}
               aria-label="Close assistant"
+              className="h-10 w-10 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl hover:bg-white/15 active:bg-white/20 transition-colors"
             >
-              <X className="w-4 h-4" />
+              <X className="w-5 h-5" />
             </button>
           </div>
 
@@ -499,7 +663,7 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
                   type="button"
                   key={i}
                   onClick={() => handleSuggestionClick(reply)}
-                  className="flex-shrink-0 text-[11px] px-3 py-1.5 rounded-full bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 border dark:border-white/10 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+                  className="flex-shrink-0 min-h-[38px] text-xs px-3.5 py-1.5 rounded-full bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-200 border dark:border-white/10 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-700 dark:hover:text-blue-300 transition-colors flex items-center"
                 >
                   {reply}
                 </button>
@@ -517,7 +681,7 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
               placeholder={UI_STRINGS[lang].placeholder}
               disabled={loading}
               className="flex-1 border border-gray-300 dark:border-slate-700
-                         rounded-lg px-3 py-2 text-sm
+                         rounded-xl px-3.5 py-2.5 text-base
                          dark:bg-slate-800 dark:text-slate-200 dark:placeholder-slate-500
                          focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400
                          focus:border-blue-500 dark:focus:border-blue-400
@@ -527,12 +691,13 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
               type="button"
               onClick={() => handleSend()}
               disabled={loading || !input.trim()}
-              className="bg-blue-700 text-white p-2 rounded-lg
+              className="bg-blue-700 text-white min-h-[44px] min-w-[44px] rounded-xl flex items-center justify-center p-2.5
                          hover:bg-blue-800
                          disabled:bg-gray-300 dark:disabled:bg-slate-700
-                         disabled:cursor-not-allowed transition"
+                         disabled:cursor-not-allowed active:scale-95 transition"
+              aria-label="Send message"
             >
-              <Send className="w-4 h-4" />
+              <Send className="w-5 h-5" />
             </button>
           </div>
         </div>

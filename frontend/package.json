@@ -6,6 +6,7 @@
     "dev": "next dev",
     "dev:docker": "sh ./scripts/start-dev-docker.sh",
     "dev:webpack": "next dev --webpack -H 0.0.0.0",
+    "sync-ip": "sh ../scripts/sync-lan-ip.sh",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -20,6 +21,7 @@
     "@zxing/library": "^0.23.0",
     "axios": "^1.16.0",
     "framer-motion": "^12.40.0",
+    "lenis": "^1.3.26",
     "lucide-react": "^1.1.0",
     "next": "16.2.6",
     "qrcode.react": "^4.2.0",
@@ -29,6 +31,7 @@
     "react-is": "^19.2.0",
     "react-simple-maps": "^3.0.0",
     "recharts": "^3.8.0",
+    "world-atlas": "^2.0.2",
     "zod": "^4.4.0"
   },
   "devDependencies": {

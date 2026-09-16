@@ -19,8 +19,11 @@ export const glassStyles = {
   // Secondary action button (orange highlight)
   secondaryButton: 'bg-brand-orange hover:bg-orange-600 text-white border border-orange-500 rounded-xl transition-colors duration-300 shadow-lg shadow-orange-500/20 trim-cap-alpha px-4 py-2',
 
+  // Success / booking conversion CTA button (emerald green highlight)
+  successButton: 'bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white border border-emerald-500/80 rounded-xl transition-all duration-200 shadow-lg shadow-emerald-600/20 trim-cap-alpha px-4 py-2',
+
   // Input field (frosted inner inset)
-  input: 'bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border border-glass-border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-blue/50 transition-all text-foreground',
+  input: 'w-full block bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border border-glass-border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-blue/50 transition-all text-foreground',
 
   // Operator dashboard stat card
   statCard:
@@ -49,5 +52,5 @@ export const glassStyles = {
     'flex items-center gap-4 px-4 py-3 rounded-xl transition-colors font-semibold bg-brand-blue text-white shadow-md shadow-brand-blue/20',
 
   pageContainer:
-    'max-w-7xl mx-auto w-full space-y-5 px-4 py-5 pb-28 sm:space-y-6 sm:px-6 sm:py-6 md:pb-6',
+    'max-w-7xl mx-auto w-full space-y-3 sm:space-y-5 px-3 py-3 pb-3 sm:px-6 sm:py-6 md:pb-8',
 };

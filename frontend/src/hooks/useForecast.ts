@@ -69,10 +69,7 @@ export function useForecast(routeId: string): UseForecastResult {
       }
     }
 
-    // Reset loading when route or refetch changes (async fetch below)
-    queueMicrotask(() => {
-      if (!cancelled) setLoadState("loading");
-    });
+    setLoadState("loading");
     void load();
 
     return () => {

@@ -103,7 +103,11 @@ export function getSavedBoardingPassById(
   return getSavedBoardingPasses().find((pass) => pass.id === bookingId) ?? null;
 }
 
+import { saveSessionSingleBooking } from "./session-bookings";
+
 export function saveBoardingPass(booking: BookingDetail): void {
+  saveSessionSingleBooking(booking);
+
   if (booking.status.toLowerCase() !== "confirmed") return;
 
   const savedPass = sanitizeBooking(booking);

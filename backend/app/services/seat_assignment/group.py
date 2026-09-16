@@ -27,7 +27,10 @@ def _beside(first: Seat, second: Seat) -> bool:
     return (
         first.row_number == second.row_number
         and abs(first.col_number - second.col_number) == 1
-        and {first.col_number, second.col_number} in ({1, 2}, {3, 4})
+        and (
+            {first.col_number, second.col_number} in ({1, 2}, {3, 4}, {4, 5})
+            or (first.row_number == 12 and {first.col_number, second.col_number} == {2, 3})
+        )
     )
 
 
@@ -43,7 +46,7 @@ def allocate_group_seats(
     """
     seats = sorted(available_seats, key=_seat_key)
     if len(seats) < len(members):
-        raise SeatUnavailableError("Not enough available seats for the whole family")
+        raise SeatUnavailableError("Not enough available seats for the whole group")
 
     accessible_indexes = [
         index for index, member in enumerate(members) if member.accessibility_needs
@@ -67,11 +70,16 @@ def allocate_group_seats(
         primary: Seat | None = None
         companion: Seat | None = None
         companion_index = ordinary_indexes[0] if ordinary_indexes else None
+        companion_reasons = (
+            "Companion seated beside accessibility passenger",
+            "Kept near group",
+        )
 
+        # Tier 1: Search for an accessible seat with a directly adjacent companion seat (no aisle crossing)
         for candidate in priority:
             possible_companions = [
                 seat
-                for seat in priority
+                for seat in seats
                 if seat.seat_label != candidate.seat_label and _beside(candidate, seat)
             ]
             if companion_index is None or possible_companions:
@@ -79,9 +87,37 @@ def allocate_group_seats(
                 companion = possible_companions[0] if possible_companions else None
                 break
 
+        # Tier 2: Proximity secondary fallback - if no priority seat has a directly adjacent seat,
+        # find the priority seat that has the closest available seat for the companion
+        if primary is None and companion_index is not None and priority:
+            best_score = float("inf")
+            needed_priority = len(accessible_indexes) - 1
+            for candidate in priority:
+                available_for_companion = [
+                    seat
+                    for seat in seats
+                    if seat.seat_label != candidate.seat_label
+                    and (not seat.is_accessibility or (len(priority) - 2 >= needed_priority))
+                ]
+                for other in available_for_companion:
+                    dist = (
+                        abs(other.row_number - candidate.row_number) * 10
+                        + abs(other.col_number - candidate.col_number)
+                    )
+                    priority_penalty = 5 if other.is_accessibility else 0
+                    score = dist + priority_penalty
+                    if score < best_score:
+                        best_score = score
+                        primary = candidate
+                        companion = other
+            companion_reasons = (
+                "Companion seated near accessibility passenger",
+                "Nearest available to group",
+            )
+
         if primary is None:
             raise SeatUnavailableError(
-                "No priority seat has room for the required adjacent companion"
+                "Not enough available seats to seat the group near the priority passenger"
             )
 
         allocations[primary_index] = GroupAllocation(
@@ -94,12 +130,12 @@ def allocate_group_seats(
         if companion_index is not None:
             if companion is None:
                 raise SeatUnavailableError(
-                    "No priority seat has room for the required adjacent companion"
+                    "Not enough available seats for companion"
                 )
             allocations[companion_index] = GroupAllocation(
                 companion_index,
                 companion,
-                ("Companion seated beside accessibility passenger", "Kept near family"),
+                companion_reasons,
             )
             used.add(companion.seat_label)
 
@@ -144,7 +180,7 @@ def allocate_group_seats(
         allocations[member_index] = GroupAllocation(
             member_index,
             chosen,
-            ("Kept near family", "Nearest available standard seat"),
+            ("Kept near group", "Nearest available standard seat"),
         )
         used.add(chosen.seat_label)
 
@@ -154,7 +190,7 @@ def allocate_group_seats(
 def synchronized_boarding_window(
     departure: datetime, allocations: Sequence[GroupAllocation]
 ) -> tuple[datetime, datetime]:
-    """Use one front-most boarding window for the complete family."""
+    """Use one front-most boarding window for the complete group."""
     front_row = min(allocation.seat.row_number for allocation in allocations)
     start = departure + timedelta(minutes=front_row * 3)
     return start, start + timedelta(minutes=15)

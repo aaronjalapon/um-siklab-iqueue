@@ -15,7 +15,7 @@ services:
   postgres:
     # Inherits postgres:18-alpine from base compose file
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
 
   # --- FastAPI Backend (dev: hot reload, volume mounts) ---
   backend:
@@ -28,6 +28,7 @@ services:
       - ./deployments/xlm-roberta-iqueue:/app/app/services/chatbot/artifacts/xlm-roberta-iqueue:ro
       # Trained champion/candidate bundles — persisted on the host filesystem
       - ./iqueue_artifacts:/app/iqueue_artifacts
+      - ./scripts:/app/scripts
     environment:
       - DEBUG=true
       - HOST=0.0.0.0

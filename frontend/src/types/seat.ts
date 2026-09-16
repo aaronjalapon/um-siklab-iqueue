@@ -2,7 +2,7 @@
 
 export type SeatType = "window" | "aisle" | "middle";
 export type SeatStatus = "available" | "occupied" | "reserved" | "blocked";
-export type SeatSide = "left" | "right";
+export type SeatSide = "left" | "right" | "middle";
 
 export interface SeatMapEntry {
   seat_id: string;

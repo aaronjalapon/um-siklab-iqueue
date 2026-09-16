@@ -187,7 +187,7 @@ def validate_qr_timing(
     *,
     now: datetime | None = None,
     early_minutes: int = 120,
-    expiry_hours: int = 6,
+    expiry_hours: int = 24,
 ) -> tuple[bool, str]:
     """Validate a signed token's boarding window for offline scanners."""
 

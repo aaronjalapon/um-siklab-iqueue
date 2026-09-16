@@ -106,10 +106,10 @@ class BookingDetailResponse(BookingResponse):
 
 
 class GroupMemberRequest(BaseModel):
-    """A passenger included in an atomic family booking."""
+    """A passenger included in an atomic group booking."""
 
     name: str = Field(..., min_length=1, max_length=255)
-    phone: str = Field(..., min_length=5, max_length=20)
+    phone: str | None = Field(default=None, max_length=20)
     accessibility_needs: bool = False
 
 

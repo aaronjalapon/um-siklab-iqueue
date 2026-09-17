@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { BarChart3, BrainCircuit, Bus, FileCheck2, Home, QrCode, Users } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
 import { BRAND } from "@/lib/brand";
-import { glassStyles } from "@/lib/design-system";
+import { uiStyles } from "@/lib/design-system";
 
 const NAV_ITEMS = [
   { href: "/operator", label: "Dashboard", shortLabel: "Home", icon: BarChart3, exact: true },
@@ -28,8 +28,8 @@ export function OperatorShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   return (
-    <div className="min-h-screen min-w-0 bg-slate-50 dark:bg-slate-950 md:flex">
-      <aside className="hidden md:flex flex-col w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 fixed h-full z-30 shadow-sm">
+    <div className="min-h-dvh min-w-0 bg-ui-canvas md:flex">
+      <aside className="fixed z-30 hidden h-full w-64 flex-col border-r border-white/10 bg-ui-navy text-white md:flex">
         <div className="p-6">
           <Link
             href="/operator"
@@ -38,10 +38,10 @@ export function OperatorShell({ children }: { children: React.ReactNode }) {
           >
             <BrandLogo
               label={BRAND.operatorName}
-              textClassName="text-2xl font-bold tracking-tight text-slate-900 dark:text-white"
+              textClassName="font-heading text-xl font-semibold text-white"
             />
           </Link>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 ml-9">
+          <p className="ml-9 mt-1 text-xs text-slate-400">
             Operator Dashboard
           </p>
         </div>
@@ -57,7 +57,7 @@ export function OperatorShell({ children }: { children: React.ReactNode }) {
                 key={item.href}
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className={active ? glassStyles.navItemActive : glassStyles.navItem}
+                className={active ? uiStyles.navItemActive : uiStyles.navItem}
               >
                 <Icon className="w-5 h-5" aria-hidden />
                 <span>{item.label}</span>
@@ -67,12 +67,12 @@ export function OperatorShell({ children }: { children: React.ReactNode }) {
         </nav>
       </aside>
 
-      <main className="min-h-screen min-w-0 flex-1 overflow-x-clip pb-24 md:ml-64 md:pb-0">
+      <main id="main-content" className="min-h-dvh min-w-0 flex-1 overflow-x-clip pb-28 md:ml-64 md:pb-0">
         {children}
       </main>
 
       <nav
-        className="md:hidden fixed inset-x-0 bottom-0 w-full bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-2 py-2 flex justify-around items-center pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.05)] dark:shadow-[0_-4px_20px_rgba(0,0,0,0.2)] z-40 rounded-t-3xl"
+        className="fixed inset-x-0 bottom-0 z-40 flex w-full items-center justify-around border-t border-ui-border bg-ui-surface px-2 py-2 pb-safe md:hidden"
         aria-label="Operator navigation"
       >
         {NAV_ITEMS.map((item) => {
@@ -86,7 +86,7 @@ export function OperatorShell({ children }: { children: React.ReactNode }) {
               className={`flex flex-col items-center justify-center gap-0.5 flex-1 py-2 min-w-0 ${
                 active
                   ? "text-brand-blue"
-                  : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                  : "text-slate-600 hover:text-slate-800 dark:text-slate-300 dark:hover:text-white"
               } transition-colors`}
             >
               <Icon className="w-5 h-5 shrink-0" aria-hidden />

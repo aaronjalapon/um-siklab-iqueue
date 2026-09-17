@@ -4,7 +4,7 @@ export type BookingStep = "search" | "preferences" | "seat" | "pass";
 
 const STEPS: { id: BookingStep; label: string }[] = [
   { id: "search", label: "Search" },
-  { id: "preferences", label: "Prefs" },
+  { id: "preferences", label: "Preferences" },
   { id: "seat", label: "Seat" },
   { id: "pass", label: "Pass" },
 ];
@@ -18,7 +18,7 @@ export function BookingProgress({ current }: BookingProgressProps) {
 
   return (
     <nav aria-label="Booking progress" className="w-full">
-      <ol className="grid grid-cols-4 gap-1 rounded-xl sm:rounded-2xl border border-glass-border bg-glass-bg p-1 sm:p-2 text-[10px] sm:text-xs glass-shadow backdrop-blur-xl">
+      <ol className="grid grid-cols-4 gap-1 rounded-xl border border-ui-border bg-ui-surface p-1.5 text-[10px] sm:gap-2 sm:p-2 sm:text-xs">
         {STEPS.map((step, index) => {
           const isCurrent = index === currentIndex;
           const isDone = index < currentIndex;
@@ -29,10 +29,10 @@ export function BookingProgress({ current }: BookingProgressProps) {
               key={step.id}
               className={`flex min-w-0 items-center justify-center gap-0.5 sm:gap-1.5 rounded-lg sm:rounded-xl px-1 py-1.5 sm:px-2 sm:py-2 font-semibold ${
                 isCurrent
-                  ? "bg-brand-blue text-white shadow-sm shadow-brand-blue/20"
+                  ? "bg-ui-primary text-white"
                   : isDone
                     ? "bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-200"
-                    : "text-slate-400 dark:text-slate-500"
+                    : "text-ui-muted-foreground"
               }`}
               aria-current={isCurrent ? "step" : undefined}
             >

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Download, X } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
-import { glassStyles } from "@/lib/design-system";
+import { uiStyles } from "@/lib/design-system";
 import { downloadQrAsPng } from "@/lib/qr-download";
 
 export interface TicketModalData {
@@ -123,7 +123,7 @@ export default function TicketModal({
           <button
             type="button"
             onClick={onClose}
-            className={`${glassStyles.primaryButton} mt-4 sm:mt-6 min-h-10 sm:min-h-11 w-full font-bold`}
+            className={`${uiStyles.primaryButton} mt-4 sm:mt-6 min-h-10 sm:min-h-11 w-full font-bold`}
           >
             Done
           </button>

@@ -12,9 +12,9 @@ function capacityColor(percent: number): string {
 }
 
 function capacityTextColor(percent: number): string {
-  if (percent >= 90) return "text-red-600 dark:text-red-300";
-  if (percent >= 70) return "text-amber-600 dark:text-amber-300";
-  return "text-green-600 dark:text-green-300";
+  if (percent >= 90) return "text-red-700 dark:text-red-300";
+  if (percent >= 70) return "text-amber-800 dark:text-amber-300";
+  return "text-green-800 dark:text-green-300";
 }
 
 export function CapacityMeter({
@@ -28,7 +28,7 @@ export function CapacityMeter({
 
   return (
     <div className={className}>
-      <div className="mb-1.5 flex items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
+      <div className="mb-1.5 flex items-center justify-between gap-3 text-xs text-ui-muted-foreground">
         <span>{label}</span>
         <span className="flex items-center gap-2 font-medium">
           <span>

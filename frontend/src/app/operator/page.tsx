@@ -10,7 +10,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { useForecast } from "@/hooks/useForecast";
 import { useOperatorFleet, todayIsoDate } from "@/hooks/useOperatorFleet";
 import { getLearningLogSummary, recordForecastAction, recordOperationalOutcome, replayRetraining } from "@/lib/api";
-import { glassStyles } from "@/lib/design-system";
+import { uiStyles } from "@/lib/design-system";
 import { DEMO_TENANT_ID } from "@/lib/demo-config";
 import {
   DEMO_ROUTES,
@@ -121,7 +121,8 @@ export default function OperatorDashboard() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    const frame = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(frame);
   }, []);
 
   const highSurgeDays = useMemo(
@@ -266,7 +267,7 @@ export default function OperatorDashboard() {
   }
 
   return (
-    <div className={glassStyles.pageContainer}>
+    <div className={uiStyles.pageContainer}>
       <PageHeader
         eyebrow="Operator control room"
         title="Operator Dashboard"
@@ -277,7 +278,7 @@ export default function OperatorDashboard() {
             <select
               value={routeId}
               onChange={(e) => setRouteId(e.target.value)}
-              className={`${glassStyles.input} text-sm`}
+              className={`${uiStyles.input} text-sm`}
             >
               {DEMO_ROUTES.map((route) => (
                 <option key={route.id} value={route.id}>
@@ -302,7 +303,7 @@ export default function OperatorDashboard() {
       {isForecastLoading || isFleetLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className={`${glassStyles.statCard} animate-pulse motion-reduce:animate-none`}>
+            <div key={i} className={`${uiStyles.statCard} animate-pulse motion-reduce:animate-none`}>
               <div className="w-8 h-8 rounded-lg bg-slate-200 dark:bg-slate-700" />
               <div className="space-y-2 flex-1">
                 <div className="h-4 w-24 bg-slate-200 dark:bg-slate-700 rounded" />
@@ -350,10 +351,10 @@ export default function OperatorDashboard() {
       </div>
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-3 xl:gap-6">
-        <section className={`${glassStyles.panel} p-5 xl:col-span-2`}>
+        <section className={`${uiStyles.surface} p-5 xl:col-span-2`}>
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div>
-              <h2 className={glassStyles.sectionTitle}>Forecast Decision</h2>
+              <h2 className={uiStyles.sectionTitle}>Forecast Decision</h2>
               <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
                 {primaryPrediction
                   ? primaryPrediction.recommended_action
@@ -382,7 +383,7 @@ export default function OperatorDashboard() {
                   primaryPrediction &&
                   void submitForecastAction(primaryPrediction, "accepted")
                 }
-                className="inline-flex items-center gap-2 rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-md bg-green-700 px-3 py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Check className="h-4 w-4" /> Accept
               </button>
@@ -391,7 +392,7 @@ export default function OperatorDashboard() {
                 suppressHydrationWarning
                 disabled={!mounted || !primaryPrediction || actionState === "saving"}
                 onClick={() => openOverride("modified")}
-                className="inline-flex items-center gap-2 rounded-md bg-amber-500 px-3 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-md bg-amber-700 px-3 py-2 text-sm font-semibold text-white hover:bg-amber-800 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Pencil className="h-4 w-4" /> Modify
               </button>
@@ -400,7 +401,7 @@ export default function OperatorDashboard() {
                 suppressHydrationWarning
                 disabled={!mounted || !primaryPrediction || actionState === "saving"}
                 onClick={() => openOverride("rejected")}
-                className="inline-flex items-center gap-2 rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-md bg-red-700 px-3 py-2 text-sm font-semibold text-white hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <X className="h-4 w-4" /> Reject
               </button>
@@ -424,10 +425,10 @@ export default function OperatorDashboard() {
           )}
         </section>
 
-        <section className={`${glassStyles.panel} p-5`}>
+        <section className={`${uiStyles.surface} p-5`}>
           <div className="flex items-center gap-2">
             <BrainCircuit className="h-5 w-5 text-brand-blue" />
-            <h2 className={glassStyles.sectionTitle}>AI Learning Log</h2>
+            <h2 className={uiStyles.sectionTitle}>AI Learning Log</h2>
           </div>
           <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
             <div>
@@ -496,12 +497,12 @@ export default function OperatorDashboard() {
 
       {outcomeOpen && primaryPrediction && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <form onSubmit={submitOutcome} className={`${glassStyles.panel} max-h-[90vh] w-full max-w-2xl overflow-y-auto p-6 sm:p-7 shadow-2xl border border-slate-700/60 bg-slate-900/95`}>
+          <form onSubmit={submitOutcome} className={`${uiStyles.surface} max-h-[90vh] w-full max-w-2xl overflow-y-auto p-6 sm:p-7 shadow-2xl border border-slate-700/60 bg-slate-900/95`}>
             <div className="flex items-start justify-between gap-4 pb-4 border-b border-slate-800">
               <div>
                 <div className="flex items-center gap-2">
                   <ClipboardCheck className="h-5 w-5 text-brand-blue" />
-                  <h2 className={glassStyles.sectionTitle}>Record Route Outcome</h2>
+                  <h2 className={uiStyles.sectionTitle}>Record Route Outcome</h2>
                 </div>
                 <p className="mt-1 text-xs sm:text-sm text-slate-400">
                   Service Date: <span className="font-semibold text-slate-200">{primaryPrediction.forecast_date}</span> · Ground-truth collection for AI evaluation
@@ -536,7 +537,7 @@ export default function OperatorDashboard() {
                     required={key === "actualPassengerCount"}
                     value={outcomeForm[key as keyof typeof outcomeForm] as string}
                     onChange={(event) => setOutcomeForm((current) => ({ ...current, [key]: event.target.value }))}
-                    className={glassStyles.input}
+                    className={uiStyles.input}
                     placeholder={placeholder}
                   />
                 </label>
@@ -579,13 +580,13 @@ export default function OperatorDashboard() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <form
             onSubmit={submitOverride}
-            className={`${glassStyles.panel} w-full max-w-xl p-6 sm:p-7 shadow-2xl border border-slate-700/60 bg-slate-900/95`}
+            className={`${uiStyles.surface} w-full max-w-xl p-6 sm:p-7 shadow-2xl border border-slate-700/60 bg-slate-900/95`}
           >
             <div className="flex items-start justify-between gap-4 pb-4 border-b border-slate-800">
               <div>
                 <div className="flex items-center gap-2">
                   <Pencil className="h-5 w-5 text-amber-400" />
-                  <h2 className={glassStyles.sectionTitle}>
+                  <h2 className={uiStyles.sectionTitle}>
                     {overrideMode === "modified" ? "Modify Forecast Action" : "Reject Forecast Action"}
                   </h2>
                 </div>
@@ -609,7 +610,7 @@ export default function OperatorDashboard() {
                 <input
                   value={overrideReason}
                   onChange={(event) => setOverrideReason(event.target.value)}
-                  className={glassStyles.input}
+                  className={uiStyles.input}
                   required
                   placeholder="e.g. Local festival surge, sudden weather delay, fleet constraint"
                 />
@@ -620,7 +621,7 @@ export default function OperatorDashboard() {
                 <input
                   value={finalAction}
                   onChange={(event) => setFinalAction(event.target.value)}
-                  className={glassStyles.input}
+                  className={uiStyles.input}
                   placeholder="e.g. Dispatch 1 additional bus, open extra boarding lane"
                 />
               </label>
@@ -630,7 +631,7 @@ export default function OperatorDashboard() {
                 <textarea
                   value={overrideNotes}
                   onChange={(event) => setOverrideNotes(event.target.value)}
-                  className={`${glassStyles.input} min-h-[96px] resize-y`}
+                  className={`${uiStyles.input} min-h-[96px] resize-y`}
                   placeholder="Provide any additional observations for terminal management..."
                 />
               </label>

@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { glassStyles } from "@/lib/design-system";
+import { uiStyles } from "@/lib/design-system";
 
 interface StatCardProps {
   icon: LucideIcon;
@@ -17,7 +17,7 @@ export function StatCard({
   className = "",
 }: StatCardProps) {
   return (
-    <div className={`${glassStyles.statCard} ${className}`}>
+    <div className={`${uiStyles.statCard} ${className}`}>
       <Icon className={`w-8 h-8 shrink-0 ${iconClassName}`} aria-hidden />
       <div>
         <p className="text-sm text-slate-500 dark:text-slate-400">{label}</p>

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 import pytest
 from httpx import AsyncClient
@@ -143,7 +144,9 @@ async def test_get_seat_map_scopes_occupancy_by_travel_date(
     await generate_seats_for_bus(bus, db_session)
     await db_session.flush()
 
-    day_one = datetime.now(timezone.utc) + timedelta(days=6)
+    day_one = datetime.now(ZoneInfo("Asia/Manila")).replace(
+        hour=12, minute=0, second=0, microsecond=0
+    ) + timedelta(days=6)
     day_two = day_one + timedelta(days=1)
     db_session.add(
         Booking(
@@ -195,7 +198,9 @@ async def test_assign_seat_uses_requested_travel_date(
     await generate_seats_for_bus(bus, db_session)
     await db_session.flush()
 
-    day_one = datetime.now(timezone.utc) + timedelta(days=7)
+    day_one = datetime.now(ZoneInfo("Asia/Manila")).replace(
+        hour=12, minute=0, second=0, microsecond=0
+    ) + timedelta(days=7)
     day_two = day_one + timedelta(days=1)
     db_session.add(
         Booking(

@@ -12,10 +12,10 @@ import { MessageCircle, Send, X } from "lucide-react";
 // ---------------------------------------------------------------------------
 
 const LANGUAGES = [
-  { code: "en", label: "English", flag: "🇺🇸" },
-  { code: "fil", label: "Filipino", flag: "🇵🇭" },
-  { code: "id", label: "Bahasa", flag: "🇮🇩" },
-  { code: "vi", label: "Tiếng Việt", flag: "🇻🇳" },
+  { code: "en", label: "English" },
+  { code: "fil", label: "Filipino" },
+  { code: "id", label: "Bahasa" },
+  { code: "vi", label: "Tiếng Việt" },
 ] as const;
 
 type LanguageCode = (typeof LANGUAGES)[number]["code"];
@@ -26,14 +26,14 @@ const UI_STRINGS: Record<
 > = {
   en: {
     title: BRAND.assistantName,
-    subtitle: "AI-powered · 4 languages",
+    subtitle: "Prototype assistant · 4 languages",
     placeholder: "Type your question...",
     thinking: "Thinking...",
     error: "Sorry, I'm having trouble connecting. Please try again later.",
   },
   fil: {
     title: BRAND.assistantName,
-    subtitle: "AI-powered · 4 na wika",
+    subtitle: "Prototype assistant · 4 na wika",
     placeholder: "I-type ang iyong tanong...",
     thinking: "Nag-iisip...",
     error: "Paumanhin, may problema sa koneksyon. Pakisubukan muli.",
@@ -118,6 +118,7 @@ interface Message {
 
 interface ChatbotPanelProps {
   bookingId?: string;
+  hideLauncher?: boolean;
 }
 
 type ActionLike = ChatbotAction | string;
@@ -172,7 +173,7 @@ function isBookingDetailNavigation(action: string): boolean {
 // Component
 // ---------------------------------------------------------------------------
 
-export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
+export default function ChatbotPanel({ bookingId, hideLauncher = false }: ChatbotPanelProps) {
   const router = useRouter();
   const initialLang = detectBrowserLanguage();
   const [isOpen, setIsOpen] = useState(false);
@@ -183,6 +184,12 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
   const [loading, setLoading] = useState(false);
   const initializedRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const openAssistant = () => setIsOpen(true);
+    window.addEventListener("tripsync:open-assistant", openAssistant);
+    return () => window.removeEventListener("tripsync:open-assistant", openAssistant);
+  }, []);
 
   // Floating trigger position and dragging state
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
@@ -481,7 +488,7 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
   return (
     <>
       {/* Floating Chatbot Button — Placed by default on the upper right side of the bottom navbar on mobile; freely draggable */}
-      <div
+      {!hideLauncher && <div
         ref={triggerRef}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
@@ -504,30 +511,16 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
             : "bottom-24 right-4 md:bottom-6 md:right-6"
         } ${isDragging ? "cursor-grabbing scale-105" : "cursor-grab"}`}
       >
-        {!isOpen && !isDragging && (
-          <>
-            {/* Primary background pulse wave */}
-            <span
-              className="absolute inset-0 rounded-full bg-blue-500/40 animate-sonar-wave pointer-events-none"
-              aria-hidden="true"
-            />
-            {/* Secondary staggered pulse wave for continuous silky aura */}
-            <span
-              className="absolute inset-0 rounded-full bg-blue-400/30 animate-sonar-wave [animation-delay:1.2s] pointer-events-none"
-              aria-hidden="true"
-            />
-          </>
-        )}
         <button
           type="button"
           onClick={handleButtonClick}
-          className={`relative rounded-full bg-blue-700 h-14 w-14 min-w-[56px] min-h-[56px] flex items-center justify-center text-white shadow-xl shadow-blue-900/40 hover:bg-blue-600 ${
+          className={`relative flex h-12 w-12 min-h-12 min-w-12 items-center justify-center rounded-lg border border-blue-300/40 bg-ui-navy text-white shadow-sm hover:bg-slate-800 ${
             isDragging
               ? "ring-4 ring-blue-400/60 shadow-2xl shadow-blue-900/70"
               : "active:scale-95 transition-colors duration-200"
           } focus:outline-none focus:ring-4 focus:ring-blue-400/40`}
-          aria-label={isOpen ? `Close ${BRAND.assistantName}` : `Chat with ${BRAND.assistantName} (drag to reposition)`}
-          title={isOpen ? `Close ${BRAND.assistantName}` : `Chat with ${BRAND.assistantName} (drag to reposition)`}
+          aria-label={isOpen ? `Close ${BRAND.assistantName}` : `Chat with ${BRAND.assistantName}`}
+          title={isOpen ? `Close ${BRAND.assistantName}` : `Chat with ${BRAND.assistantName}`}
           aria-expanded={isOpen}
           aria-controls="iqueue-chatbot-panel"
         >
@@ -536,12 +529,10 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
           ) : (
             <>
               <MessageCircle className="h-6 w-6 pointer-events-none" />
-              {/* Online indicator dot */}
-              <span className="absolute top-3 right-3 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-blue-700 pointer-events-none" />
             </>
           )}
         </button>
-      </div>
+      </div>}
 
       {/* Chat Panel */}
       {isOpen && (
@@ -550,11 +541,11 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
           role="dialog"
           aria-modal="false"
           aria-label={UI_STRINGS[lang].title}
-          className="fixed bottom-24 left-3 right-3 mx-0 sm:left-auto sm:right-6
+          className="fixed bottom-28 left-3 right-3 mx-0 sm:bottom-6 sm:left-auto sm:right-6
                      w-auto sm:w-96 h-[min(72dvh,540px)] max-h-[calc(100dvh-7rem)]
                      bg-white dark:bg-slate-900
-                     rounded-2xl shadow-2xl dark:shadow-2xl dark:shadow-black/60
-                     border dark:border-white/15
+                     rounded-xl shadow-lg
+                     border border-ui-border
                      flex flex-col z-50 overflow-hidden"
         >
           {/* Header */}
@@ -590,8 +581,7 @@ export default function ChatbotPanel({ bookingId }: ChatbotPanelProps) {
                 }`}
                 title={l.label}
               >
-                <span>{l.flag}</span>
-                <span className="hidden sm:inline">{l.label}</span>
+                <span>{l.label}</span>
               </button>
             ))}
           </div>

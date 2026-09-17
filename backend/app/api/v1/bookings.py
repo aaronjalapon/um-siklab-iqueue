@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import logging
+from datetime import datetime
 from uuid import UUID, uuid4
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
@@ -41,6 +43,28 @@ from app.services.seat_assignment.scorer import PassengerContext
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+
+def _validate_departure_date(departure_date: datetime) -> None:
+    """Reject service days that have already passed in the booking timezone."""
+    from app.core.config import get_settings
+
+    timezone_name = get_settings().BOOKING_TIMEZONE
+    try:
+        booking_timezone = ZoneInfo(timezone_name)
+    except ZoneInfoNotFoundError as exc:
+        raise RuntimeError(f"Invalid BOOKING_TIMEZONE: {timezone_name}") from exc
+
+    if departure_date.tzinfo is None:
+        service_day = departure_date.date()
+    else:
+        service_day = departure_date.astimezone(booking_timezone).date()
+
+    if service_day < datetime.now(booking_timezone).date():
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Departure date cannot be in the past",
+        )
 
 
 def _validate_group_people(payload: GroupBookingRequest) -> None:
@@ -97,6 +121,7 @@ async def _group_preview(
     lock: bool = False,
 ):
     """Load current service-day availability and produce one stable cluster."""
+    _validate_departure_date(payload.departure_date)
     _validate_group_people(payload)
     bus_result = await db.execute(
         select(Bus)
@@ -394,7 +419,9 @@ async def create_booking(
     - Generates a QR boarding pass token
     - Persists the booking and returns it with the QR token
     """
-    from datetime import datetime, timezone, timedelta
+    from datetime import timezone, timedelta
+
+    _validate_departure_date(payload.departure_date)
 
     # Validate passenger exists
     passenger = await db.get(Passenger, payload.passenger_id)
@@ -475,17 +502,18 @@ async def create_booking(
         if "–" in bw:
             parts = bw.split("–")
             today = payload.departure_date.date()
+            service_timezone = payload.departure_date.tzinfo or timezone.utc
             t1_parts = parts[0].split(":")
             t2_parts = parts[1].split(":")
             boarding_window_start = datetime(
                 today.year, today.month, today.day,
                 int(t1_parts[0]), int(t1_parts[1]),
-                tzinfo=timezone.utc,
+                tzinfo=service_timezone,
             )
             boarding_window_end = datetime(
                 today.year, today.month, today.day,
                 int(t2_parts[0]), int(t2_parts[1]),
-                tzinfo=timezone.utc,
+                tzinfo=service_timezone,
             )
     except SeatUnavailableError as exc:
         if payload.selected_seat:

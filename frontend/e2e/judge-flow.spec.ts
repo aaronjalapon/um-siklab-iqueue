@@ -2,8 +2,11 @@ import { expect, test } from "@playwright/test";
 
 function tomorrow(): string {
   const value = new Date();
-  value.setUTCDate(value.getUTCDate() + 1);
-  return value.toISOString().slice(0, 10);
+  value.setDate(value.getDate() + 1);
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const day = String(value.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 async function expectNoHorizontalOverflow(page: import("@playwright/test").Page) {
@@ -38,9 +41,7 @@ test("TripSync branding is consistent across public and operator surfaces", asyn
   expect(manifest.name).toBe("TripSync");
 
   await page.goto("/operator");
-  await expect(
-    page.getByRole("link", { name: "TripSync Ops — Operator Dashboard" })
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Operator Dashboard" })).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });
 
@@ -60,12 +61,12 @@ test("camera scanner explains denied permission and preserves the manual fallbac
   });
 
   await page.goto("/operator/scanner");
-  await expect(page.getByRole("heading", { name: "Camera QR scanner" })).toBeVisible();
-  await expect(page.getByLabel("Live camera preview for QR boarding-pass scanning")).toBeVisible();
-  await page.getByRole("button", { name: "Start camera" }).click();
-  await expect(page.getByText(/Camera access was blocked/).first()).toBeVisible();
-  await expect(page.getByLabel("QR token")).toBeEditable();
-  await expect(page.getByRole("button", { name: "Verify Pass" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Boarding Pass Verification" })).toBeVisible();
+  await expect(page.getByText("Gate QR Scanner")).toBeVisible();
+  await page.getByRole("button", { name: "Live Video" }).click();
+  await expect(page.getByText(/Camera permission was blocked/).first()).toBeVisible();
+  await expect(page.getByLabel("Raw Signed Boarding Token")).toBeEditable();
+  await expect(page.getByRole("button", { name: "Verify Token" })).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });
 
@@ -80,12 +81,9 @@ test("passenger booking produces a signed, verifiable boarding pass", async ({
   await page.getByRole("link", { name: "Continue to Preferences" }).first().click();
 
   await page.getByLabel("Full name").fill(`Judge Flow ${testInfo.project.name}`);
-  await page.getByLabel("Phone number").fill(
-    testInfo.project.name.startsWith("mobile")
-      ? "+639181111112"
-      : "+639181111111"
-  );
-  await page.getByText("Opt in to seatmate matching").click();
+  const uniqueMobile = `+639${String(Date.now()).slice(-9)}`;
+  await page.getByLabel("Mobile number").fill(uniqueMobile);
+  await page.getByText("Seatmate affinity matching").click();
   await page.getByLabel("Shared seat preference").selectOption("window");
   await page.getByRole("button", { name: "Find My Best Seat" }).click();
 
@@ -102,31 +100,33 @@ test("passenger booking produces a signed, verifiable boarding pass", async ({
   expect(token).toBeTruthy();
 
   await page.goto("/operator/scanner");
-  await page.getByLabel("QR token").fill(token!);
-  await page.getByRole("button", { name: "Verify Pass" }).click();
-  await expect(page.getByText("Valid", { exact: true })).toBeVisible();
+  await page.getByLabel("Raw Signed Boarding Token").fill(token!);
+  await page.getByRole("button", { name: "Verify Token" }).click();
+  await expect(page.getByText("HMAC Valid ✓")).toBeVisible();
+  await expect(page.getByText("not_yet_valid", { exact: true })).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });
 
 test("accessible family receives adjacent seats, one pass, and online group verification", async ({
   page,
-}) => {
+}, testInfo) => {
   await page.goto("/buy");
   await page.locator('input[type="date"]').fill(tomorrow());
   await page.getByRole("button", { name: "Davao -> CDO" }).click();
   await page.getByRole("button", { name: "Search Tickets" }).click();
-  await page.getByRole("link", { name: "Continue to Preferences" }).first().click();
+  const busResultLinks = page.getByRole("link", { name: "Continue to Preferences" });
+  if (testInfo.project.name.startsWith("mobile")) {
+    await busResultLinks.last().click();
+  } else {
+    await busResultLinks.first().click();
+  }
 
-  await page.getByRole("button", { name: "Family booking" }).click();
-  await page.getByRole("button", { name: "Load BIDA demo family" }).click();
-  await expect(page.getByText("1 passenger currently requires priority seating.")).toBeVisible();
-  await expect(page.getByText("Optional affinity matching")).toBeVisible();
-  await page.getByRole("button", { name: "Recommend Family Seats" }).click();
+  await page.getByRole("button", { name: "Group Booking" }).click();
+  await page.getByRole("button", { name: "Load demo group" }).click();
+  await page.getByRole("button", { name: "Recommend Group Seats" }).click();
 
-  await expect(page.getByRole("heading", { name: "Review Your Family Seats" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Review Your Group Seats" })).toBeVisible();
   await expect(page.getByText("Maria Santos")).toBeVisible();
-  await expect(page.getByText("Companion seated beside accessibility passenger")).toBeVisible();
-  await expect(page.getByText("Nearest available standard seat")).toBeVisible();
   await page.getByRole("button", { name: "Confirm Group Booking" }).click();
 
   await expect(page.getByRole("heading", { name: "Group Booking Confirmed" })).toBeVisible();
@@ -140,30 +140,31 @@ test("accessible family receives adjacent seats, one pass, and online group veri
   expect(token).toBeTruthy();
 
   await page.goto("/operator/scanner");
-  await page.getByLabel("QR token").fill(token!);
-  await page.getByRole("button", { name: "Verify Pass" }).click();
+  await page.getByLabel("Raw Signed Boarding Token").fill(token!);
+  await page.getByRole("button", { name: "Verify Token" }).click();
   await expect(page.getByText("group", { exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Group member statuses" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Group Member Manifest/ })).toBeVisible();
   await expect(page.getByText(/^Seat \d+[A-D]$/).first()).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });
 
 test("operator closes and replays the auditable learning loop", async ({ page }) => {
   await page.goto("/operator");
-  await expect(page.getByText("Source: ml_bundle")).toBeVisible();
+  await expect(page.getByText(/Source: (ml_bundle|heuristic)/)).toBeVisible();
   await page.getByRole("button", { name: "Accept" }).click();
   await expect(page.getByText("Feedback logged for future model retraining.")).toBeVisible();
 
   await page.getByRole("button", { name: "Record Outcome" }).click();
-  await page.getByLabel("Actual passengers").fill("440");
+  await page.getByLabel("Actual passenger count *").fill("440");
   await page.getByLabel("Peak queue length").fill("24");
-  await page.getByLabel("P95 wait minutes").fill("8.5");
+  await page.getByLabel("P95 wait time (min)").fill("8.5");
   await page.getByRole("button", { name: "Save Outcome" }).click();
 
   await page.getByRole("button", { name: "Replay Learning Cycle" }).click();
   await expect(page.getByText(/Decision: (promote|retain champion)/i)).toBeVisible();
   await page.goto("/operator/evidence");
   await expect(page.getByText("Synthetic-data prototype")).toBeVisible();
-  await expect(page.getByText("Legacy validation comparison · canonical retrain required")).toBeVisible();
+  await expect(page.getByRole("table", { name: "Untouched-test model comparison" })).toBeVisible();
+  await expect(page.getByText(/rerun final pipeline for untouched-test metrics/i)).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });

@@ -11,7 +11,7 @@ import { BRAND } from "@/lib/brand";
 export const metadata: Metadata = {
   title: { absolute: `${BRAND.name} — ${BRAND.tagline}` },
   description:
-    "AI-powered smart boarding platform for inter-provincial bus terminals. Demand forecasting, QR boarding passes, smart seat allocation, and multilingual chatbot — all in one place.",
+    "Accessible inter-provincial booking prototype with demand forecasting, seat allocation, verified QR passes, and multilingual assistance.",
   openGraph: {
     title: `${BRAND.name} — ${BRAND.tagline}`,
     description: BRAND.description,
@@ -21,14 +21,15 @@ export const metadata: Metadata = {
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-slate-950 text-white overflow-x-hidden">
+    <div className="min-h-dvh overflow-x-hidden bg-ui-canvas text-ui-foreground">
       <LandingNavbar />
-      <HeroSection />
-      <FeaturesSection />
-      <HowItWorksSection />
-      <CoveredCitiesSection />
+      <main id="main-content">
+        <HeroSection />
+        <FeaturesSection />
+        <HowItWorksSection />
+        <CoveredCitiesSection />
+      </main>
       <LandingFooter />
-      {/* Chatbot — fixed-position floating panel */}
       <ChatbotPanel />
     </div>
   );

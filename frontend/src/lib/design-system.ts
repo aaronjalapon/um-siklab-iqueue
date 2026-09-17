@@ -1,56 +1,40 @@
 /**
- * IQueue Design System Utilities
- * 
- * Standardized class strings for the Glassmorphism UI to ensure consistency
- * across the Passenger and Operator applications.
- * These utilize the custom CSS variables mapped in Tailwind v4 `@theme inline`.
+ * TripSync semantic UI primitives.
+ *
+ * Keep visual decisions here so passenger and operator surfaces share the same
+ * hierarchy. Components should prefer these roles over one-off effects.
  */
-
-export const glassStyles = {
-  // Base frosted glass panel with shadow and subtle border
-  panel: 'bg-glass-bg backdrop-blur-xl border border-glass-border glass-shadow rounded-2xl',
-  
-  // Interactive glass button (e.g. for booking)
-  button: 'bg-glass-bg hover:bg-white/40 dark:hover:bg-slate-800/60 backdrop-blur-md border border-glass-border rounded-xl transition-all duration-300 glass-shadow text-foreground trim-cap-alpha',
-  
-  // Primary action button (solid with glass highlights)
-  primaryButton: 'bg-brand-blue hover:bg-blue-600 text-white border border-blue-500 rounded-xl transition-colors duration-300 shadow-lg shadow-blue-500/20 trim-cap-alpha px-4 py-2',
-  
-  // Secondary action button (orange highlight)
-  secondaryButton: 'bg-brand-orange hover:bg-orange-600 text-white border border-orange-500 rounded-xl transition-colors duration-300 shadow-lg shadow-orange-500/20 trim-cap-alpha px-4 py-2',
-
-  // Success / booking conversion CTA button (emerald green highlight)
-  successButton: 'bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white border border-emerald-500/80 rounded-xl transition-all duration-200 shadow-lg shadow-emerald-600/20 trim-cap-alpha px-4 py-2',
-
-  // Input field (frosted inner inset)
-  input: 'w-full block bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border border-glass-border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-blue/50 transition-all text-foreground',
-
-  // Operator dashboard stat card
+export const uiStyles = {
+  surface:
+    "rounded-xl border border-ui-border bg-ui-surface text-ui-foreground",
+  elevatedSurface:
+    "rounded-xl border border-ui-border bg-ui-surface text-ui-foreground shadow-[0_1px_2px_rgba(11,31,51,0.08)]",
+  button:
+    "inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border border-ui-border bg-ui-surface px-4 py-2 font-semibold text-ui-foreground transition-colors duration-150 hover:bg-ui-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45",
+  primaryButton:
+    "inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border border-ui-primary bg-ui-primary px-4 py-2 font-semibold text-white transition-colors duration-150 hover:bg-ui-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45 dark:text-slate-950",
+  secondaryButton:
+    "inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border border-ui-border bg-ui-surface px-4 py-2 font-semibold text-ui-foreground transition-colors duration-150 hover:border-ui-primary hover:text-ui-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-primary focus-visible:ring-offset-2",
+  successButton:
+    "inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border border-ui-success bg-ui-success px-4 py-2 font-semibold text-white transition-colors duration-150 hover:bg-ui-success-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-success focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45",
+  input:
+    "block min-h-11 w-full rounded-lg border border-ui-border bg-ui-surface px-3 py-2.5 text-ui-foreground outline-none transition-colors duration-150 placeholder:text-ui-muted-foreground focus:border-ui-primary focus:ring-2 focus:ring-ui-primary/20 disabled:cursor-not-allowed disabled:bg-ui-muted",
   statCard:
-    'bg-glass-bg backdrop-blur-xl border border-glass-border glass-shadow rounded-2xl p-5 flex items-center gap-4 transition-shadow hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.25)]',
-
-  sectionTitle: 'text-lg font-semibold text-foreground trim-cap-alpha',
-
+    "flex items-center gap-4 rounded-xl border border-ui-border bg-ui-surface p-5 text-ui-foreground",
+  sectionTitle: "font-heading text-lg font-semibold text-ui-foreground",
   badge:
-    'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-
-  skeleton: 'animate-pulse rounded-xl bg-slate-200/80 dark:bg-slate-700/50 motion-reduce:animate-none',
-
+    "inline-flex items-center rounded-full border border-ui-border bg-ui-muted px-2.5 py-1 text-xs font-semibold text-ui-muted-foreground",
+  skeleton: "animate-pulse rounded-lg bg-ui-muted motion-reduce:animate-none",
   segmentedControl:
-    'bg-white/50 dark:bg-slate-900/50 backdrop-blur-md rounded-lg p-1 border border-glass-border text-xs flex gap-1',
-
+    "flex gap-1 rounded-lg border border-ui-border bg-ui-muted p-1 text-xs",
   segmentedActive:
-    'shrink-0 px-3 py-1.5 rounded-md bg-white dark:bg-slate-800 shadow-sm font-medium text-slate-800 dark:text-slate-100',
-
+    "shrink-0 rounded-md border border-ui-border bg-ui-surface px-3 py-1.5 font-semibold text-ui-foreground",
   segmentedInactive:
-    'shrink-0 px-3 py-1.5 rounded-md text-slate-500 hover:bg-white/50 dark:hover:bg-slate-800/50 transition opacity-70',
-
+    "shrink-0 cursor-pointer rounded-md px-3 py-1.5 text-ui-muted-foreground transition-colors duration-150 hover:bg-ui-surface hover:text-ui-foreground",
   navItem:
-    'flex items-center gap-4 px-4 py-3 rounded-xl transition-colors font-semibold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 dark:text-slate-400 dark:hover:text-white',
-
+    "flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 font-semibold text-slate-300 transition-colors duration-150 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300",
   navItemActive:
-    'flex items-center gap-4 px-4 py-3 rounded-xl transition-colors font-semibold bg-brand-blue text-white shadow-md shadow-brand-blue/20',
-
+    "flex min-h-11 items-center gap-3 rounded-lg bg-white px-3 py-2.5 font-semibold text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300",
   pageContainer:
-    'max-w-7xl mx-auto w-full space-y-3 sm:space-y-5 px-3 py-3 pb-3 sm:px-6 sm:py-6 md:pb-8',
-};
+    "mx-auto w-full max-w-7xl space-y-5 px-4 py-5 pb-28 sm:px-6 sm:py-7 md:pb-8 lg:px-8",
+} as const;

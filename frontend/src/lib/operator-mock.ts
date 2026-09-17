@@ -1,6 +1,7 @@
 /** Centralized demo fixtures for the operator interface. */
 
 import type { SurgePrediction } from "./types";
+import { getLocalDateInputValue } from "@/lib/local-date";
 
 export interface DemoRoute {
   id: string;
@@ -229,7 +230,7 @@ export function generateMockForecast(routeId: string): SurgePrediction[] {
             : "low";
     sample.push({
       forecast_snapshot_id: null,
-      forecast_date: d.toISOString().split("T")[0],
+      forecast_date: getLocalDateInputValue(d),
       surge_probability: surgeProbability,
       predicted_volume: Math.floor(80 + seed * 15 + i * 12),
       confidence_lower: 60,

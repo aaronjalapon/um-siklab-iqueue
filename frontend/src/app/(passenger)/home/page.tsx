@@ -16,9 +16,9 @@ import {
 import TicketModal, { type TicketModalData } from "@/components/TicketModal";
 import { CapacityMeter } from "@/components/ui/CapacityMeter";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { glassStyles } from "@/lib/design-system";
+import { uiStyles } from "@/lib/design-system";
 import { getLatestSessionPass, type SessionPass } from "@/lib/session-bookings";
-import { formatBoardingWindow, formatDate } from "@/lib/utils";
+import { formatBoardingWindow } from "@/lib/utils";
 
 const QUICK_ROUTES = [
   { destination: "Cagayan de Oro", label: "Davao → CDO", seats: 18 },
@@ -32,14 +32,17 @@ export default function HomePage() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
     function refreshPass() {
       setActivePass(getLatestSessionPass());
     }
 
-    refreshPass();
+    const frame = requestAnimationFrame(() => {
+      setMounted(true);
+      refreshPass();
+    });
     window.addEventListener("focus", refreshPass);
     return () => {
+      cancelAnimationFrame(frame);
       window.removeEventListener("focus", refreshPass);
     };
   }, []);
@@ -91,7 +94,7 @@ export default function HomePage() {
     : null;
 
   return (
-    <div className={`${glassStyles.pageContainer} max-w-7xl`}>
+    <div className={`${uiStyles.pageContainer} max-w-7xl`}>
       <PageHeader
         eyebrow="Passenger dashboard"
         title="Good morning, Demo Passenger"
@@ -113,7 +116,7 @@ export default function HomePage() {
       <Link
         href={buildBuyHref()}
         prefetch={false}
-        className={`${glassStyles.panel} group flex w-full items-center gap-3 p-3.5 sm:p-4 text-left transition-all hover:border-brand-blue/50 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] active:scale-[0.99]`}
+        className={`${uiStyles.surface} group flex w-full items-center gap-3 p-3.5 sm:p-4 text-left transition-all hover:border-brand-blue/50 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] active:scale-[0.99]`}
       >
         <div className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-brand-blue/10 text-brand-blue transition-colors group-hover:bg-brand-blue group-hover:text-white dark:bg-brand-blue/20">
           <Search className="h-5 w-5" aria-hidden />
@@ -134,7 +137,7 @@ export default function HomePage() {
       <div className="grid grid-cols-1 gap-4 sm:gap-6 xl:grid-cols-[1.4fr_1fr]">
         {/* Dynamic Active Ticket Panel: Only renders if a real booking exists in this session */}
         {mounted && activePass ? (
-          <section className={`${glassStyles.panel} overflow-hidden`}>
+          <section className={`${uiStyles.surface} overflow-hidden`}>
             <div className="flex items-center justify-between gap-2 border-b border-glass-border p-3.5 sm:p-5">
               <div className="min-w-0">
                 <p className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.14em] sm:tracking-[0.18em] text-brand-orange">
@@ -146,7 +149,7 @@ export default function HomePage() {
                   <span>{destination}</span>
                 </h2>
               </div>
-              <span className={`${glassStyles.badge} shrink-0 bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-300 text-[10px] sm:text-xs font-semibold`}>
+              <span className={`${uiStyles.badge} shrink-0 bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-300 text-[10px] sm:text-xs font-semibold`}>
                 Confirmed
               </span>
             </div>
@@ -230,7 +233,7 @@ export default function HomePage() {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(true)}
-                  className={`${glassStyles.primaryButton} min-h-[38px] sm:min-h-11 w-full text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all`}
+                  className={`${uiStyles.primaryButton} min-h-[38px] sm:min-h-11 w-full text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all`}
                 >
                   <QrCode className="h-4 w-4" aria-hidden />
                   <span>Show QR Pass</span>
@@ -240,7 +243,7 @@ export default function HomePage() {
           </section>
         ) : (
           /* Clean Empty State: When no booking has occurred in this session */
-          <section className={`${glassStyles.panel} p-5 sm:p-7 flex flex-col items-center justify-center text-center`}>
+          <section className={`${uiStyles.surface} p-5 sm:p-7 flex flex-col items-center justify-center text-center`}>
             <div className="mb-4 flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50/80 shadow-inner dark:border-blue-900/40 dark:bg-blue-950/30">
               <Ticket className="h-7 w-7 sm:h-8 sm:w-8 text-brand-blue" aria-hidden />
             </div>
@@ -250,7 +253,7 @@ export default function HomePage() {
             </p>
             <Link
               href="/buy"
-              className={`${glassStyles.primaryButton} mt-4 inline-flex min-h-[38px] sm:min-h-10 items-center justify-center gap-2 text-xs sm:text-sm font-bold`}
+              className={`${uiStyles.primaryButton} mt-4 inline-flex min-h-[38px] sm:min-h-10 items-center justify-center gap-2 text-xs sm:text-sm font-bold`}
             >
               <Search className="h-4 w-4" aria-hidden />
               <span>Book a Trip Now</span>
@@ -281,7 +284,7 @@ export default function HomePage() {
                 key={route.label}
                 href={buildBuyHref(route.destination)}
                 prefetch={false}
-                className={`${glassStyles.panel} group flex items-center justify-between gap-3 p-3 sm:p-4 text-left transition-all hover:border-brand-blue/50 hover:bg-white/70 dark:hover:bg-slate-900/60 active:scale-[0.99]`}
+                className={`${uiStyles.surface} group flex items-center justify-between gap-3 p-3 sm:p-4 text-left transition-all hover:border-brand-blue/50 hover:bg-white/70 dark:hover:bg-slate-900/60 active:scale-[0.99]`}
               >
                 <div className="min-w-0 flex-1">
                   <span className="block text-xs sm:text-sm font-bold text-foreground group-hover:text-brand-blue transition-colors truncate">

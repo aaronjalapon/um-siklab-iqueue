@@ -114,7 +114,8 @@ export function AseanContactInput({
   useEffect(() => {
     const matched = ASEAN_COUNTRIES.find((c) => value.startsWith(c.dialCode));
     if (matched && matched.code !== selectedCountry.code) {
-      setSelectedCountry(matched);
+      const frame = requestAnimationFrame(() => setSelectedCountry(matched));
+      return () => cancelAnimationFrame(frame);
     }
   }, [value, selectedCountry.code]);
 

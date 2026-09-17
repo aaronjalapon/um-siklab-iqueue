@@ -19,7 +19,7 @@ import {
   Zap,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { glassStyles } from "@/lib/design-system";
+import { uiStyles } from "@/lib/design-system";
 import {
   getRetrainStatus,
   listRetrainJobs,
@@ -226,7 +226,7 @@ export default function ModelRetrainingPage() {
   const isRunning = activeJob ? ACTIVE_STATUSES.includes(activeJob.status) : false;
 
   return (
-    <div className={glassStyles.pageContainer}>
+    <div className={uiStyles.pageContainer}>
       <PageHeader
         eyebrow="AI model management"
         title="Model Retraining"
@@ -237,10 +237,10 @@ export default function ModelRetrainingPage() {
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
 
         {/* Trigger panel */}
-        <section className={`${glassStyles.panel} p-5 lg:col-span-2`}>
+        <section className={`${uiStyles.surface} p-5 lg:col-span-2`}>
           <div className="flex items-center gap-2 mb-4">
             <FlaskConical className="h-5 w-5 text-brand-blue" />
-            <h2 className={glassStyles.sectionTitle}>Trigger Retraining</h2>
+            <h2 className={uiStyles.sectionTitle}>Trigger Retraining</h2>
           </div>
 
           <div className="grid grid-cols-2 gap-4 mb-5">
@@ -252,7 +252,7 @@ export default function ModelRetrainingPage() {
                 value={epochs}
                 onChange={(e) => setEpochs(Number(e.target.value))}
                 disabled={isRunning}
-                className={`${glassStyles.input} mt-1 w-full`}
+                className={`${uiStyles.input} mt-1 w-full`}
               />
               <span className="text-xs text-slate-400 mt-1 block">Training iterations (default 80)</span>
             </label>
@@ -264,7 +264,7 @@ export default function ModelRetrainingPage() {
                 value={minRows}
                 onChange={(e) => setMinRows(Number(e.target.value))}
                 disabled={isRunning}
-                className={`${glassStyles.input} mt-1 w-full`}
+                className={`${uiStyles.input} mt-1 w-full`}
               />
               <span className="text-xs text-slate-400 mt-1 block">Rows needed before retraining triggers</span>
             </label>
@@ -321,10 +321,10 @@ export default function ModelRetrainingPage() {
         </section>
 
         {/* Gate rules panel */}
-        <section className={`${glassStyles.panel} p-5`}>
+        <section className={`${uiStyles.surface} p-5`}>
           <div className="flex items-center gap-2 mb-4">
             <ShieldCheck className="h-5 w-5 text-emerald-500" />
-            <h2 className={glassStyles.sectionTitle}>Promotion Gate</h2>
+            <h2 className={uiStyles.sectionTitle}>Promotion Gate</h2>
           </div>
           <ul className="space-y-3 text-sm text-slate-600 dark:text-slate-300">
             {[
@@ -347,7 +347,7 @@ export default function ModelRetrainingPage() {
 
       {/* ── Active job status ── */}
       {activeJob && (
-        <section className={`${glassStyles.panel} p-5 border ${statusBg(activeJob.status)}`}>
+        <section className={`${uiStyles.surface} p-5 border ${statusBg(activeJob.status)}`}>
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-3">
               <StatusIcon status={activeJob.status} />
@@ -460,11 +460,11 @@ export default function ModelRetrainingPage() {
       )}
 
       {/* ── Job history ── */}
-      <section className={`${glassStyles.panel} p-5`}>
+      <section className={`${uiStyles.surface} p-5`}>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <History className="h-5 w-5 text-slate-500" />
-            <h2 className={glassStyles.sectionTitle}>Job History</h2>
+            <h2 className={uiStyles.sectionTitle}>Job History</h2>
           </div>
           <button
             id="btn-refresh-jobs"
@@ -479,7 +479,7 @@ export default function ModelRetrainingPage() {
         {jobsLoading ? (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className={`${glassStyles.skeleton} h-16 w-full`} />
+              <div key={i} className={`${uiStyles.skeleton} h-16 w-full`} />
             ))}
           </div>
         ) : jobs.length === 0 ? (

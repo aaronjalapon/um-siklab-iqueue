@@ -10,7 +10,7 @@ import { OperatorSeatList } from "@/components/seats/OperatorSeatList";
 import { CapacityMeter } from "@/components/ui/CapacityMeter";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { useSeatMap } from "@/hooks/useSeatMap";
-import { glassStyles } from "@/lib/design-system";
+import { uiStyles } from "@/lib/design-system";
 
 type ViewMode = "grid" | "list";
 
@@ -30,7 +30,7 @@ export default function OperatorSeatDashboardPage() {
 
   if (loading) {
     return (
-      <div className={glassStyles.pageContainer}>
+      <div className={uiStyles.pageContainer}>
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-slate-200 rounded w-64" />
           <div className="h-4 bg-slate-200 rounded w-96" />
@@ -58,7 +58,7 @@ export default function OperatorSeatDashboardPage() {
   }
 
   return (
-    <div className={glassStyles.pageContainer}>
+    <div className={uiStyles.pageContainer}>
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -85,7 +85,7 @@ export default function OperatorSeatDashboardPage() {
       </div>
 
       {/* Capacity summary */}
-      <div className={`${glassStyles.panel} p-4`}>
+      <div className={`${uiStyles.surface} p-4`}>
         <CapacityMeter booked={occupied} capacity={total} label="Seats occupied" />
       </div>
 
@@ -123,14 +123,14 @@ export default function OperatorSeatDashboardPage() {
 
       {/* Content */}
       {viewMode === "grid" ? (
-        <div className={`${glassStyles.panel} p-6`}>
+        <div className={`${uiStyles.surface} p-6`}>
           <BusSeatGrid seats={seats} readOnly />
           <div className="mt-4">
             <SeatLegend variant="operator" />
           </div>
         </div>
       ) : (
-        <div className={`${glassStyles.panel} p-6`}>
+        <div className={`${uiStyles.surface} p-6`}>
           <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
             Seat swap is disabled in this prototype until the seat map includes
             real booking IDs for each occupied seat.

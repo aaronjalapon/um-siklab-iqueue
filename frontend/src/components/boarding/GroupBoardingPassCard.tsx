@@ -11,7 +11,7 @@ import {
   WifiOff,
 } from "lucide-react";
 import { BRAND } from "@/lib/brand";
-import { glassStyles } from "@/lib/design-system";
+import { uiStyles } from "@/lib/design-system";
 import { downloadQrAsPng } from "@/lib/qr-download";
 import type { GroupBookingResponse } from "@/lib/types";
 import { formatBoardingWindow, formatDate } from "@/lib/utils";
@@ -39,7 +39,7 @@ export default function GroupBoardingPassCard({
   }
 
   return (
-    <section className={`${glassStyles.panel} overflow-hidden`}>
+    <section className={`${uiStyles.surface} overflow-hidden`}>
       <header className="flex flex-wrap items-center justify-between gap-2 border-b border-glass-border p-3 sm:p-5">
         <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
           <div className="flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl bg-green-50 text-green-600 dark:bg-green-950/40 dark:text-green-400">

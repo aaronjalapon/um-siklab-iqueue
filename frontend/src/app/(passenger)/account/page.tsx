@@ -12,7 +12,7 @@ import {
   User,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { glassStyles } from "@/lib/design-system";
+import { uiStyles } from "@/lib/design-system";
 import { clearSessionPasses } from "@/lib/session-bookings";
 
 const MENU_ITEMS = [
@@ -32,8 +32,8 @@ const MENU_ITEMS = [
   },
   {
     icon: CreditCard,
-    label: "Payment Methods",
-    description: "Cashless & terminal counter checkout",
+    label: "Fare Information",
+    description: "Displayed fares are estimates; payment is not processed",
     color: "text-orange-500",
     bg: "bg-orange-50 dark:bg-orange-500/10",
   },
@@ -47,7 +47,7 @@ const MENU_ITEMS = [
   {
     icon: HelpCircle,
     label: "Help Center & Assistant",
-    description: "AI booking assistant support 24/7",
+    description: "Prototype booking assistance in four languages",
     color: "text-violet-500",
     bg: "bg-violet-50 dark:bg-violet-500/10",
   },
@@ -62,14 +62,14 @@ export default function AccountPage() {
   }
 
   return (
-    <div className={`${glassStyles.pageContainer} max-w-4xl !space-y-3 sm:!space-y-5 !px-3 sm:!px-6 !py-3 sm:!py-6`}>
+    <div className={`${uiStyles.pageContainer} max-w-4xl !space-y-3 sm:!space-y-5 !px-3 sm:!px-6 !py-3 sm:!py-6`}>
       <PageHeader
         eyebrow="Account"
         title="Demo Passenger"
         description="Profile and preferences are local demo states for the hackathon build."
       />
 
-      <section className={`${glassStyles.panel} overflow-hidden`}>
+      <section className={`${uiStyles.surface} overflow-hidden`}>
         {/* Responsive Profile Header */}
         <div className="flex items-center gap-3 sm:gap-4 p-3.5 sm:p-5 border-b border-slate-100 dark:border-slate-800">
           <div className="flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-brand-blue text-white shadow-md shadow-brand-blue/20">

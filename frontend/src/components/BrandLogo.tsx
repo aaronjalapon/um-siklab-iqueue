@@ -26,7 +26,7 @@ export default function BrandLogo({
         width={48}
         height={48}
         priority
-        className={`${markClassName} shrink-0 rounded-2xl bg-white shadow-lg shadow-brand-blue/20`}
+        className={`${markClassName} shrink-0 rounded-lg bg-white`}
         aria-hidden
       />
       <span className="flex min-w-0 flex-col">

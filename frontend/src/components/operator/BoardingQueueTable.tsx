@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { ArrowUpDown, CheckCircle2 } from "lucide-react";
-import { glassStyles } from "@/lib/design-system";
+import { uiStyles } from "@/lib/design-system";
 import type { BoardingQueueEntry } from "@/lib/operator-mock";
 import { formatBoardingWindow, statusColorClass } from "@/lib/utils";
 import { EmptyState } from "./EmptyState";
@@ -105,20 +105,20 @@ export function BoardingQueueTable({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2 text-sm text-slate-600 dark:text-slate-300">
-        <span className={`${glassStyles.badge} bg-slate-100 dark:bg-slate-800`}>
+        <span className={`${uiStyles.badge} bg-slate-100 dark:bg-slate-800`}>
           {summary.waiting} waiting
         </span>
-        <span className={`${glassStyles.badge} bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200`}>
+        <span className={`${uiStyles.badge} bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200`}>
           {summary.boardingNow} boarding now
         </span>
-        <span className={`${glassStyles.badge} bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200`}>
+        <span className={`${uiStyles.badge} bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200`}>
           {summary.missed} missed
         </span>
       </div>
 
       <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div
-          className={`${glassStyles.segmentedControl} min-w-0 overflow-x-auto`}
+          className={`${uiStyles.segmentedControl} min-w-0 overflow-x-auto`}
           role="tablist"
           aria-label="Queue filters"
         >
@@ -130,8 +130,8 @@ export function BoardingQueueTable({
               aria-selected={filter === f.id}
               className={
                 filter === f.id
-                  ? glassStyles.segmentedActive
-                  : glassStyles.segmentedInactive
+                  ? uiStyles.segmentedActive
+                  : uiStyles.segmentedInactive
               }
               onClick={() => setFilter(f.id)}
             >
@@ -144,7 +144,7 @@ export function BoardingQueueTable({
           placeholder="Search name, seat, or plate…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className={`${glassStyles.input} text-sm w-full lg:max-w-xs`}
+          className={`${uiStyles.input} text-sm w-full lg:max-w-xs`}
           aria-label="Search queue"
         />
       </div>
@@ -162,7 +162,7 @@ export function BoardingQueueTable({
             return (
               <article
                 key={entry.bookingId}
-                className={`${glassStyles.panel} p-4 ${
+                className={`${uiStyles.surface} p-4 ${
                   boarding ? "border-green-400 bg-green-50/70 dark:bg-green-950/20" : ""
                 }`}
               >
@@ -176,7 +176,7 @@ export function BoardingQueueTable({
                     </p>
                   </div>
                   <span
-                    className={`${glassStyles.badge} ${statusColorClass(entry.status)}`}
+                    className={`${uiStyles.badge} ${statusColorClass(entry.status)}`}
                   >
                     {entry.status}
                   </span>
@@ -191,7 +191,7 @@ export function BoardingQueueTable({
                   <button
                     type="button"
                     onClick={() => onMarkBoarded(entry.bookingId)}
-                    className={`${glassStyles.primaryButton} mt-4 inline-flex min-h-10 w-full items-center justify-center gap-1 text-xs`}
+                    className={`${uiStyles.primaryButton} mt-4 inline-flex min-h-10 w-full items-center justify-center gap-1 text-xs`}
                   >
                     <CheckCircle2 className="w-3.5 h-3.5" aria-hidden />
                     Mark boarded
@@ -202,7 +202,7 @@ export function BoardingQueueTable({
           })}
         </div>
 
-        <div className={`${glassStyles.panel} hidden overflow-x-auto md:block`}>
+        <div className={`${uiStyles.surface} hidden overflow-x-auto md:block`}>
           <table className="w-full text-sm">
             <caption className="sr-only">
               Boarding queue — passengers sorted by boarding window
@@ -273,7 +273,7 @@ export function BoardingQueueTable({
                     </td>
                     <td className="p-3">
                       <span
-                        className={`${glassStyles.badge} ${statusColorClass(entry.status)}`}
+                        className={`${uiStyles.badge} ${statusColorClass(entry.status)}`}
                       >
                         <span className="sr-only">Status: </span>
                         {entry.status}
@@ -284,7 +284,7 @@ export function BoardingQueueTable({
                         <button
                           type="button"
                           onClick={() => onMarkBoarded(entry.bookingId)}
-                          className={`${glassStyles.primaryButton} inline-flex items-center gap-1 text-xs py-1.5 px-3`}
+                          className={`${uiStyles.primaryButton} inline-flex items-center gap-1 text-xs py-1.5 px-3`}
                         >
                           <CheckCircle2 className="w-3.5 h-3.5" aria-hidden />
                           Board

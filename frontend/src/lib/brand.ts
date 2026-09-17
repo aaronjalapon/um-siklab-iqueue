@@ -4,9 +4,9 @@ export const BRAND = {
   operatorName: "TripSync Ops",
   assistantName: "TripSync Assistant",
   description:
-    "AI-powered smart boarding platform for inter-provincial bus terminals across ASEAN.",
+    "Smart boarding prototype for inter-provincial bus terminals across ASEAN.",
   shortDescription:
-    "AI-powered smart boarding and QR passes for inter-provincial bus terminals.",
+    "Accessible booking and verified QR passes for inter-provincial bus terminals.",
 } as const;
 
 export function applyFrontendBrand(text: string): string {

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Home, Ticket, WifiOff } from "lucide-react";
 import { BRAND } from "@/lib/brand";
-import { glassStyles } from "@/lib/design-system";
+import { uiStyles } from "@/lib/design-system";
 
 export const metadata: Metadata = {
   title: "Offline",
@@ -28,14 +28,14 @@ export default function OfflinePage() {
         <div className="mt-7 grid w-full grid-cols-1 gap-3 sm:grid-cols-2">
           <Link
             href="/tickets"
-            className={`${glassStyles.primaryButton} inline-flex min-h-11 items-center justify-center gap-2 font-bold`}
+            className={`${uiStyles.primaryButton} inline-flex min-h-11 items-center justify-center gap-2 font-bold`}
           >
             <Ticket className="h-4 w-4" aria-hidden />
             Saved Tickets
           </Link>
           <Link
             href="/home"
-            className={`${glassStyles.button} inline-flex min-h-11 items-center justify-center gap-2 px-4 py-2 font-bold`}
+            className={`${uiStyles.button} inline-flex min-h-11 items-center justify-center gap-2 px-4 py-2 font-bold`}
           >
             <Home className="h-4 w-4" aria-hidden />
             Home

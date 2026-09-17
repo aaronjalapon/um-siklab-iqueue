@@ -26,7 +26,6 @@ export function downloadQrAsPng(
     }
 
     const filename = options.filename || "TripSync-Boarding-Pass.png";
-    const title = options.title || "TripSync Boarding Pass";
     const subtitle = options.subtitle || "Offline Gate Pass";
     const seatInfo = options.seatInfo;
 

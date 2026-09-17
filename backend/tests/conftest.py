@@ -53,6 +53,11 @@ async def engine():
 @pytest_asyncio.fixture
 async def db_session(engine) -> AsyncGenerator[AsyncSession, None]:
     """Create a fresh database session for each test."""
+    # Some API paths flush or commit internally. Recreate the in-memory schema
+    # per test so those writes cannot leak into the next case.
+    async with engine.begin() as connection:
+        await connection.run_sync(Base.metadata.drop_all)
+        await connection.run_sync(Base.metadata.create_all)
     session_factory = async_sessionmaker(
         engine,
         class_=AsyncSession,
@@ -120,7 +125,7 @@ async def bus(db_session: AsyncSession, tenant, route):
         tenant_id=tenant.id,
         route_id=route.id,
         capacity=50,
-        plate_number="PH-0001",
+        plate_number=f"PH-{uuid.uuid4().hex[:8].upper()}",
     )
     db_session.add(b)
     await db_session.flush()
@@ -134,7 +139,7 @@ async def passenger(db_session: AsyncSession, tenant):
         id=uuid.uuid4(),
         tenant_id=tenant.id,
         name="Juan Dela Cruz",
-        phone="+63 912 345 6789",
+        phone=f"+639{uuid.uuid4().int % 10_000_000_000:010d}",
         language_pref="fil",
         travel_habits="leisure",
         lifestyle_interests="sports,music,travel",

@@ -33,6 +33,50 @@ async def test_create_booking_returns_201(
 
 
 @pytest.mark.asyncio
+async def test_create_booking_rejects_past_service_day(
+    client: AsyncClient, passenger, bus
+):
+    departure = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat()
+    response = await client.post(
+        "/api/v1/bookings",
+        json={
+            "passenger_id": str(passenger.id),
+            "bus_id": str(bus.id),
+            "departure_date": departure,
+        },
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == "Departure date cannot be in the past"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("endpoint", ["/api/v1/bookings/groups/preview", "/api/v1/bookings/groups"])
+async def test_group_booking_rejects_past_service_day(
+    client: AsyncClient, passenger, bus, endpoint: str
+):
+    payload = {
+        "tenant_id": str(passenger.tenant_id),
+        "bus_id": str(bus.id),
+        "departure_date": (datetime.now(timezone.utc) - timedelta(days=2)).isoformat(),
+        "members": [
+            {"name": "Lead Passenger", "phone": "+639171111111"},
+            {"name": "Companion", "phone": "+639172222222"},
+        ],
+        "preferences": {},
+    }
+    if endpoint.endswith("/groups"):
+        payload["seat_assignments"] = [
+            {"member_index": 0, "seat_label": "1A"},
+            {"member_index": 1, "seat_label": "1B"},
+        ]
+
+    response = await client.post(endpoint, json=payload)
+    assert response.status_code == 422
+    assert response.json()["detail"] == "Departure date cannot be in the past"
+
+
+@pytest.mark.asyncio
 async def test_create_booking_reserves_confirmed_selected_seat(
     client: AsyncClient,
     db_session,

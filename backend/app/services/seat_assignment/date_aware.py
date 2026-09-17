@@ -9,11 +9,13 @@ from __future__ import annotations
 
 from datetime import date, datetime, time, timedelta, timezone
 from uuid import UUID
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.core.config import get_settings
 from app.models.booking import Booking, BookingStatus
 from app.models.bus import Bus
 from app.models.seat import Seat, SeatStatus
@@ -36,10 +38,24 @@ ACTIVE_BOOKING_STATUSES = (
 
 
 def _day_bounds(travel_date: date | datetime) -> tuple[datetime, datetime]:
-    """Return UTC day bounds for a travel date or departure datetime."""
-    day = travel_date.date() if isinstance(travel_date, datetime) else travel_date
-    start = datetime.combine(day, time.min, tzinfo=timezone.utc)
-    return start, start + timedelta(days=1)
+    """Return UTC bounds for the supplied service day.
+
+    A date-only value is interpreted in the configured booking timezone. An
+    aware datetime keeps its explicit timezone, so API payloads and tests can
+    describe the intended local service day without a UTC date rollover.
+    """
+    if isinstance(travel_date, datetime):
+        day = travel_date.date()
+        service_timezone = travel_date.tzinfo or ZoneInfo(
+            get_settings().BOOKING_TIMEZONE
+        )
+    else:
+        day = travel_date
+        service_timezone = ZoneInfo(get_settings().BOOKING_TIMEZONE)
+
+    local_start = datetime.combine(day, time.min, tzinfo=service_timezone)
+    start = local_start.astimezone(timezone.utc)
+    return start, (local_start + timedelta(days=1)).astimezone(timezone.utc)
 
 
 def _boarding_window(
@@ -103,24 +119,6 @@ async def _bookings_for_service_day(
         )
     )
     bookings = list(result.scalars().all())
-    if not bookings:
-        from app.api.v1.buses import _ensure_demo_bookings_for_bus_date
-        bus_result = await session.execute(select(Bus).where(Bus.id == bus_uuid))
-        bus = bus_result.scalars().first()
-        if bus:
-            day = travel_date.date() if isinstance(travel_date, datetime) else travel_date
-            await _ensure_demo_bookings_for_bus_date(session, bus, day)
-            result = await session.execute(
-                select(Booking)
-                .options(selectinload(Booking.passenger))
-                .where(
-                    Booking.bus_id == bus_uuid,
-                    Booking.departure_date >= start,
-                    Booking.departure_date < end,
-                    Booking.status.in_(ACTIVE_BOOKING_STATUSES),
-                )
-            )
-            bookings = list(result.scalars().all())
     return bookings
 
 

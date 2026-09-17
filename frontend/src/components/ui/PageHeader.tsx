@@ -32,7 +32,7 @@ export function PageHeader({
           {actions && <div className="shrink-0 sm:hidden">{actions}</div>}
         </div>
         {description && (
-          <div className="mt-0.5 text-xs sm:text-sm leading-5 sm:leading-6 text-slate-500 dark:text-slate-400">
+          <div className="mt-0.5 text-xs leading-5 text-ui-muted-foreground sm:text-sm sm:leading-6">
             {description}
           </div>
         )}
@@ -53,7 +53,7 @@ export function PageHeader({
           {title}
         </h1>
         {description && (
-          <div className="mt-0.5 sm:mt-1 text-xs sm:text-sm leading-5 sm:leading-6 text-slate-500 dark:text-slate-400">
+          <div className="mt-0.5 text-xs leading-5 text-ui-muted-foreground sm:mt-1 sm:text-sm sm:leading-6">
             {description}
           </div>
         )}

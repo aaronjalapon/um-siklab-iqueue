@@ -11,7 +11,6 @@ import {
   ChevronDown,
   Languages,
   Minus,
-  Phone,
   Plus,
   ShieldCheck,
   UserRound,
@@ -24,7 +23,7 @@ import {
   parseAseanPhone,
 } from "@/components/booking/AseanContactInput";
 import { BRAND } from "@/lib/brand";
-import { glassStyles } from "@/lib/design-system";
+import { uiStyles } from "@/lib/design-system";
 import { saveGroupBookingDraft } from "@/lib/group-booking-drafts";
 import type { GroupMemberRequest, PassengerFormData } from "@/lib/types";
 import { LANGUAGE_LABELS } from "@/lib/utils";
@@ -189,7 +188,7 @@ export default function PreferencesPage() {
       : Number(formData.accessibility_needs);
 
   return (
-    <div className={`${glassStyles.pageContainer} max-w-4xl !space-y-3 sm:!space-y-5 !px-3 sm:!px-6 !py-3 sm:!py-6`}>
+    <div className={`${uiStyles.pageContainer} max-w-4xl !space-y-3 sm:!space-y-5 !px-3 sm:!px-6 !py-3 sm:!py-6`}>
       <div className="flex items-center justify-between">
         <Link
           href={`/buy?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(dest)}&date=${date}`}
@@ -216,7 +215,7 @@ export default function PreferencesPage() {
 
       <form onSubmit={submit} className="space-y-3 sm:space-y-5">
         {/* Booking mode selector: strictly horizontal side-by-side with no text stacking */}
-        <fieldset className={`${glassStyles.panel} p-2.5 sm:p-4`}>
+        <fieldset className={`${uiStyles.surface} p-2.5 sm:p-4`}>
           <legend className="sr-only">Booking mode</legend>
           <div className="grid grid-cols-2 gap-2 sm:gap-3">
             {(["single", "group"] as const).map((value) => (
@@ -248,7 +247,7 @@ export default function PreferencesPage() {
         </fieldset>
 
         {/* Passenger details section */}
-        <section className={`${glassStyles.panel} p-3.5 sm:p-5 md:p-6`}>
+        <section className={`${uiStyles.surface} p-3.5 sm:p-5 md:p-6`}>
           <div className="mb-3 sm:mb-4 flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-sm sm:text-base font-bold text-foreground">
               {mode === "group" ? `Group members (${members.length} of 6)` : "Passenger details"}
@@ -385,7 +384,7 @@ export default function PreferencesPage() {
         </section>
 
         {/* Shared preferences section */}
-        <section className={`${glassStyles.panel} grid gap-2.5 sm:gap-4 p-3.5 sm:p-5 md:grid-cols-2 md:p-6`}>
+        <section className={`${uiStyles.surface} grid gap-2.5 sm:gap-4 p-3.5 sm:p-5 md:grid-cols-2 md:p-6`}>
           <label className="text-xs sm:text-sm font-medium">
             <span className="mb-1 flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
               <Languages className="h-3.5 w-3.5" /> Shared language
@@ -451,7 +450,7 @@ export default function PreferencesPage() {
         {/* Submit action button: Emerald CTA */}
         <button
           type="submit"
-          className={`${glassStyles.successButton} flex min-h-[42px] sm:min-h-12 w-full items-center justify-center gap-2 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold group active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2`}
+          className={`${uiStyles.successButton} flex min-h-[42px] sm:min-h-12 w-full items-center justify-center gap-2 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold group active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2`}
         >
           <span>{mode === "group" ? "Recommend Group Seats" : "Find My Best Seat"}</span>
           <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 transition-transform duration-200 group-hover:translate-x-1" aria-hidden />
@@ -460,5 +459,4 @@ export default function PreferencesPage() {
     </div>
   );
 }
-
 

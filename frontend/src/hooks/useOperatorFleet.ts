@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { searchBuses } from "@/lib/api";
+import { getLocalDateInputValue } from "@/lib/local-date";
 import { DEMO_ROUTES, mockFleetFromCapacity } from "@/lib/operator-mock";
 import type { Bus } from "@/lib/types";
 
@@ -42,6 +43,7 @@ export function useOperatorFleet({
     let cancelled = false;
 
     async function load() {
+      setLoadState("loading");
       try {
         const data = await searchBuses(origin, destination, travelDate);
         if (cancelled) return;
@@ -59,7 +61,6 @@ export function useOperatorFleet({
       }
     }
 
-    setLoadState("loading");
     void load();
 
     return () => {
@@ -71,7 +72,7 @@ export function useOperatorFleet({
 }
 
 export function todayIsoDate(): string {
-  return new Date().toISOString().split("T")[0];
+  return getLocalDateInputValue();
 }
 
 export { DEMO_ROUTES };

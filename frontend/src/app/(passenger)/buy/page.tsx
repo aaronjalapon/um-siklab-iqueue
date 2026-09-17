@@ -15,12 +15,11 @@ import {
   MapPin,
   Search,
 } from "lucide-react";
-import { CapacityMeter } from "@/components/ui/CapacityMeter";
 import { BookingProgress } from "@/components/ui/BookingProgress";
-import { PageHeader } from "@/components/ui/PageHeader";
 import { searchBuses } from "@/lib/api";
 import { BRAND } from "@/lib/brand";
-import { glassStyles } from "@/lib/design-system";
+import { uiStyles } from "@/lib/design-system";
+import { getLocalDateInputValue, isPastLocalDate } from "@/lib/local-date";
 import type { Bus } from "@/lib/types";
 import { formatDate, surgeColorClass, surgeLabel } from "@/lib/utils";
 
@@ -32,10 +31,6 @@ const QUICK_ROUTES = [
 ];
 
 type SortMode = "recommended" | "seats" | "surge" | "price";
-
-function todayIsoDate(): string {
-  return new Date().toISOString().split("T")[0];
-}
 
 function getErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
@@ -120,7 +115,7 @@ function BusResultSkeleton() {
       {Array.from({ length: 4 }).map((_, index) => (
         <div
           key={index}
-          className={`${glassStyles.panel} min-h-[150px] p-3.5 sm:p-5 animate-pulse motion-reduce:animate-none flex flex-col justify-between`}
+          className={`${uiStyles.surface} min-h-[150px] p-3.5 sm:p-5 animate-pulse motion-reduce:animate-none flex flex-col justify-between`}
         >
           <div className="flex items-start justify-between">
             <div className="space-y-2">
@@ -145,7 +140,7 @@ function BuyPageInner() {
     searchParams.get("destination") || searchParams.get("dest") || ""
   );
   const [travelDate, setTravelDate] = useState(
-    searchParams.get("date") || todayIsoDate()
+    searchParams.get("date") || getLocalDateInputValue()
   );
   const [buses, setBuses] = useState<Bus[]>([]);
   const [loading, setLoading] = useState(false);
@@ -153,7 +148,9 @@ function BuyPageInner() {
   const [error, setError] = useState<string | null>(null);
   const [sortMode, setSortMode] = useState<SortMode>("recommended");
 
-  const canSearch = origin.trim().length > 0 && destination.trim().length > 0;
+  const minimumDate = getLocalDateInputValue();
+  const dateIsPast = isPastLocalDate(travelDate, minimumDate);
+  const canSearch = origin.trim().length > 0 && destination.trim().length > 0 && !dateIsPast;
 
   const sortedBuses = useMemo(() => {
     const list = [...buses];
@@ -183,6 +180,11 @@ function BuyPageInner() {
     const trimmedOrigin = searchOrigin.trim();
     const trimmedDestination = searchDestination.trim();
     if (!trimmedOrigin || !trimmedDestination) return;
+    if (isPastLocalDate(searchDate)) {
+      setError("Travel date cannot be in the past. Choose today or a future date.");
+      setHasSearched(false);
+      return;
+    }
 
     setLoading(true);
     setError(null);
@@ -231,7 +233,7 @@ function BuyPageInner() {
       : `Search available inter-provincial buses and let ${BRAND.name} pick your best seat.`;
 
   return (
-    <div className={`${glassStyles.pageContainer} max-w-6xl !space-y-3 sm:!space-y-5 !px-3 sm:!px-6 !py-3 sm:!py-6`}>
+    <div className={`${uiStyles.pageContainer} max-w-6xl !space-y-3 sm:!space-y-5 !px-3 sm:!px-6 !py-3 sm:!py-6`}>
       <div className="hidden md:flex items-center justify-between">
         <Link
           href="/home"
@@ -251,53 +253,63 @@ function BuyPageInner() {
         <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-foreground tracking-tight">
           Find Your Bus
         </h1>
-        <p className="mt-0.5 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+        <p className="mt-0.5 text-xs text-ui-muted-foreground sm:text-sm">
           {routeSummary}
         </p>
       </header>
 
       {/* Filter / Search Card — Compact on mobile */}
-      <section className={`${glassStyles.panel} p-3 sm:p-4 md:p-5`}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-[1fr_1fr_180px] gap-2 sm:gap-3">
-          <label className="flex items-center gap-2.5 rounded-xl border border-glass-border bg-white/50 px-3 py-2 sm:py-2.5 dark:bg-slate-900/50">
-            <span className="h-2.5 w-2.5 shrink-0 rounded-full border-2 border-green-500" />
+      <section className={`${uiStyles.surface} p-4 sm:p-5`} aria-labelledby="route-search-title">
+        <h2 id="route-search-title" className="sr-only">Search routes</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-[1fr_1fr_180px]">
+          <label htmlFor="origin-city" className="space-y-1.5 text-sm font-semibold">
+            <span>Origin</span>
             <input
+              id="origin-city"
               type="text"
-              placeholder="Origin city"
+              placeholder="e.g. Davao City"
               value={origin}
               onChange={(e) => setOrigin(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && void performSearch()}
-              className="w-full bg-transparent text-xs sm:text-sm font-medium text-slate-900 outline-none placeholder:text-slate-400 dark:text-white"
+              className={uiStyles.input}
             />
           </label>
 
-          <label className="flex items-center gap-2.5 rounded-xl border border-glass-border bg-white/50 px-3 py-2 sm:py-2.5 dark:bg-slate-900/50">
-            <span className="h-2.5 w-2.5 shrink-0 rounded-full border-2 border-brand-orange" />
+          <label htmlFor="destination-city" className="space-y-1.5 text-sm font-semibold">
+            <span>Destination</span>
             <input
+              id="destination-city"
               type="text"
-              placeholder="Destination city"
+              placeholder="e.g. Cagayan de Oro"
               value={destination}
               onChange={(e) => setDestination(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && void performSearch()}
-              className="w-full bg-transparent text-xs sm:text-sm font-medium text-slate-900 outline-none placeholder:text-slate-400 dark:text-white"
+              className={uiStyles.input}
             />
           </label>
 
-          <label className="flex items-center gap-2.5 rounded-xl border border-glass-border bg-white/50 px-3 py-2 sm:py-2.5 dark:bg-slate-900/50 sm:col-span-2 md:col-span-1">
-            <CalendarDays className="h-4 w-4 shrink-0 text-slate-400" />
+          <label htmlFor="travel-date" className="space-y-1.5 text-sm font-semibold sm:col-span-2 md:col-span-1">
+            <span className="flex items-center gap-1.5"><CalendarDays className="h-4 w-4 text-ui-muted-foreground" aria-hidden />Travel date</span>
             <input
+              id="travel-date"
               type="date"
               value={travelDate}
               onChange={(e) => setTravelDate(e.target.value)}
-              className="w-full bg-transparent text-xs sm:text-sm font-medium text-slate-900 outline-none dark:text-white"
+              min={minimumDate}
+              aria-invalid={dateIsPast}
+              aria-describedby={dateIsPast ? "travel-date-error" : undefined}
+              className={uiStyles.input}
             />
+            {dateIsPast && <span id="travel-date-error" role="alert" className="block text-sm font-normal text-ui-danger">Choose today or a future date.</span>}
           </label>
         </div>
 
         {/* Quick Routes + Search Action Row */}
         <div className="mt-2.5 sm:mt-3.5 flex flex-col gap-2 sm:gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 whitespace-nowrap min-w-0">
-            <span className="shrink-0 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400 mr-0.5">
+          <div className="min-w-0">
+            <div className="mb-1 flex items-center justify-between text-xs font-semibold text-ui-muted-foreground sm:hidden"><span>Quick routes</span><span aria-hidden>Scroll →</span></div>
+            <div className="flex items-center gap-2 overflow-x-auto py-1 pr-8 whitespace-nowrap sm:flex-wrap sm:overflow-visible sm:pr-0">
+            <span className="mr-0.5 hidden shrink-0 text-xs font-bold uppercase tracking-wider text-ui-muted-foreground sm:inline">
               Quick routes
             </span>
             {QUICK_ROUTES.map((route) => (
@@ -305,18 +317,19 @@ function BuyPageInner() {
                 key={route.label}
                 type="button"
                 onClick={() => handleQuickRoute(route.origin, route.destination)}
-                className="shrink-0 rounded-full border border-glass-border bg-white/60 px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:border-brand-blue/40 hover:text-brand-blue dark:bg-slate-900/50 dark:text-slate-300 active:scale-95"
+                className="min-h-10 shrink-0 rounded-full border border-ui-border bg-ui-surface px-3 py-2 text-sm font-semibold text-ui-muted-foreground transition-colors hover:border-ui-primary hover:text-ui-primary"
               >
                 {route.label}
               </button>
             ))}
+            </div>
           </div>
 
           <button
             type="button"
             onClick={() => void performSearch()}
             disabled={loading || !canSearch}
-            className={`${glassStyles.primaryButton} inline-flex min-h-[38px] sm:min-h-11 items-center justify-center gap-2 text-xs sm:text-sm font-bold w-full lg:w-auto shrink-0 disabled:cursor-not-allowed disabled:opacity-50`}
+            className={`${uiStyles.primaryButton} inline-flex min-h-[38px] sm:min-h-11 items-center justify-center gap-2 text-xs sm:text-sm font-bold w-full lg:w-auto shrink-0 disabled:cursor-not-allowed disabled:opacity-50`}
           >
             <Search className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden />
             {loading ? "Searching..." : "Search Tickets"}
@@ -341,10 +354,11 @@ function BuyPageInner() {
             {buses.length > 0 && (
               <div className="flex items-center gap-1.5 shrink-0">
                 <ListFilter className="h-3.5 w-3.5 text-slate-400" aria-hidden />
-                <select
+                <label htmlFor="sort-results" className="sr-only">Sort results</label>
+                <select id="sort-results" aria-label="Sort results"
                   value={sortMode}
                   onChange={(e) => setSortMode(e.target.value as SortMode)}
-                  className="rounded-xl border border-glass-border bg-white/60 dark:bg-slate-900/60 px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none"
+                  className="min-h-11 rounded-lg border border-ui-border bg-ui-surface px-3 py-2 text-sm font-semibold text-ui-foreground outline-none focus:border-ui-primary focus:ring-2 focus:ring-ui-primary/20"
                 >
                   <option value="recommended">Recommended</option>
                   <option value="seats">Most seats</option>
@@ -378,7 +392,7 @@ function BuyPageInner() {
                 return (
                   <article
                     key={bus.id}
-                    className={`${glassStyles.panel} relative flex flex-col justify-between p-3.5 sm:p-5 transition-all hover:border-brand-blue/40`}
+                    className={`${uiStyles.surface} relative flex flex-col justify-between p-3.5 sm:p-5 transition-all hover:border-brand-blue/40`}
                   >
                     {/* Top Row: Badges, Route & Price */}
                     <div className="flex items-start justify-between gap-3">
@@ -456,7 +470,7 @@ function BuyPageInner() {
                         <Link
                           href={buildPreferencesHref(bus)}
                           prefetch={false}
-                          className={`${glassStyles.successButton} flex min-h-[38px] sm:min-h-10 w-full items-center justify-center gap-2 text-xs sm:text-sm font-bold group active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2`}
+                          className={`${uiStyles.successButton} flex min-h-[38px] sm:min-h-10 w-full items-center justify-center gap-2 text-xs sm:text-sm font-bold group active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2`}
                         >
                           <span>Continue to Preferences</span>
                           <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-1" aria-hidden />
@@ -469,7 +483,7 @@ function BuyPageInner() {
             </div>
           ) : (
             !error && (
-              <div className={`${glassStyles.panel} py-8 text-center`}>
+              <div className={`${uiStyles.surface} py-8 text-center`}>
                 <MapPin className="mx-auto mb-2 h-10 w-10 text-slate-300" />
                 <p className="font-semibold text-foreground text-sm sm:text-base">No buses found</p>
                 <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
@@ -488,8 +502,8 @@ export default function BuyPage() {
   return (
     <Suspense
       fallback={
-        <div className={`${glassStyles.pageContainer} max-w-6xl`}>
-          <div className={`${glassStyles.skeleton} h-32`} />
+        <div className={`${uiStyles.pageContainer} max-w-6xl`}>
+          <div className={`${uiStyles.skeleton} h-32`} />
           <BusResultSkeleton />
         </div>
       }

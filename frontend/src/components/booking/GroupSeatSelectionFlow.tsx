@@ -19,7 +19,8 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { createGroupBooking, previewGroupBooking } from "@/lib/api";
 import { BRAND } from "@/lib/brand";
 import { DEMO_TENANT_ID } from "@/lib/demo-config";
-import { glassStyles } from "@/lib/design-system";
+import { uiStyles } from "@/lib/design-system";
+import { isPastLocalDate, toServiceDepartureIso } from "@/lib/local-date";
 import { getGroupBookingDraft, removeGroupBookingDraft, type GroupBookingDraft } from "@/lib/group-booking-drafts";
 import { saveGroupBoardingPass } from "@/lib/group-boarding-passes";
 import type { GroupBookingPreview, GroupBookingRequest } from "@/lib/types";
@@ -44,8 +45,11 @@ export function GroupSeatSelectionFlow({
   const [draft, setDraft] = useState<GroupBookingDraft | null>(null);
 
   useEffect(() => {
-    setMounted(true);
-    setDraft(getGroupBookingDraft(draftId));
+    const frame = requestAnimationFrame(() => {
+      setMounted(true);
+      setDraft(getGroupBookingDraft(draftId));
+    });
+    return () => cancelAnimationFrame(frame);
   }, [draftId]);
 
   const { seats, loading: seatsLoading, error: seatsError } = useSeatMap(busId, date);
@@ -56,11 +60,11 @@ export function GroupSeatSelectionFlow({
   const [revision, setRevision] = useState(0);
 
   const request = useMemo<GroupBookingRequest | null>(() => {
-    if (!draft) return null;
+    if (!draft || isPastLocalDate(draft.date)) return null;
     return {
       tenant_id: DEMO_TENANT_ID,
       bus_id: busId,
-      departure_date: new Date(draft.date).toISOString(),
+      departure_date: toServiceDepartureIso(draft.date),
       members: draft.members,
       preferences: draft.preferences,
     };
@@ -108,13 +112,13 @@ export function GroupSeatSelectionFlow({
 
   if (!mounted) {
     return (
-      <div className={`${glassStyles.pageContainer} max-w-7xl`}>
+      <div className={`${uiStyles.pageContainer} max-w-7xl`}>
         <div className="h-4 w-32 rounded bg-slate-200/50 dark:bg-slate-800/50 animate-pulse" />
         <BookingProgress current="seat" />
-        <div className={`${glassStyles.skeleton} h-20 w-full mt-2`} />
+        <div className={`${uiStyles.skeleton} h-20 w-full mt-2`} />
         <div className="grid gap-6 lg:grid-cols-3 mt-4">
-          <div className={`${glassStyles.skeleton} h-96 lg:col-span-2`} />
-          <div className={`${glassStyles.skeleton} h-96`} />
+          <div className={`${uiStyles.skeleton} h-96 lg:col-span-2`} />
+          <div className={`${uiStyles.skeleton} h-96`} />
         </div>
       </div>
     );
@@ -122,7 +126,7 @@ export function GroupSeatSelectionFlow({
 
   if (!draft || draft.members.length === 0) {
     return (
-      <div className={`${glassStyles.pageContainer} max-w-2xl`}>
+      <div className={`${uiStyles.pageContainer} max-w-2xl`}>
         <div role="alert" className="rounded-2xl border border-amber-300 bg-amber-50 p-6 text-amber-900">
           <h1 className="text-lg font-bold">No group booking draft found</h1>
           <p className="mt-1 text-sm">Start a group booking by adding passengers first.</p>
@@ -135,7 +139,7 @@ export function GroupSeatSelectionFlow({
   }
 
   return (
-    <div className={`${glassStyles.pageContainer} max-w-7xl`}>
+    <div className={`${uiStyles.pageContainer} max-w-7xl`}>
       <Link href={`/book/${busId}/preferences?${new URLSearchParams({ date, origin, dest: destination })}`} className="inline-flex items-center gap-1 text-xs sm:text-sm text-brand-blue hover:underline">
         <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Change group preferences
       </Link>
@@ -165,7 +169,7 @@ export function GroupSeatSelectionFlow({
       {error && <div role="alert" className="rounded-lg sm:rounded-xl border border-red-300 bg-red-50 p-2.5 sm:p-3.5 text-xs sm:text-sm text-red-800 shadow-sm">{error} Your group draft is still saved.</div>}
 
       <div className="grid items-start gap-4 sm:gap-6 lg:grid-cols-3">
-        <section className={`${glassStyles.panel} p-2.5 sm:p-5 md:p-6 lg:col-span-2`} aria-label="Recommended group seat map">
+        <section className={`${uiStyles.surface} p-2.5 sm:p-5 md:p-6 lg:col-span-2`} aria-label="Recommended group seat map">
           {loading || seatsLoading ? (
             <div className="grid min-h-60 sm:min-h-80 place-items-center text-xs sm:text-sm text-slate-500">Finding one safe cluster for the whole group…</div>
           ) : seatsError ? (
@@ -178,7 +182,7 @@ export function GroupSeatSelectionFlow({
           )}
         </section>
 
-        <aside className={`${glassStyles.panel} space-y-3 sm:space-y-4 p-3 sm:p-5`}>
+        <aside className={`${uiStyles.surface} space-y-3 sm:space-y-4 p-3 sm:p-5`}>
           <div className="flex items-center justify-between gap-2">
             <h2 className="flex items-center gap-1.5 sm:gap-2 text-base sm:text-lg font-bold"><Users className="h-4 w-4 sm:h-5 sm:w-5" /> Group of {draft.members.length}</h2>
             <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] sm:text-xs font-semibold dark:bg-slate-800">One QR</span>

@@ -5,7 +5,7 @@ import { AlertTriangle, CheckCircle2, Database, FileCheck2 } from "lucide-react"
 import { PageHeader } from "@/components/ui/PageHeader";
 import { getEvidenceSummary } from "@/lib/api";
 import { BRAND } from "@/lib/brand";
-import { glassStyles } from "@/lib/design-system";
+import { uiStyles } from "@/lib/design-system";
 import type { EvidenceSummary } from "@/lib/types";
 
 function formatMetric(value: unknown): string {
@@ -42,7 +42,7 @@ export default function EvidencePage() {
   }, []);
 
   return (
-    <div className={glassStyles.pageContainer}>
+    <div className={uiStyles.pageContainer}>
       <PageHeader
         eyebrow="Validation and governance"
         title={`${BRAND.name} Evidence`}
@@ -67,22 +67,22 @@ export default function EvidencePage() {
       {evidence && (
         <>
           <section className="grid gap-4 md:grid-cols-4">
-            <div className={`${glassStyles.panel} p-4`}>
+            <div className={`${uiStyles.surface} p-4`}>
               <Database className="h-5 w-5 text-brand-blue" />
               <p className="mt-3 text-xs text-slate-500">Bundle</p>
               <p className="font-semibold">{evidence.active_bundle.version ?? "Unversioned"}</p>
             </div>
-            <div className={`${glassStyles.panel} p-4`}>
+            <div className={`${uiStyles.surface} p-4`}>
               <CheckCircle2 className="h-5 w-5 text-green-600" />
               <p className="mt-3 text-xs text-slate-500">Bundle status</p>
               <p className="font-semibold capitalize">{evidence.active_bundle.status}</p>
             </div>
-            <div className={`${glassStyles.panel} p-4`}>
+            <div className={`${uiStyles.surface} p-4`}>
               <FileCheck2 className="h-5 w-5 text-brand-blue" />
               <p className="mt-3 text-xs text-slate-500">Loaded routes</p>
               <p className="font-semibold">{evidence.active_bundle.loaded_routes.length}</p>
             </div>
-            <div className={`${glassStyles.panel} p-4`}>
+            <div className={`${uiStyles.surface} p-4`}>
               <CheckCircle2 className="h-5 w-5 text-green-600" />
               <p className="mt-3 text-xs text-slate-500">Surge classifier</p>
               <p className="font-semibold">{evidence.active_bundle.classifier_loaded ? "Loaded" : "Unavailable"}</p>
@@ -118,7 +118,7 @@ export default function EvidencePage() {
             <h2 className="text-lg font-semibold">Subsystem validation</h2>
             <div className="mt-3 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {Object.entries(evidence.subsystems).map(([name, metrics]) => (
-                <div key={name} className={`${glassStyles.panel} p-4`}>
+                <div key={name} className={`${uiStyles.surface} p-4`}>
                   <h3 className="font-semibold capitalize">{name.replaceAll("_", " ")}</h3>
                   <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
                     {metricEntries(metrics).slice(0, 12).map(([key, value]) => (

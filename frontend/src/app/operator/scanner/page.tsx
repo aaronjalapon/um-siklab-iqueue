@@ -1,5 +1,6 @@
 "use client";
 
+import NextImage from "next/image";
 import {
   FormEvent,
   useCallback,
@@ -21,7 +22,7 @@ import {
 import { PageHeader } from "@/components/ui/PageHeader";
 import { verifyBoardingPass } from "@/lib/api";
 import { getSavedBoardingPasses } from "@/lib/boarding-passes";
-import { glassStyles } from "@/lib/design-system";
+import { uiStyles } from "@/lib/design-system";
 import { getSavedGroupBoardingPasses } from "@/lib/group-boarding-passes";
 import type { BoardingVerifyResponse } from "@/lib/types";
 
@@ -449,7 +450,7 @@ export default function BoardingScannerPage() {
     cameraStatus === "requesting" || cameraStatus === "active";
 
   return (
-    <div className={glassStyles.pageContainer}>
+    <div className={uiStyles.pageContainer}>
       <PageHeader
         eyebrow="Terminal Gate"
         title="Boarding Pass Verification"
@@ -457,7 +458,7 @@ export default function BoardingScannerPage() {
       />
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.6fr)]">
-        <div className={`${glassStyles.panel} space-y-5 p-5`}>
+        <div className={`${uiStyles.surface} space-y-5 p-5`}>
           <section aria-labelledby="camera-scanner-title">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
@@ -472,7 +473,7 @@ export default function BoardingScannerPage() {
               <div className="flex flex-wrap gap-2">
                 {/* Take Photo / Scan Pass: OS-level camera intent works on all mobile devices over HTTP/HTTPS */}
                 <label
-                  className={`${glassStyles.secondaryButton} inline-flex min-h-11 items-center justify-center gap-2 cursor-pointer shadow-sm active:scale-95 transition touch-manipulation`}
+                  className={`${uiStyles.secondaryButton} inline-flex min-h-11 items-center justify-center gap-2 cursor-pointer shadow-sm active:scale-95 transition touch-manipulation`}
                 >
                   {photoScanning ? (
                     <LoaderCircle className="h-4 w-4 animate-spin text-brand-orange" />
@@ -494,7 +495,7 @@ export default function BoardingScannerPage() {
                   <button
                     type="button"
                     onClick={stopCamera}
-                    className={`${glassStyles.secondaryButton} inline-flex min-h-11 items-center gap-2 active:scale-95 transition touch-manipulation`}
+                    className={`${uiStyles.secondaryButton} inline-flex min-h-11 items-center gap-2 active:scale-95 transition touch-manipulation`}
                   >
                     <CameraOff className="h-4 w-4" aria-hidden />
                     Stop Video
@@ -503,7 +504,7 @@ export default function BoardingScannerPage() {
                   <button
                     type="button"
                     onClick={() => void startCamera()}
-                    className={`${glassStyles.primaryButton} inline-flex min-h-11 items-center gap-2 active:scale-95 transition touch-manipulation`}
+                    className={`${uiStyles.primaryButton} inline-flex min-h-11 items-center gap-2 active:scale-95 transition touch-manipulation`}
                   >
                     {cameraStatus === "scanned" ? (
                       <RotateCcw className="h-4 w-4" aria-hidden />
@@ -567,7 +568,7 @@ export default function BoardingScannerPage() {
                 <select
                   value={selectedCameraId}
                   onChange={(event) => changeCamera(event.target.value)}
-                  className={`${glassStyles.input} mt-1.5`}
+                  className={`${uiStyles.input} mt-1.5`}
                   disabled={cameraStatus === "requesting"}
                 >
                   {cameras.map((camera, index) => (
@@ -582,9 +583,12 @@ export default function BoardingScannerPage() {
 
           {capturedThumb && (
             <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/60">
-              <img
+              <NextImage
                 src={capturedThumb}
                 alt="Captured QR photo thumbnail"
+                width={56}
+                height={56}
+                unoptimized
                 className="h-14 w-14 rounded-lg object-cover border border-slate-300 dark:border-slate-700 shadow-sm"
               />
               <div className="text-xs text-slate-600 dark:text-slate-300">
@@ -695,7 +699,7 @@ export default function BoardingScannerPage() {
               <textarea
                 value={token}
                 onChange={(event) => setToken(event.target.value)}
-                className={`${glassStyles.input} mt-1.5 min-h-24 font-mono text-xs`}
+                className={`${uiStyles.input} mt-1.5 min-h-24 font-mono text-xs`}
                 placeholder="Paste the base64 HMAC token here"
                 required
               />
@@ -703,7 +707,7 @@ export default function BoardingScannerPage() {
             <button
               type="submit"
               disabled={status === "checking"}
-              className={`${glassStyles.primaryButton} mt-3 inline-flex min-h-10 items-center gap-2 active:scale-95 transition touch-manipulation`}
+              className={`${uiStyles.primaryButton} mt-3 inline-flex min-h-10 items-center gap-2 active:scale-95 transition touch-manipulation`}
             >
               <QrCode className="h-4 w-4" aria-hidden />
               {status === "checking" ? "Verifying…" : "Verify Token"}
@@ -718,7 +722,7 @@ export default function BoardingScannerPage() {
         </div>
 
         {/* Detailed Results Section */}
-        <section ref={resultsRef} className={`${glassStyles.panel} p-5`} aria-live="polite">
+        <section ref={resultsRef} className={`${uiStyles.surface} p-5`} aria-live="polite">
           {!result ? (
             <div className="flex flex-col items-center justify-center py-12 text-center text-slate-400">
               <HelpCircle className="h-10 w-10 opacity-40" />

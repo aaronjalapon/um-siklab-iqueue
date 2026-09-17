@@ -12,7 +12,7 @@ import {
   todayIsoDate,
   useOperatorFleet,
 } from "@/hooks/useOperatorFleet";
-import { glassStyles } from "@/lib/design-system";
+import { uiStyles } from "@/lib/design-system";
 
 export default function OperatorBusesPage() {
   const [routeIndex, setRouteIndex] = useState(0);
@@ -40,7 +40,7 @@ export default function OperatorBusesPage() {
   }, [buses, sortMode]);
 
   return (
-    <div className={glassStyles.pageContainer}>
+    <div className={uiStyles.pageContainer}>
       <PageHeader
         eyebrow="Fleet operations"
         title="Fleet Overview"
@@ -54,7 +54,7 @@ export default function OperatorBusesPage() {
         <DataStatusBanner message="Could not reach the backend. Check that the API server is running." />
       )}
 
-      <div className={`${glassStyles.panel} grid grid-cols-1 gap-4 p-4 md:grid-cols-3`}>
+      <div className={`${uiStyles.surface} grid grid-cols-1 gap-4 p-4 md:grid-cols-3`}>
         <div className="flex flex-col gap-1">
           <label
             htmlFor="fleet-route"
@@ -66,7 +66,7 @@ export default function OperatorBusesPage() {
             id="fleet-route"
             value={routeIndex}
             onChange={(e) => setRouteIndex(Number(e.target.value))}
-            className={`${glassStyles.input} w-full text-sm`}
+            className={`${uiStyles.input} w-full text-sm`}
           >
             {DEMO_ROUTES.map((r, i) => (
               <option key={r.id} value={i}>
@@ -87,7 +87,7 @@ export default function OperatorBusesPage() {
             type="date"
             value={travelDate}
             onChange={(e) => setTravelDate(e.target.value)}
-            className={`${glassStyles.input} w-full text-sm`}
+            className={`${uiStyles.input} w-full text-sm`}
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -105,7 +105,7 @@ export default function OperatorBusesPage() {
               onChange={(e) =>
                 setSortMode(e.target.value as "occupancy" | "available" | "plate")
               }
-              className={`${glassStyles.input} w-full pl-9 text-sm`}
+              className={`${uiStyles.input} w-full pl-9 text-sm`}
             >
               <option value="occupancy">Highest occupancy</option>
               <option value="available">Most available seats</option>

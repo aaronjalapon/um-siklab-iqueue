@@ -61,6 +61,7 @@ class Settings(BaseSettings):
     REQUIRE_FORECAST_MODELS: bool = False
     SECRET_KEY: str = "dev-secret-key-change-in-production"
     ALLOWED_ORIGINS: str = "http://localhost:3000"
+    BOOKING_TIMEZONE: str = "Asia/Manila"
 
     # --- API ---
     API_V1_PREFIX: str = "/api/v1"

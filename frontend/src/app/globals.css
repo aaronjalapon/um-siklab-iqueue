@@ -1,57 +1,72 @@
 @import "tailwindcss";
 
 :root {
-  --background: #FCFCFD; /* gray-25 */
-  --foreground: #111827;
-  --app-font-sans: Arial, Helvetica, sans-serif;
+  --ui-canvas: #f6f7f4;
+  --ui-surface: #ffffff;
+  --ui-foreground: #132238;
+  --ui-muted: #eef1f4;
+  --ui-muted-foreground: #5f6b7a;
+  --ui-border: #d8dee8;
+  --ui-primary: #175cd3;
+  --ui-primary-hover: #124cae;
+  --ui-warning: #d97706;
+  --ui-success: #087a55;
+  --ui-success-hover: #066344;
+  --ui-danger: #b42318;
+  --ui-navy: #0b1f33;
+  --app-font-body: var(--font-source-sans), "Source Sans 3", Arial, sans-serif;
+  --app-font-heading: var(--font-lexend), Lexend, Arial, sans-serif;
   --app-font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-  
-  /* Glassmorphism Tokens - Light */
-  --glass-bg: rgba(255, 255, 255, 0.6);
-  --glass-border: rgba(255, 255, 255, 0.4);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--app-font-sans);
+  --color-background: var(--ui-canvas);
+  --color-foreground: var(--ui-foreground);
+  --color-ui-canvas: var(--ui-canvas);
+  --color-ui-surface: var(--ui-surface);
+  --color-ui-foreground: var(--ui-foreground);
+  --color-ui-muted: var(--ui-muted);
+  --color-ui-muted-foreground: var(--ui-muted-foreground);
+  --color-ui-border: var(--ui-border);
+  --color-ui-primary: var(--ui-primary);
+  --color-ui-primary-hover: var(--ui-primary-hover);
+  --color-ui-warning: var(--ui-warning);
+  --color-ui-success: var(--ui-success);
+  --color-ui-success-hover: var(--ui-success-hover);
+  --color-ui-danger: var(--ui-danger);
+  --color-ui-navy: var(--ui-navy);
+  --color-brand-blue: var(--ui-primary);
+  --color-brand-orange: var(--ui-warning);
+  --color-glass-bg: var(--ui-surface);
+  --color-glass-border: var(--ui-border);
+  --font-sans: var(--app-font-body);
+  --font-heading: var(--app-font-heading);
   --font-mono: var(--app-font-mono);
-  
-  /* City Trans Reference Colors */
-  --color-brand-blue: #1A73E8;
-  --color-brand-orange: #F97316;
-  
-  /* Reference Grays */
-  --color-ref-25: #FCFCFD;
-  --color-ref-50: #F9FAFB;
-  --color-ref-100: #F2F4F7;
-  --color-ref-200: #EAECF0;
-  --color-ref-300: #D0D5DD;
-  --color-ref-400: #98A2B3;
-  --color-ref-500: #667085;
-  --color-ref-600: #475467;
-
-  /* Map Glass Tokens */
-  --color-glass-bg: var(--glass-bg);
-  --color-glass-border: var(--glass-border);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    /* Optimized Dark Mode: Slate/Zinc tones */
-    --background: #0f172a; 
-    --foreground: #f8fafc;
-    
-    /* Glassmorphism Tokens - Dark */
-    --glass-bg: rgba(15, 23, 42, 0.6);
-    --glass-border: rgba(255, 255, 255, 0.08);
+    --ui-canvas: #0b1220;
+    --ui-surface: #111b2e;
+    --ui-foreground: #f6f8fb;
+    --ui-muted: #1b2940;
+    --ui-muted-foreground: #b7c2d0;
+    --ui-border: #33425a;
+    --ui-primary: #6ea8fe;
+    --ui-primary-hover: #8bb8ff;
+    --ui-warning: #f6b84a;
+    --ui-success: #31b983;
+    --ui-success-hover: #48c995;
+    --ui-danger: #ff8178;
+    --ui-navy: #07111f;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--app-font-sans);
+* { border-color: var(--ui-border); }
+
+html {
+  color-scheme: light dark;
+  scroll-padding-top: 5rem;
 }
 
 html,
@@ -60,209 +75,53 @@ body {
   overflow-x: clip;
 }
 
-button,
-a,
-input,
-select,
-textarea {
-  touch-action: manipulation;
+body {
+  min-height: 100dvh;
+  background: var(--ui-canvas);
+  color: var(--ui-foreground);
+  font-family: var(--app-font-body);
+  line-height: 1.5;
 }
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--app-font-heading);
+  text-wrap: balance;
+}
+
+button, a, input, select, textarea { touch-action: manipulation; }
+button, a, select { cursor: pointer; }
+
+:focus-visible {
+  outline: 2px solid var(--ui-primary);
+  outline-offset: 3px;
+}
+
+::selection { background: color-mix(in srgb, var(--ui-primary) 25%, transparent); }
 
 @media (max-width: 639px) {
-  input,
-  select,
-  textarea {
-    font-size: 16px !important;
-  }
+  input, select, textarea { font-size: 16px !important; }
 }
 
-/* Hide scrollbar for the mobile app feel */
-::-webkit-scrollbar {
-  width: 0px;
-  background: transparent;
-}
+.pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
+.trim-cap-alpha { text-box: trim-both cap alphabetic; }
+.content-deferred { content-visibility: auto; contain-intrinsic-size: 1px 500px; }
 
-/* 
-  ========================================
-  MODERN WEB UTILITIES 
-  ========================================
-*/
-
-/* 1. Precise Text Alignment (Modern Web Guidance) */
-.trim-cap-alpha {
-  /* Trims the top to the cap-height and the bottom to the alphabetic baseline. */
-  text-box: trim-both cap alphabetic;
-}
-
-/* 2. Performance: Content Visibility */
-.content-deferred {
-  /* Reduce rendering times by deferring rendering for offscreen content. */
-  content-visibility: auto;
-  contain-intrinsic-size: 1px 500px; /* Provide a placeholder size */
-}
-
-/* Safe area for mobile bottom navigation */
-.pb-safe {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-}
-
-.glass-shadow {
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
-}
-
-@media (prefers-color-scheme: dark) {
-  .glass-shadow {
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
-  }
-}
-
-/* 3. Global Reduced Motion override for view transitions */
-@media (prefers-reduced-motion: reduce) {
-  ::view-transition-group(*),
-  ::view-transition-old(*),
-  ::view-transition-new(*) {
-    animation: none !important;
-  }
-
-  .motion-safe-animate {
-    animation: none !important;
-    transition: none !important;
-  }
-}
-
-/* =============================================
-   FLOATING ANIMATION — GPU HARDWARE COMPOSITED
-   Uses translate3d and hardware texture layering
-   to guarantee zero subpixel snapping jitter or lag.
-   ============================================= */
-@keyframes float-smooth {
-  0%, 100% {
-    transform: translate3d(0, 0px, 0);
-  }
-  50% {
-    transform: translate3d(0, -16px, 0);
-  }
-}
-
-.animate-float-smooth {
-  animation: float-smooth 5s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
-  will-change: transform;
-  transform: translate3d(0, 0, 0);
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  perspective: 1000px;
-  transform-style: preserve-3d;
-}
-
-.animate-float {
-  animation: float-smooth 5s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
-  will-change: transform;
-  transform: translate3d(0, 0, 0);
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  perspective: 1000px;
-  transform-style: preserve-3d;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .animate-float-smooth,
-  .animate-float {
-    animation: none !important;
-    will-change: auto !important;
-  }
-}
-
-/* =============================================
-   MAP ROUTE TELEMETRY ANIMATIONS
-   Loop distance (64px) is an exact integer multiple
-   of strokeDasharray="6 26" (period = 32px), ensuring
-   100% seamless, continuous looping with zero jump.
-   ============================================= */
-@keyframes route-flow {
-  from {
-    stroke-dashoffset: 64;
-  }
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-
-.animate-route-flow {
-  animation: route-flow 3s linear infinite;
-  will-change: stroke-dashoffset;
-}
-
-@keyframes radar-ring {
-  0% {
-    r: 6;
-    opacity: 0.85;
-  }
-  100% {
-    r: 24;
-    opacity: 0;
-  }
-}
-
-.animate-radar-ring {
-  animation: radar-ring 2.2s cubic-bezier(0.1, 0.8, 0.2, 1) infinite;
-}
-
-/* =============================================
-   CHATBOT BACKGROUND PULSE WAVE ANIMATION
-   The button itself stays completely FIXED in size.
-   The pulse animation runs strictly BEHIND the icon
-   via outward-expanding, smoothly-fading sonar rings.
-   100% GPU-composited (scale3d & opacity only).
-   ============================================= */
-@keyframes sonar-wave {
-  0% {
-    transform: scale3d(1, 1, 1);
-    opacity: 0.55;
-  }
-  100% {
-    transform: scale3d(1.75, 1.75, 1);
-    opacity: 0;
-  }
-}
-
-.animate-sonar-wave {
-  animation: sonar-wave 2.4s cubic-bezier(0.15, 0.45, 0.25, 1) infinite;
-  will-change: transform, opacity;
-  transform-origin: center center;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  transform: translateZ(0);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .animate-sonar-wave {
-    animation: none !important;
-  }
-}
-
-/* Custom discreet scrollbar for terminal list */
 .terminal-scroll {
   scrollbar-width: thin;
-  scrollbar-color: rgba(56, 189, 248, 0.25) transparent;
+  scrollbar-color: color-mix(in srgb, var(--ui-primary) 45%, transparent) transparent;
 }
 
-.terminal-scroll::-webkit-scrollbar {
-  width: 5px;
-}
-
-.terminal-scroll::-webkit-scrollbar-track {
-  background: transparent;
-}
-
+.terminal-scroll::-webkit-scrollbar { width: 6px; }
 .terminal-scroll::-webkit-scrollbar-thumb {
-  background: rgba(56, 189, 248, 0.2);
-  border-radius: 9999px;
+  background: color-mix(in srgb, var(--ui-primary) 45%, transparent);
+  border-radius: 999px;
 }
 
-.terminal-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(56, 189, 248, 0.45);
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
-
-
-
-

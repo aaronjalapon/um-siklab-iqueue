@@ -12,7 +12,7 @@ import {
   saveBoardingPass,
 } from "@/lib/boarding-passes";
 import { getBooking } from "@/lib/api";
-import { glassStyles } from "@/lib/design-system";
+import { uiStyles } from "@/lib/design-system";
 import type { BookingDetail } from "@/lib/types";
 
 export default function ConfirmationPage() {
@@ -57,17 +57,17 @@ export default function ConfirmationPage() {
 
   if (loading) {
     return (
-      <div className={`${glassStyles.pageContainer} max-w-2xl`}>
+      <div className={`${uiStyles.pageContainer} max-w-2xl`}>
         <BookingProgress current="pass" />
-        <div className={`${glassStyles.skeleton} h-10 w-64`} />
-        <div className={`${glassStyles.skeleton} h-[520px]`} />
+        <div className={`${uiStyles.skeleton} h-10 w-64`} />
+        <div className={`${uiStyles.skeleton} h-[520px]`} />
       </div>
     );
   }
 
   if (error || !booking) {
     return (
-      <div className={`${glassStyles.pageContainer} max-w-lg`}>
+      <div className={`${uiStyles.pageContainer} max-w-lg`}>
         <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-100">
           <p className="font-semibold">Booking not found</p>
           <p className="mt-1 text-sm">{error || "Invalid booking ID"}</p>
@@ -83,7 +83,7 @@ export default function ConfirmationPage() {
   }
 
   return (
-    <div className={`${glassStyles.pageContainer} max-w-2xl`}>
+    <div className={`${uiStyles.pageContainer} max-w-2xl`}>
       <Link
         href="/home"
         className="hidden md:inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium text-brand-blue hover:underline transition-colors"

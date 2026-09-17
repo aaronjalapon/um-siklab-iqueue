@@ -1,13 +1,34 @@
 import type { Metadata, Viewport } from "next";
+import localFont from "next/font/local";
 import { config } from "@fortawesome/fontawesome-svg-core";
 import "@fortawesome/fontawesome-svg-core/styles.css";
 import DevelopmentRuntimeGate from "@/components/DevelopmentRuntimeGate";
 import PWARegistrar from "@/components/PWARegistrar";
 import { BRAND } from "@/lib/brand";
 import { SHOULD_ENABLE_PWA } from "@/lib/pwa-runtime";
-import "lenis/dist/lenis.css";
 import "./globals.css";
-import SmoothScroll from "@/components/SmoothScroll";
+
+const lexend = localFont({
+  src: [
+    { path: "./fonts/lexend-400.ttf", weight: "400" },
+    { path: "./fonts/lexend-500.ttf", weight: "500" },
+    { path: "./fonts/lexend-600.ttf", weight: "600" },
+    { path: "./fonts/lexend-700.ttf", weight: "700" },
+  ],
+  variable: "--font-lexend",
+  display: "swap",
+});
+
+const sourceSans = localFont({
+  src: [
+    { path: "./fonts/source-sans-400.ttf", weight: "400" },
+    { path: "./fonts/source-sans-500.ttf", weight: "500" },
+    { path: "./fonts/source-sans-600.ttf", weight: "600" },
+    { path: "./fonts/source-sans-700.ttf", weight: "700" },
+  ],
+  variable: "--font-source-sans",
+  display: "swap",
+});
 
 config.autoAddCss = false;
 
@@ -58,15 +79,15 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className="h-full antialiased" suppressHydrationWarning>
-      <body suppressHydrationWarning className="min-h-full bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 text-foreground flex flex-col font-sans relative overflow-x-hidden">
-        <SmoothScroll>
-          {/* Main Content */}
-          <div className="flex-1 w-full relative z-0">
-            <DevelopmentRuntimeGate>{children}</DevelopmentRuntimeGate>
-          </div>
-          <PWARegistrar />
-        </SmoothScroll>
+    <html lang="en" className={`${lexend.variable} ${sourceSans.variable} h-full antialiased`} suppressHydrationWarning>
+      <body suppressHydrationWarning className="relative flex min-h-full flex-col overflow-x-hidden bg-ui-canvas font-sans text-ui-foreground">
+        <a href="#main-content" className="sr-only z-[100] rounded-lg bg-white px-4 py-3 text-slate-950 focus:not-sr-only focus:fixed focus:left-4 focus:top-4">
+          Skip to main content
+        </a>
+        <div className="relative z-0 w-full flex-1">
+          <DevelopmentRuntimeGate>{children}</DevelopmentRuntimeGate>
+        </div>
+        <PWARegistrar />
       </body>
     </html>
   );

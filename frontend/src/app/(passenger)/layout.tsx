@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { BusFront, Home, LogOut, Tag, Ticket, User, WifiOff } from "lucide-react";
+import { BusFront, Home, LogOut, MessageCircle, Tag, Ticket, User, WifiOff } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
 import ChatbotPanel from "@/components/ChatbotPanel";
 import { CancelTransactionModal } from "@/components/ui/CancelTransactionModal";
@@ -20,6 +20,7 @@ export default function PassengerLayout({
 
   // Detect mid-process booking flow: preferences or seat allocation
   const isBookingInProgress = /^\/book\/[^/]+\/(preferences|seat-selection)/.test(pathname);
+  const isBookingFunnel = pathname === "/buy" || pathname.startsWith("/book/");
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [pendingTarget, setPendingTarget] = useState<{
     label: string;
@@ -116,9 +117,9 @@ export default function PassengerLayout({
     item.match.some((match) => pathname === match || pathname.startsWith(`${match}/`));
 
   return (
-    <div className="min-h-screen min-w-0 bg-slate-50 dark:bg-slate-950 md:flex">
+    <div className="min-h-dvh min-w-0 bg-ui-canvas md:flex">
       {/* Desktop Sidebar (hidden on mobile) */}
-      <aside className="hidden md:flex flex-col w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 fixed h-full z-30 shadow-sm">
+      <aside className="fixed z-30 hidden h-full w-64 flex-col border-r border-white/10 bg-ui-navy text-white md:flex">
         <div className="p-6">
           <Link
             href="/home"
@@ -127,7 +128,7 @@ export default function PassengerLayout({
             className="inline-flex"
             aria-label={`${BRAND.name} passenger home`}
           >
-            <BrandLogo textClassName="text-2xl font-bold tracking-tight text-slate-900 dark:text-white" />
+            <BrandLogo textClassName="font-heading text-xl font-semibold text-white" />
           </Link>
         </div>
         <nav className="flex-1 px-4 space-y-2 mt-4 overflow-y-auto">
@@ -142,8 +143,8 @@ export default function PassengerLayout({
                 onClick={(e) => handleNavClick(e, item)}
                 className={`flex items-center gap-4 px-4 py-3 rounded-xl transition-colors font-semibold ${
                   isActive 
-                    ? "bg-brand-blue text-white shadow-md shadow-brand-blue/20" 
-                    : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 dark:text-slate-400 dark:hover:text-white"
+                    ? "bg-white text-slate-950"
+                    : "text-slate-300 hover:bg-white/10 hover:text-white"
                 }`}
               >
                 <Icon className="w-5 h-5" />
@@ -154,11 +155,11 @@ export default function PassengerLayout({
         </nav>
 
         {/* Sidebar Footer / Log Out Action */}
-        <div className="p-4 border-t border-slate-200 dark:border-slate-800">
+        <div className="border-t border-white/10 p-4">
           <button
             type="button"
             onClick={handleLogoutClick}
-            className="flex w-full items-center gap-4 px-4 py-3 rounded-xl font-semibold transition-all duration-200 text-slate-500 hover:text-red-600 hover:bg-red-50 dark:text-slate-400 dark:hover:text-red-400 dark:hover:bg-red-950/30 group active:scale-[0.98]"
+            className="group flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 font-semibold text-slate-300 transition-colors duration-150 hover:bg-white/10 hover:text-white"
             title="Log out and return to landing page"
             aria-label="Log Out"
           >
@@ -169,7 +170,7 @@ export default function PassengerLayout({
       </aside>
 
       {/* Main Content Area */}
-      <main className="min-w-0 flex-1 overflow-x-clip pb-20 md:ml-64 md:pb-0">
+      <main id="main-content" className="min-w-0 flex-1 overflow-x-clip pb-28 md:ml-64 md:pb-0">
         {!isOnline && (
           <div className="sticky top-0 z-20 border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-900 shadow-sm dark:border-amber-900/50 dark:bg-amber-950/80 dark:text-amber-100">
             <span className="mx-auto flex max-w-7xl items-center gap-2">
@@ -178,11 +179,18 @@ export default function PassengerLayout({
             </span>
           </div>
         )}
+        {isBookingFunnel && (
+          <div className="mx-auto flex max-w-7xl justify-end px-4 pt-3 sm:px-6 lg:px-8">
+            <button type="button" className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-ui-border bg-ui-surface px-3 py-2 text-sm font-semibold text-ui-foreground transition-colors hover:border-ui-primary hover:text-ui-primary" onClick={() => window.dispatchEvent(new Event("tripsync:open-assistant"))}>
+              <MessageCircle className="h-4 w-4" aria-hidden /> Need help?
+            </button>
+          </div>
+        )}
         {children}
       </main>
 
       {/* Mobile Bottom Navigation (hidden on desktop) */}
-      <nav className="md:hidden fixed inset-x-0 bottom-0 w-full bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-2 pt-1 pb-2 flex justify-around items-end pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.05)] dark:shadow-[0_-4px_20px_rgba(0,0,0,0.2)] z-40 rounded-t-3xl">
+      <nav className="fixed inset-x-0 bottom-0 z-40 flex w-full items-end justify-around border-t border-ui-border bg-ui-surface px-2 pb-2 pt-1 pb-safe md:hidden" aria-label="Passenger navigation">
         {navItems.map((item) => {
           const isActive = isItemActive(item);
           const Icon = item.icon;
@@ -228,7 +236,7 @@ export default function PassengerLayout({
               className={`flex min-w-0 flex-1 flex-col items-center justify-end gap-1.5 px-1 pb-1 transition-colors ${
                 isActive
                   ? "text-brand-blue dark:text-blue-400"
-                  : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                  : "text-slate-600 hover:text-slate-800 dark:text-slate-300 dark:hover:text-white"
               }`}
             >
               <div className="flex h-7 items-center justify-center">
@@ -255,7 +263,7 @@ export default function PassengerLayout({
       />
 
       {/* Floating chatbot — available on all passenger pages */}
-      <ChatbotPanel />
+      <ChatbotPanel hideLauncher={isBookingFunnel} />
     </div>
   );
 }

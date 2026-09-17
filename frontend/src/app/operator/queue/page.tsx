@@ -4,7 +4,7 @@ import { useCallback, useState } from "react";
 import { BoardingQueueTable } from "@/components/operator/BoardingQueueTable";
 import { DataStatusBanner } from "@/components/operator/DataStatusBanner";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { glassStyles } from "@/lib/design-system";
+import { uiStyles } from "@/lib/design-system";
 import {
   generateMockBoardingQueue,
   type BoardingQueueEntry,
@@ -27,7 +27,7 @@ export default function OperatorQueuePage() {
   }, []);
 
   return (
-    <div className={glassStyles.pageContainer}>
+    <div className={uiStyles.pageContainer}>
       <PageHeader
         eyebrow="Gate operations"
         title="Boarding Queue"

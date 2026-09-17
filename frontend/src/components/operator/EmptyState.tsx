@@ -1,5 +1,5 @@
 import { Inbox } from "lucide-react";
-import { glassStyles } from "@/lib/design-system";
+import { uiStyles } from "@/lib/design-system";
 
 interface EmptyStateProps {
   title: string;
@@ -16,7 +16,7 @@ export function EmptyState({
 }: EmptyStateProps) {
   return (
     <div
-      className={`${glassStyles.panel} flex flex-col items-center justify-center py-12 px-6 text-center`}
+      className={`${uiStyles.surface} flex flex-col items-center justify-center py-12 px-6 text-center`}
     >
       <Inbox className="w-10 h-10 text-slate-400 mb-3" aria-hidden />
       <h3 className="text-base font-semibold text-foreground">{title}</h3>
@@ -29,7 +29,7 @@ export function EmptyState({
         <button
           type="button"
           onClick={onAction}
-          className={`${glassStyles.primaryButton} mt-4 text-sm`}
+          className={`${uiStyles.primaryButton} mt-4 text-sm`}
         >
           {actionLabel}
         </button>

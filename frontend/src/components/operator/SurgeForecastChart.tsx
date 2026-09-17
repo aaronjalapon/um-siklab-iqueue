@@ -1,6 +1,6 @@
 "use client";
 
-import { glassStyles } from "@/lib/design-system";
+import { uiStyles } from "@/lib/design-system";
 import { surgeLabel } from "@/lib/utils";
 import type { SurgePrediction } from "@/lib/types";
 import { EmptyState } from "./EmptyState";
@@ -67,9 +67,9 @@ export function SurgeForecastChart({
   const barWidth = Math.min(54, slotWidth * 0.58);
 
   return (
-    <div className={`${glassStyles.panel} p-6 xl:col-span-3`}>
+    <div className={`${uiStyles.surface} p-6 xl:col-span-3`}>
       <div className="mb-4">
-        <h2 className={glassStyles.sectionTitle}>7-Day Surge Forecast</h2>
+        <h2 className={uiStyles.sectionTitle}>7-Day Surge Forecast</h2>
       </div>
       <div className="h-80 min-h-[20rem] w-full min-w-0 overflow-hidden">
         <svg

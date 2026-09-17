@@ -47,6 +47,7 @@ export function useForecast(routeId: string): UseForecastResult {
     let cancelled = false;
 
     async function load() {
+      setLoadState("loading");
       try {
         const data: ForecastResponse = await getForecast(routeId);
         if (cancelled) return;
@@ -69,7 +70,6 @@ export function useForecast(routeId: string): UseForecastResult {
       }
     }
 
-    setLoadState("loading");
     void load();
 
     return () => {

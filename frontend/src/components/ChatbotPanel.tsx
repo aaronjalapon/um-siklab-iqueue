@@ -505,16 +505,24 @@ export default function ChatbotPanel({ bookingId, hideLauncher = false }: Chatbo
               }
             : undefined
         }
-        className={`fixed z-40 touch-none select-none ${
+        className={`fixed z-40 flex h-12 w-12 items-center justify-center touch-none select-none ${
           position
             ? ""
             : "bottom-24 right-4 md:bottom-6 md:right-6"
         } ${isDragging ? "cursor-grabbing scale-105" : "cursor-grab"}`}
       >
+        {/* Ambient looping light pulse behind the floating icon */}
+        <div className="pointer-events-none absolute inset-0 -z-10 flex items-center justify-center">
+          <div
+            className="h-12 w-12 rounded-full bg-blue-500/35 dark:bg-cyan-400/40 blur-md chatbot-pulse-glow"
+            aria-hidden="true"
+          />
+        </div>
+
         <button
           type="button"
           onClick={handleButtonClick}
-          className={`clay-dark-panel relative flex h-12 w-12 min-h-12 min-w-12 items-center justify-center rounded-2xl border border-white/20 bg-ui-navy text-white hover:bg-[#132f4d] ${
+          className={`relative flex h-12 w-12 min-h-12 min-w-12 items-center justify-center rounded-2xl border border-ui-border/80 dark:border-white/20 bg-ui-surface dark:bg-[#0c1b30] text-ui-foreground dark:text-white shadow-md hover:shadow-lg dark:shadow-slate-950/60 hover:bg-ui-muted dark:hover:bg-[#132f4d] ${
             isDragging
               ? "ring-4 ring-ui-primary/35"
               : "active:scale-95 transition-colors duration-200"
@@ -549,16 +557,16 @@ export default function ChatbotPanel({ bookingId, hideLauncher = false }: Chatbo
                      flex flex-col z-50 overflow-hidden"
         >
           {/* Header */}
-          <div className="flex shrink-0 items-center justify-between bg-ui-navy p-4 text-white">
+          <div className="flex shrink-0 items-center justify-between border-b border-ui-border/70 bg-ui-surface p-4 text-ui-foreground dark:border-white/10 dark:bg-ui-navy dark:text-white">
             <div>
               <h3 className="font-bold text-base">{UI_STRINGS[lang].title}</h3>
-              <p className="text-xs text-slate-300">{UI_STRINGS[lang].subtitle}</p>
+              <p className="text-xs text-ui-muted-foreground dark:text-slate-300">{UI_STRINGS[lang].subtitle}</p>
             </div>
             <button
               type="button"
               onClick={() => setIsOpen(false)}
               aria-label="Close assistant"
-              className="h-10 w-10 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl hover:bg-white/15 active:bg-white/20 transition-colors"
+              className="h-10 w-10 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl hover:bg-ui-muted dark:hover:bg-white/15 active:bg-ui-muted-foreground/10 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>

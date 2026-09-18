@@ -17,37 +17,57 @@ const steps: Step[] = [
 
 export default function HowItWorksSection() {
   return (
-    <section id="how-it-works" className="border-y border-ui-border bg-ui-surface px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
-      <div className="mx-auto max-w-7xl">
+    <section
+      id="how-it-works"
+      className="relative flex min-h-screen min-h-dvh w-full flex-col justify-center overflow-hidden bg-ui-surface px-4 pt-[4.5rem] pb-4 text-ui-foreground sm:px-6 sm:pb-8 lg:px-8 lg:pb-10"
+    >
+      <div className="mx-auto my-auto flex w-full max-w-7xl flex-col justify-center">
         <div className="mx-auto max-w-3xl text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-ui-warning/35 bg-ui-warning-surface px-3.5 py-1.5 text-sm font-bold text-ui-warning">
-            <Route className="h-4 w-4" aria-hidden /> Passenger flow
+          <div className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full border border-ui-warning/35 bg-ui-warning-surface px-3 py-1 text-xs sm:text-sm font-bold text-ui-warning">
+            <Route className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden /> Passenger flow
           </div>
-          <h2 className="mt-5 font-heading text-3xl font-semibold tracking-tight sm:text-5xl">From route search to gate-ready pass.</h2>
-          <p className="mt-5 text-base leading-7 text-ui-muted-foreground sm:text-lg">Four transparent steps, with accessibility needs considered before optional seat preferences.</p>
+          <h2 className="mt-1.5 sm:mt-4 font-heading text-xl sm:text-3xl lg:text-4xl xl:text-5xl font-semibold tracking-tight">
+            From route search to gate-ready pass.
+          </h2>
+          <p className="mt-1 sm:mt-3 text-xs sm:text-base lg:text-lg text-ui-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            Four transparent steps, with accessibility needs considered before optional seat preferences.
+          </p>
         </div>
 
-        <div className="relative mt-14">
+        <div className="relative mt-4 sm:mt-8 lg:mt-10">
           <div className="absolute left-[12.5%] right-[12.5%] top-10 hidden h-px bg-ui-border lg:block" aria-hidden="true" />
-          <ol className="grid gap-4 lg:grid-cols-4 lg:gap-6">
+          <ol className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4 lg:gap-6">
             {steps.map(({ icon: Icon, title, body, tone }, index) => (
-              <li key={title} className="process-card clay-surface relative z-10 flex items-center gap-4 rounded-2xl border border-ui-border bg-ui-canvas p-5 lg:flex-col lg:px-3 lg:text-center">
-                <div className={`clay-inset relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border ${tone}`}>
-                  <Icon className="h-7 w-7" aria-hidden />
-                  <span className="absolute -right-2 -top-2 rounded-lg border border-ui-border bg-ui-surface px-1.5 py-0.5 font-mono text-[0.68rem] font-bold text-ui-muted-foreground">{String(index + 1).padStart(2, "0")}</span>
+              <li
+                key={title}
+                className="process-card clay-surface relative z-10 flex flex-col justify-between rounded-xl sm:rounded-2xl border border-ui-border bg-ui-canvas p-2.5 sm:p-5 lg:text-center min-h-[9.5rem] sm:min-h-56"
+              >
+                <div className="flex items-center justify-between lg:justify-center w-full">
+                  <div className={`clay-inset relative flex h-8 w-8 sm:h-12 sm:w-12 items-center justify-center rounded-lg sm:rounded-xl border ${tone}`}>
+                    <Icon className="h-4 w-4 sm:h-6 sm:w-6" aria-hidden />
+                  </div>
+                  <span className="rounded-md border border-ui-border bg-ui-surface px-1.5 py-0.5 font-mono text-[0.6rem] sm:text-xs font-bold text-ui-muted-foreground lg:hidden">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
                 </div>
-                <div>
-                  <h3 className="font-heading text-xl font-semibold">{title}</h3>
-                  <p className="mt-2 leading-7 text-ui-muted-foreground">{body}</p>
+                <div className="mt-2 sm:mt-4">
+                  <span className="hidden lg:inline-block font-mono text-xs font-bold text-ui-muted-foreground mb-1">
+                    Step {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <h3 className="font-heading text-xs sm:text-base lg:text-lg font-semibold">{title}</h3>
+                  <p className="mt-1 text-[0.62rem] sm:text-xs lg:text-sm text-ui-muted-foreground leading-normal line-clamp-2 sm:line-clamp-none">{body}</p>
                 </div>
               </li>
             ))}
           </ol>
         </div>
 
-        <div className="mt-12 text-center">
-          <Link href="/buy" className="clay-action inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-ui-primary bg-ui-primary px-7 py-3 font-bold text-white hover:bg-ui-primary-hover dark:text-ui-navy sm:w-auto">
-            Start a booking <ArrowRight className="h-4 w-4" aria-hidden />
+        <div className="mt-4 sm:mt-8 text-center">
+          <Link
+            href="/buy"
+            className="clay-action inline-flex min-h-10 sm:min-h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-xl border border-ui-primary bg-ui-primary px-5 py-2 sm:px-7 sm:py-3 text-xs sm:text-sm lg:text-base font-bold text-white hover:bg-ui-primary-hover dark:text-ui-navy"
+          >
+            Start a booking <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden />
           </Link>
         </div>
       </div>

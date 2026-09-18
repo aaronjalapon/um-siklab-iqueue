@@ -95,7 +95,7 @@ function MetricsCompare({
     ? (((candidate - champion) / Math.abs(champion)) * 100).toFixed(1)
     : "—";
   return (
-    <div className="rounded-xl border border-ui-border bg-ui-surface dark:bg-slate-900/60 p-4">
+    <div className="clay-data-well rounded-xl border border-ui-border bg-ui-surface dark:bg-slate-900/60 p-4">
       <p className="text-xs font-medium text-ui-muted-foreground uppercase tracking-wide mb-3">
         {label}
       </p>
@@ -276,7 +276,7 @@ export default function ModelRetrainingPage() {
               type="button"
               disabled={isRunning || triggerState === "starting"}
               onClick={() => void handleTrigger()}
-              className="inline-flex items-center gap-2 rounded-xl bg-brand-blue px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+              className="clay-action inline-flex min-h-11 items-center gap-2 rounded-xl bg-brand-blue px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {triggerState === "starting" || isRunning
                 ? <Loader2 className="h-4 w-4 animate-spin" />
@@ -288,7 +288,7 @@ export default function ModelRetrainingPage() {
               type="button"
               disabled={reloadState === "loading"}
               onClick={() => void handleReload()}
-              className="inline-flex items-center gap-2 rounded-xl border border-ui-border px-5 py-2.5 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 transition-colors"
+              className="clay-control clay-interactive inline-flex min-h-11 items-center gap-2 rounded-xl border border-ui-border px-5 py-2.5 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50"
             >
               {reloadState === "loading"
                 ? <Loader2 className="h-4 w-4 animate-spin" />
@@ -339,7 +339,7 @@ export default function ModelRetrainingPage() {
               </li>
             ))}
           </ul>
-          <div className="mt-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 p-3 text-xs text-ui-muted-foreground">
+          <div className="clay-data-well mt-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 p-3 text-xs text-ui-muted-foreground">
             On promotion, the previous champion is archived with a timestamp and the live service hot-swaps without a restart.
           </div>
         </section>
@@ -495,7 +495,7 @@ export default function ModelRetrainingPage() {
             {jobs.map((job) => (
               <div
                 key={job.job_id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ui-border bg-ui-surface dark:bg-slate-900/40 px-4 py-3"
+                className="clay-data-well flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ui-border bg-ui-surface dark:bg-slate-900/40 px-4 py-3"
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <StatusIcon status={job.status} />

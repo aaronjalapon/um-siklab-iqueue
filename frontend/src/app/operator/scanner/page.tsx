@@ -582,7 +582,7 @@ export default function BoardingScannerPage() {
           </section>
 
           {capturedThumb && (
-            <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/60">
+            <div className="clay-data-well flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/60">
               <NextImage
                 src={capturedThumb}
                 alt="Captured QR photo thumbnail"
@@ -603,7 +603,7 @@ export default function BoardingScannerPage() {
           )}
 
           {/* Quick Demo Shortcuts (Works 100% on Mobile & Laptop) */}
-          <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/50">
+          <div className="clay-data-well rounded-xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/50">
             <div className="flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-amber-500" />
               <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-300">
@@ -757,7 +757,7 @@ export default function BoardingScannerPage() {
                 </div>
               </div>
 
-              <dl className="grid grid-cols-2 gap-2.5 rounded-xl border border-slate-200 bg-slate-50/50 p-3 text-xs dark:border-slate-800 dark:bg-slate-900/40">
+              <dl className="clay-data-well grid grid-cols-2 gap-2.5 rounded-xl border border-slate-200 bg-slate-50/50 p-3 text-xs dark:border-slate-800 dark:bg-slate-900/40">
                 <dt className="text-ui-muted-foreground">Status</dt>
                 <dd className="font-bold capitalize text-slate-900 dark:text-white">
                   {result.boarding_status || (result.valid ? "Ready" : "Invalid")}

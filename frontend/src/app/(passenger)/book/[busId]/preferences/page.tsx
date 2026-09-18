@@ -292,7 +292,7 @@ export default function PreferencesPage() {
           ) : (
             <div className="space-y-3 sm:space-y-4">
               {members.map((member, index) => (
-                <fieldset key={index} className="space-y-2.5 rounded-xl border border-ui-border bg-ui-surface-soft p-3 sm:p-4">
+                <fieldset key={index} className="clay-inset space-y-2.5 rounded-xl border border-ui-border bg-ui-surface-soft p-3 sm:p-4">
                   <legend className="px-1 text-xs font-bold text-ui-foreground sm:text-sm">
                     {index === 0 ? "Lead passenger (Primary contact)" : `Group member ${index + 1}`}
                   </legend>
@@ -359,7 +359,7 @@ export default function PreferencesPage() {
         </section>
 
         {/* Accessibility assistance priority box */}
-        <section aria-labelledby="assistance-title" className="rounded-2xl border border-ui-warning/45 bg-ui-warning-surface p-3.5 text-ui-warning sm:p-5">
+        <section aria-labelledby="assistance-title" className="clay-surface-low rounded-2xl border border-ui-warning/45 bg-ui-warning-surface p-3.5 text-ui-warning sm:p-5">
           <div className="flex items-start gap-2.5 sm:gap-3">
             <ShieldCheck className="mt-0.5 h-5 w-5 sm:h-6 sm:w-6 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden />
             <div className="min-w-0">
@@ -393,7 +393,7 @@ export default function PreferencesPage() {
               <select
                 value={formData.language_pref}
                 onChange={(event) => updateField("language_pref", event.target.value)}
-                className="block min-h-11 w-full cursor-pointer appearance-none rounded-lg border border-ui-border bg-ui-surface py-2 pl-3 pr-9 text-xs text-ui-foreground focus:outline-none focus:ring-2 focus:ring-ui-primary/20 sm:pr-10 sm:text-sm"
+                className="clay-control block min-h-11 w-full cursor-pointer appearance-none rounded-xl border border-ui-border bg-ui-surface py-2 pl-3 pr-9 text-xs text-ui-foreground focus:outline-none focus:ring-2 focus:ring-ui-primary/20 sm:pr-10 sm:text-sm"
               >
                 {Object.entries(LANGUAGE_LABELS).map(([code, label]) => (
                   <option key={code} value={code}>{label}</option>
@@ -410,7 +410,7 @@ export default function PreferencesPage() {
               <select
                 value={formData.preferred_seat_type}
                 onChange={(event) => updateField("preferred_seat_type", event.target.value)}
-                className="block min-h-11 w-full cursor-pointer appearance-none rounded-lg border border-ui-border bg-ui-surface py-2 pl-3 pr-9 text-xs text-ui-foreground focus:outline-none focus:ring-2 focus:ring-ui-primary/20 sm:pr-10 sm:text-sm"
+                className="clay-control block min-h-11 w-full cursor-pointer appearance-none rounded-xl border border-ui-border bg-ui-surface py-2 pl-3 pr-9 text-xs text-ui-foreground focus:outline-none focus:ring-2 focus:ring-ui-primary/20 sm:pr-10 sm:text-sm"
               >
                 <option value="">No preference</option>
                 <option value="window">Window</option>
@@ -419,7 +419,7 @@ export default function PreferencesPage() {
               <ChevronDown className="pointer-events-none absolute right-3.5 sm:right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" aria-hidden />
             </div>
           </label>
-          <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-ui-border bg-ui-surface-soft p-2.5 text-xs transition-colors hover:border-ui-primary/45 sm:p-3 sm:text-sm md:col-span-2">
+          <label className="clay-inset flex cursor-pointer items-start gap-2.5 rounded-xl border border-ui-border bg-ui-surface-soft p-2.5 text-xs transition-colors hover:border-ui-primary/45 sm:p-3 sm:text-sm md:col-span-2">
             <input
               type="checkbox"
               checked={formData.affinity_opt_in}

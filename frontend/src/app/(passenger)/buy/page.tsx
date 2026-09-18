@@ -293,6 +293,9 @@ function BuyPageInner() {
             <input
               id="travel-date"
               type="date"
+              ref={(element) => {
+                if (element) element.min = getLocalDateInputValue();
+              }}
               value={travelDate}
               onChange={(e) => setTravelDate(e.target.value)}
               min={minimumDate}
@@ -317,7 +320,7 @@ function BuyPageInner() {
                 key={route.label}
                 type="button"
                 onClick={() => handleQuickRoute(route.origin, route.destination)}
-                className="min-h-10 shrink-0 rounded-full border border-ui-border bg-ui-surface px-3 py-2 text-sm font-semibold text-ui-muted-foreground transition-colors hover:border-ui-primary hover:text-ui-primary"
+                className="clay-control clay-interactive min-h-10 shrink-0 rounded-full border border-ui-border bg-ui-surface px-3 py-2 text-sm font-semibold text-ui-muted-foreground hover:border-ui-primary hover:text-ui-primary"
               >
                 {route.label}
               </button>
@@ -358,7 +361,7 @@ function BuyPageInner() {
                 <select id="sort-results" aria-label="Sort results"
                   value={sortMode}
                   onChange={(e) => setSortMode(e.target.value as SortMode)}
-                  className="min-h-11 rounded-lg border border-ui-border bg-ui-surface px-3 py-2 text-sm font-semibold text-ui-foreground outline-none focus:border-ui-primary focus:ring-2 focus:ring-ui-primary/20"
+                  className="clay-control min-h-11 rounded-xl border border-ui-border bg-ui-surface px-3 py-2 text-sm font-semibold text-ui-foreground outline-none focus:border-ui-primary focus:ring-2 focus:ring-ui-primary/20"
                 >
                   <option value="recommended">Recommended</option>
                   <option value="seats">Most seats</option>
@@ -392,7 +395,7 @@ function BuyPageInner() {
                 return (
                   <article
                     key={bus.id}
-                    className={`${uiStyles.surface} route-motif relative flex flex-col justify-between p-3.5 transition-colors duration-200 hover:border-ui-primary/45 sm:p-5`}
+                    className={`${uiStyles.surface} clay-interactive route-motif relative flex flex-col justify-between p-3.5 hover:border-ui-primary/45 sm:p-5`}
                   >
                     {/* Top Row: Badges, Route & Price */}
                     <div className="flex items-start justify-between gap-3">

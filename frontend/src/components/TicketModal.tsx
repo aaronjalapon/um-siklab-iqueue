@@ -60,7 +60,7 @@ export default function TicketModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="ticket-modal-title"
-        className="fixed bottom-0 left-1/2 z-50 max-h-[92dvh] w-full max-w-md -translate-x-1/2 overflow-y-auto overscroll-contain rounded-t-2xl border border-ui-border bg-ui-surface p-4 pt-3 shadow-[0_16px_48px_rgba(11,31,51,0.22)] sm:p-6 sm:pt-4 md:bottom-6 md:rounded-2xl"
+        className="clay-surface-raised fixed bottom-0 left-1/2 z-50 max-h-[92dvh] w-full max-w-md -translate-x-1/2 overflow-y-auto overscroll-contain rounded-t-3xl border border-ui-border bg-ui-surface p-4 pt-3 sm:p-6 sm:pt-4 md:bottom-6 md:rounded-3xl"
       >
         <div className="mb-3 flex justify-center md:hidden">
           <div className="h-1.5 w-12 rounded-full bg-slate-200 dark:bg-slate-700" />
@@ -89,7 +89,7 @@ export default function TicketModal({
         </div>
 
         <div className="flex flex-col items-center justify-center py-2 sm:py-4">
-          <div ref={qrRef} className="mb-4 sm:mb-6 rounded-2xl border border-slate-100 bg-white p-3 sm:p-4 shadow-sm">
+          <div ref={qrRef} className="clay-surface-low mb-4 sm:mb-6 rounded-2xl border border-slate-100 bg-white p-3 sm:p-4">
             <QRCodeSVG value={qrToken} size={176} marginSize={2} className="w-40 h-40 sm:w-48 sm:h-48" />
           </div>
 
@@ -109,7 +109,7 @@ export default function TicketModal({
             type="button"
             onClick={handleDownload}
             disabled={downloading}
-            className="mb-3 sm:mb-4 flex w-full max-w-xs items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 disabled:opacity-50"
+            className="clay-control clay-interactive mb-3 sm:mb-4 flex min-h-11 w-full max-w-xs items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-bold text-white hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 disabled:opacity-50"
           >
             <Download className="h-4 w-4 text-brand-orange" />
             <span>{downloading ? "Saving..." : "Download QR Pass"}</span>

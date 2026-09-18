@@ -19,7 +19,7 @@ export function BusCapacityList({ buses }: BusCapacityListProps) {
           const pct = (bus.booked / bus.capacity) * 100;
           const isFull = pct >= 100;
           return (
-            <div key={bus.plate} className="rounded-lg border border-ui-border bg-ui-muted p-3">
+            <div key={bus.plate} className="clay-data-well rounded-xl border border-ui-border bg-ui-muted p-3">
               <div className="mb-2 flex items-center justify-between gap-2">
                 <div>
                   <span className="font-mono text-sm font-semibold text-slate-700 dark:text-slate-200">

@@ -383,7 +383,7 @@ export default function OperatorDashboard() {
                   primaryPrediction &&
                   void submitForecastAction(primaryPrediction, "accepted")
                 }
-                className="inline-flex items-center gap-2 rounded-md bg-green-700 px-3 py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-50"
+                className="clay-action-success inline-flex min-h-11 items-center gap-2 rounded-xl bg-green-700 px-3 py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Check className="h-4 w-4" /> Accept
               </button>
@@ -392,7 +392,7 @@ export default function OperatorDashboard() {
                 suppressHydrationWarning
                 disabled={!mounted || !primaryPrediction || actionState === "saving"}
                 onClick={() => openOverride("modified")}
-                className="inline-flex items-center gap-2 rounded-md bg-amber-700 px-3 py-2 text-sm font-semibold text-white hover:bg-amber-800 disabled:cursor-not-allowed disabled:opacity-50"
+                className="clay-control clay-interactive inline-flex min-h-11 items-center gap-2 rounded-xl border border-amber-600 bg-amber-700 px-3 py-2 text-sm font-semibold text-white hover:bg-amber-800 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Pencil className="h-4 w-4" /> Modify
               </button>
@@ -401,7 +401,7 @@ export default function OperatorDashboard() {
                 suppressHydrationWarning
                 disabled={!mounted || !primaryPrediction || actionState === "saving"}
                 onClick={() => openOverride("rejected")}
-                className="inline-flex items-center gap-2 rounded-md bg-red-700 px-3 py-2 text-sm font-semibold text-white hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50"
+                className="clay-control clay-interactive inline-flex min-h-11 items-center gap-2 rounded-xl border border-red-600 bg-red-700 px-3 py-2 text-sm font-semibold text-white hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <X className="h-4 w-4" /> Reject
               </button>
@@ -467,7 +467,7 @@ export default function OperatorDashboard() {
               suppressHydrationWarning
               onClick={openOutcomeForm}
               disabled={!mounted || !primaryPrediction}
-              className="inline-flex items-center justify-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold disabled:opacity-50 dark:border-slate-700"
+              className="clay-control clay-interactive inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold disabled:opacity-50 dark:border-slate-700"
             >
               <ClipboardCheck className="h-4 w-4" /> Record Outcome
             </button>
@@ -476,7 +476,7 @@ export default function OperatorDashboard() {
               suppressHydrationWarning
               onClick={() => void runReplay()}
               disabled={!mounted || replayState === "loading"}
-              className="inline-flex items-center justify-center gap-2 rounded-md bg-brand-blue px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
+              className="clay-action inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-brand-blue px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
             >
               <RotateCcw className="h-4 w-4" />
               {replayState === "loading" ? "Replaying" : "Replay Learning Cycle"}

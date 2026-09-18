@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 
 export default function LandingPage() {
   return (
-    <div className="min-h-dvh overflow-x-hidden bg-ui-canvas text-ui-foreground">
+    <div className="landing-clay min-h-dvh overflow-x-hidden bg-ui-canvas text-ui-foreground">
       <LandingNavbar />
       <main id="main-content">
         <HeroSection />

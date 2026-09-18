@@ -29,7 +29,7 @@ export function OperatorShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   return (
-    <div className="min-h-dvh min-w-0 bg-ui-canvas md:flex">
+    <div className="operator-clay min-h-dvh min-w-0 bg-ui-canvas md:flex">
       <header className="fixed inset-x-0 top-0 z-30 flex h-16 items-center justify-between border-b border-white/10 bg-ui-navy px-4 text-white md:hidden">
         <Link href="/operator" aria-label={`${BRAND.operatorName} — Operator Dashboard`}>
           <BrandLogo label={BRAND.operatorName} markClassName="h-9 w-9" textClassName="font-heading text-lg font-semibold text-white" />
@@ -82,7 +82,7 @@ export function OperatorShell({ children }: { children: React.ReactNode }) {
       </main>
 
       <nav
-        className="fixed inset-x-0 bottom-0 z-40 flex w-full items-center justify-around border-t border-ui-border bg-ui-surface px-2 py-2 pb-safe md:hidden"
+        className="clay-nav fixed inset-x-0 bottom-0 z-40 flex w-full items-center justify-around border-t border-ui-border bg-ui-surface px-2 py-2 pb-safe md:hidden"
         aria-label="Operator navigation"
       >
         {NAV_ITEMS.map((item) => {

@@ -13,13 +13,17 @@ const [tokens, css] = await Promise.all([
 
 const failures = [];
 
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 function visit(value, trail = []) {
   if (!value || typeof value !== "object") return;
   if (typeof value.$cssVariable === "string" && typeof value.$value === "string") {
     const themeSelector = value.$theme === "dark" ? '[data-theme="dark"]' : ":root";
-    const blockPattern = new RegExp(`${themeSelector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*\\{([\\s\\S]*?)\\}`);
+    const blockPattern = new RegExp(`${escapeRegExp(themeSelector)}\\s*\\{([\\s\\S]*?)\\}`);
     const block = css.match(blockPattern)?.[1] ?? "";
-    const variablePattern = new RegExp(`${value.$cssVariable.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*:\\s*${value.$value}`, "i");
+    const variablePattern = new RegExp(`${escapeRegExp(value.$cssVariable)}\\s*:\\s*${escapeRegExp(value.$value)}`, "i");
     if (!variablePattern.test(block)) {
       failures.push(`${trail.join(".")}: expected ${value.$cssVariable}: ${value.$value} in ${themeSelector}`);
     }

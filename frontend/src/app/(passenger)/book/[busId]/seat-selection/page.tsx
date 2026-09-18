@@ -295,7 +295,7 @@ function SingleSeatSelectionFlow() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 relative items-start">
         {/* Seat Grid */}
-        <div className={`lg:col-span-2 ${uiStyles.surface} p-2.5 sm:p-5 md:p-6`}>
+        <div className={`lg:col-span-2 ${uiStyles.elevatedSurface} p-2.5 sm:p-5 md:p-6`}>
           <div className="mb-3 sm:mb-4 flex items-start gap-2.5 sm:gap-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
             <Accessibility className="mt-0.5 h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0 text-amber-700 dark:text-amber-300" aria-hidden />
             <p className="leading-snug sm:leading-normal">
@@ -317,11 +317,11 @@ function SingleSeatSelectionFlow() {
         </div>
 
         {/* Confirmation Card */}
-        <div className={`${uiStyles.surface} p-3 sm:p-5 md:p-6 space-y-3 sm:space-y-4`}>
+        <div className={`${uiStyles.elevatedSurface} p-3 sm:p-5 md:p-6 space-y-3 sm:space-y-4`}>
           <h2 className="font-semibold text-base sm:text-lg">Your Seat</h2>
 
           {autoAssigned && !manualMode && (
-            <div className="space-y-1.5 rounded-lg border border-green-200 bg-green-50 p-3 sm:space-y-2 sm:p-4 dark:border-green-900 dark:bg-green-950">
+            <div className="clay-surface-low space-y-1.5 rounded-xl border border-green-200 bg-green-50 p-3 sm:space-y-2 sm:p-4 dark:border-green-900 dark:bg-green-950">
               <div className="flex items-center gap-1.5 text-green-800 sm:gap-2 dark:text-green-200">
                 <Star className="w-4 h-4 sm:w-5 sm:h-5" />
                 <span className="text-xs sm:text-sm font-semibold">{BRAND.name} Recommended</span>

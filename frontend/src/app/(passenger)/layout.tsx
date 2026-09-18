@@ -118,7 +118,7 @@ export default function PassengerLayout({
     item.match.some((match) => pathname === match || pathname.startsWith(`${match}/`));
 
   return (
-    <div className="min-h-dvh min-w-0 bg-ui-canvas md:flex">
+    <div className="passenger-clay min-h-dvh min-w-0 bg-ui-canvas md:flex">
       <header className="fixed inset-x-0 top-0 z-30 flex h-16 items-center justify-between border-b border-white/10 bg-ui-navy px-4 text-white md:hidden">
         <Link href="/home" onClick={handleLogoClick} aria-label={`${BRAND.name} passenger home`}>
           <BrandLogo markClassName="h-9 w-9" textClassName="font-heading text-lg font-semibold text-white" />
@@ -198,7 +198,7 @@ export default function PassengerLayout({
       </main>
 
       {/* Mobile Bottom Navigation (hidden on desktop) */}
-      <nav className="fixed inset-x-0 bottom-0 z-40 flex w-full items-end justify-around border-t border-ui-border bg-ui-surface px-2 pb-2 pt-1 pb-safe md:hidden" aria-label="Passenger navigation">
+      <nav className="clay-nav fixed inset-x-0 bottom-0 z-40 flex w-full items-end justify-around border-t border-ui-border bg-ui-surface px-2 pb-2 pt-1 pb-safe md:hidden" aria-label="Passenger navigation">
         {navItems.map((item) => {
           const isActive = isItemActive(item);
           const Icon = item.icon;

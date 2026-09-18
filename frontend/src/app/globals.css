@@ -8,7 +8,7 @@
   --brand-signal-orange: #F97316;
   --ui-canvas: #F6F7F4;
   --ui-surface: #FFFFFF;
-  --ui-surface-soft: #F8FAF8;
+  --ui-surface-soft: #F0F4F1;
   --ui-foreground: #132238;
   --ui-muted: #EEF1F4;
   --ui-muted-foreground: #5F6B7A;
@@ -23,6 +23,26 @@
   --ui-danger: #B42318;
   --ui-danger-surface: #FEF2F2;
   --ui-navy: #0B1F33;
+  --clay-radius-control: 12px;
+  --clay-radius-card: 20px;
+  --clay-radius-panel: 24px;
+  --clay-border-highlight: rgba(255, 255, 255, 0.88);
+  --clay-shadow-low: 6px 6px 16px rgba(32, 52, 76, 0.10), -5px -5px 14px rgba(255, 255, 255, 0.92), inset 1px 1px 0 rgba(255, 255, 255, 0.78);
+  --clay-shadow-raised: 12px 12px 30px rgba(32, 52, 76, 0.14), -9px -9px 24px rgba(255, 255, 255, 0.94), inset 1px 1px 0 rgba(255, 255, 255, 0.84);
+  --clay-shadow-inset: inset 3px 3px 8px rgba(32, 52, 76, 0.10), inset -3px -3px 8px rgba(255, 255, 255, 0.86);
+  --clay-shadow-pressed: inset 4px 4px 10px rgba(20, 43, 72, 0.18), inset -3px -3px 8px rgba(255, 255, 255, 0.74);
+  --clay-shadow-primary: 0 10px 22px rgba(23, 92, 211, 0.26), inset 1px 1px 0 rgba(255, 255, 255, 0.30), inset -2px -3px 6px rgba(11, 31, 51, 0.18);
+  --clay-shadow-success: 0 10px 22px rgba(8, 122, 85, 0.22), inset 1px 1px 0 rgba(255, 255, 255, 0.24), inset -2px -3px 6px rgba(11, 31, 51, 0.16);
+  --map-water: #EAF2F8;
+  --map-panel: #FFFFFF;
+  --map-land: #C9D9E7;
+  --map-land-active: #A9CCE3;
+  --map-border: #AFC4D6;
+  --map-text: #132238;
+  --map-muted: #52677A;
+  --map-route: #4D7FA8;
+  --map-selected: #087EA4;
+  --map-hub: #EA580C;
   --motion-fast: 120ms;
   --motion-standard: 200ms;
   --motion-emphasis: 300ms;
@@ -53,6 +73,16 @@
   --color-ui-warning-surface: var(--ui-warning-surface);
   --color-ui-success-surface: var(--ui-success-surface);
   --color-ui-navy: var(--ui-navy);
+  --color-map-water: var(--map-water);
+  --color-map-panel: var(--map-panel);
+  --color-map-land: var(--map-land);
+  --color-map-land-active: var(--map-land-active);
+  --color-map-border: var(--map-border);
+  --color-map-text: var(--map-text);
+  --color-map-muted: var(--map-muted);
+  --color-map-route: var(--map-route);
+  --color-map-selected: var(--map-selected);
+  --color-map-hub: var(--map-hub);
   --color-brand-blue: var(--brand-action-blue);
   --color-logo-blue: var(--brand-logo-blue);
   --color-brand-orange: var(--brand-signal-orange);
@@ -66,7 +96,7 @@
 [data-theme="dark"] {
   --ui-canvas: #0B1220;
   --ui-surface: #111B2E;
-  --ui-surface-soft: #152238;
+  --ui-surface-soft: #16243A;
   --ui-foreground: #F6F8FB;
   --ui-muted: #1B2940;
   --ui-muted-foreground: #B7C2D0;
@@ -81,6 +111,23 @@
   --ui-danger: #FF8178;
   --ui-danger-surface: #3E1C22;
   --ui-navy: #07111F;
+  --clay-border-highlight: rgba(130, 159, 201, 0.20);
+  --clay-shadow-low: 7px 7px 18px rgba(0, 0, 0, 0.34), -4px -4px 12px rgba(82, 110, 151, 0.10), inset 1px 1px 0 rgba(255, 255, 255, 0.05);
+  --clay-shadow-raised: 13px 13px 30px rgba(0, 0, 0, 0.42), -7px -7px 20px rgba(82, 110, 151, 0.11), inset 1px 1px 0 rgba(255, 255, 255, 0.06);
+  --clay-shadow-inset: inset 4px 4px 10px rgba(0, 0, 0, 0.34), inset -3px -3px 8px rgba(95, 126, 171, 0.10);
+  --clay-shadow-pressed: inset 5px 5px 12px rgba(0, 0, 0, 0.48), inset -3px -3px 8px rgba(95, 126, 171, 0.10);
+  --clay-shadow-primary: 0 10px 24px rgba(45, 112, 226, 0.24), inset 1px 1px 0 rgba(255, 255, 255, 0.18), inset -2px -3px 7px rgba(5, 18, 38, 0.32);
+  --clay-shadow-success: 0 10px 24px rgba(49, 185, 131, 0.18), inset 1px 1px 0 rgba(255, 255, 255, 0.14), inset -2px -3px 7px rgba(5, 18, 38, 0.30);
+  --map-water: #040C18;
+  --map-panel: #0A1426;
+  --map-land: #0B2134;
+  --map-land-active: #0D3148;
+  --map-border: #16445C;
+  --map-text: #F6F8FB;
+  --map-muted: #AFC0D2;
+  --map-route: #3284AD;
+  --map-selected: #25D0F2;
+  --map-hub: #F97316;
 }
 
 * { border-color: var(--ui-border); }
@@ -93,6 +140,141 @@ html,
 body {
   max-width: 100%;
   overflow-x: clip;
+}
+
+/* Civic Clay material roles. Keep these semantic: components select a role,
+   while the theme owns the actual light direction and depth. */
+.clay-surface,
+.clay-surface-low {
+  border: 1px solid color-mix(in srgb, var(--ui-border) 76%, var(--clay-border-highlight));
+  border-radius: var(--clay-radius-card);
+  background: var(--ui-surface);
+  box-shadow: var(--clay-shadow-low);
+}
+
+.clay-surface-raised {
+  border: 1px solid color-mix(in srgb, var(--ui-border) 64%, var(--clay-border-highlight));
+  border-radius: var(--clay-radius-panel);
+  background: var(--ui-surface);
+  box-shadow: var(--clay-shadow-raised);
+}
+
+.clay-inset,
+.clay-data-well {
+  border: 1px solid color-mix(in srgb, var(--ui-border) 78%, transparent);
+  border-radius: var(--clay-radius-control);
+  box-shadow: var(--clay-shadow-inset);
+}
+
+.clay-data-well {
+  background: var(--ui-surface-soft);
+}
+
+.clay-control {
+  border-radius: var(--clay-radius-control);
+  box-shadow: var(--clay-shadow-low);
+  transition:
+    box-shadow var(--motion-fast) ease-out,
+    border-color var(--motion-fast) ease-out,
+    color var(--motion-fast) ease-out,
+    background-color var(--motion-fast) ease-out,
+    transform var(--motion-fast) ease-out;
+}
+
+.clay-control:focus,
+.clay-control:focus-visible {
+  box-shadow: var(--clay-shadow-inset), 0 0 0 3px color-mix(in srgb, var(--ui-primary) 20%, transparent);
+}
+
+.clay-interactive,
+.clay-action,
+.clay-action-success {
+  transition:
+    transform var(--motion-fast) ease-out,
+    box-shadow var(--motion-fast) ease-out,
+    background-color var(--motion-fast) ease-out,
+    border-color var(--motion-fast) ease-out,
+    color var(--motion-fast) ease-out;
+}
+
+.clay-interactive:hover:not(:disabled):not([aria-disabled="true"]),
+.clay-action:hover:not(:disabled):not([aria-disabled="true"]),
+.clay-action-success:hover:not(:disabled):not([aria-disabled="true"]) {
+  transform: translateY(-2px);
+}
+
+.clay-interactive:active:not(:disabled):not([aria-disabled="true"]) {
+  transform: translateY(0);
+  box-shadow: var(--clay-shadow-pressed);
+}
+
+.clay-action {
+  border-radius: var(--clay-radius-control);
+  box-shadow: var(--clay-shadow-primary);
+}
+
+.clay-action-success {
+  border-radius: var(--clay-radius-control);
+  box-shadow: var(--clay-shadow-success);
+}
+
+.clay-action:active:not(:disabled):not([aria-disabled="true"]),
+.clay-action-success:active:not(:disabled):not([aria-disabled="true"]) {
+  transform: translateY(0);
+  box-shadow: var(--clay-shadow-pressed);
+}
+
+.clay-badge {
+  border-radius: 999px;
+  box-shadow: inset 1px 1px 0 color-mix(in srgb, white 56%, transparent), 0 3px 8px rgba(11, 31, 51, 0.08);
+}
+
+.clay-seat {
+  box-shadow: 3px 4px 9px rgba(20, 43, 72, 0.14), -2px -2px 6px color-mix(in srgb, var(--clay-border-highlight) 72%, transparent), inset 1px 1px 0 rgba(255, 255, 255, 0.30);
+}
+
+.clay-seat[data-state="occupied"],
+.clay-seat[data-state="blocked"] {
+  box-shadow: var(--clay-shadow-inset);
+}
+
+.clay-seat[data-state="selected"],
+.clay-seat[data-state="auto_assigned"],
+.clay-seat[data-state="group_reserved"] {
+  box-shadow: var(--clay-shadow-primary);
+}
+
+.clay-seat:active:not(:disabled) {
+  box-shadow: var(--clay-shadow-pressed);
+}
+
+.clay-nav {
+  box-shadow: 0 -8px 26px rgba(11, 31, 51, 0.12), inset 0 1px 0 color-mix(in srgb, var(--clay-border-highlight) 72%, transparent);
+}
+
+.clay-dark-panel {
+  border-color: rgba(147, 178, 221, 0.18);
+  box-shadow: 18px 22px 46px rgba(0, 0, 0, 0.44), -8px -8px 24px rgba(78, 111, 159, 0.10), inset 1px 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* Local page markup predates the shared primitives. These scoped rules give
+   those semantic surface utilities the same material without affecting logos. */
+.passenger-clay :where(.rounded-xl, .rounded-2xl, .rounded-3xl).bg-ui-surface,
+.landing-clay :where(.feature-card, .process-card),
+.landing-clay .network-map {
+  box-shadow: var(--clay-shadow-low);
+}
+
+.passenger-clay :where(.rounded-lg, .rounded-xl, .rounded-2xl).bg-ui-surface-soft {
+  box-shadow: var(--clay-shadow-inset);
+}
+
+.operator-clay :where(.rounded-xl, .rounded-2xl).bg-ui-surface {
+  box-shadow: var(--clay-shadow-low);
+}
+
+.operator-clay :where(table, .recharts-wrapper, .terminal-scroll) {
+  --clay-shadow-low: none;
 }
 
 body {
@@ -122,10 +304,111 @@ time,
 }
 
 .route-motif {
-  background-image:
-    linear-gradient(90deg, color-mix(in srgb, var(--ui-border) 32%, transparent) 1px, transparent 1px),
-    linear-gradient(color-mix(in srgb, var(--ui-border) 32%, transparent) 1px, transparent 1px);
-  background-size: 48px 48px;
+  background-image: none;
+}
+
+.hero-ticket {
+  animation: hero-ticket-float 6s ease-in-out infinite;
+}
+
+.feature-card,
+.process-card {
+  transition: transform var(--motion-fast) ease-out, box-shadow var(--motion-fast) ease-out, border-color var(--motion-standard) ease-out;
+}
+
+.feature-card:hover,
+.process-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--clay-shadow-raised);
+}
+
+.network-section {
+  background: var(--ui-canvas);
+}
+
+.map-country {
+  fill: color-mix(in srgb, var(--map-land) 55%, transparent);
+  stroke: var(--map-border);
+  stroke-width: 0.6;
+  vector-effect: non-scaling-stroke;
+}
+
+.map-country-active {
+  fill: var(--map-land-active);
+  stroke: color-mix(in srgb, var(--map-selected) 60%, var(--map-border));
+}
+
+.map-route {
+  fill: none;
+  stroke: var(--map-route);
+  stroke-width: 1.5;
+  stroke-dasharray: 7 7;
+  opacity: 0.5;
+  vector-effect: non-scaling-stroke;
+  animation: map-route-flow 4s linear infinite;
+}
+
+.map-route-active {
+  stroke: var(--map-selected);
+  stroke-width: 2.5;
+  opacity: 1;
+}
+
+.map-marker {
+  cursor: pointer;
+  outline: none;
+}
+
+.map-marker-dot {
+  fill: var(--map-hub);
+  stroke: var(--map-panel);
+  stroke-width: 3;
+  vector-effect: non-scaling-stroke;
+}
+
+.map-marker-dot-selected {
+  fill: var(--map-selected);
+  stroke-width: 4;
+}
+
+.map-marker-pulse {
+  fill: none;
+  stroke: var(--map-selected);
+  stroke-width: 3;
+  opacity: 0.65;
+  vector-effect: non-scaling-stroke;
+  animation: map-marker-pulse 2.1s ease-out infinite;
+}
+
+.map-marker-label {
+  fill: var(--map-text);
+  font-family: var(--app-font-body);
+  font-size: 13px;
+  font-weight: 700;
+  paint-order: stroke;
+  stroke: var(--map-water);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.map-marker:focus-visible .map-marker-dot {
+  stroke: var(--map-text);
+  stroke-width: 5;
+}
+
+@keyframes hero-ticket-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-7px); }
+}
+
+@keyframes map-route-flow {
+  to { stroke-dashoffset: -28; }
+}
+
+@keyframes map-marker-pulse {
+  0% { opacity: 0.75; transform: scale(0.6); }
+  80%, 100% { opacity: 0; transform: scale(1.45); }
 }
 
 .route-reveal {
@@ -196,7 +479,18 @@ button, a, select { cursor: pointer; }
 
   .route-reveal,
   .seat-recommended,
-  .confirmation-reveal {
+  .confirmation-reveal,
+  .hero-ticket,
+  .map-route,
+  .map-marker-pulse {
     animation: none !important;
+  }
+
+  .feature-card:hover,
+  .process-card:hover,
+  .clay-interactive:hover,
+  .clay-action:hover,
+  .clay-action-success:hover {
+    transform: none;
   }
 }

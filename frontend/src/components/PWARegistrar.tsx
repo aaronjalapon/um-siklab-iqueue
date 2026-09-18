@@ -376,7 +376,7 @@ export default function PWARegistrar() {
       aria-describedby="pwa-install-description"
     >
       <div
-        className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-ui-border bg-ui-surface shadow-[0_16px_48px_rgba(11,31,51,0.22)]"
+        className="clay-surface-raised relative w-full max-w-lg overflow-hidden rounded-3xl border border-ui-border bg-ui-surface"
       >
         <div className="h-1.5 bg-gradient-to-r from-brand-blue via-cyan-400 to-brand-orange" />
         <button
@@ -390,7 +390,7 @@ export default function PWARegistrar() {
 
         <div className="p-5 sm:p-7">
           <div className="mb-5 flex items-center gap-4 pr-10">
-            <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-brand-blue text-white shadow-lg shadow-brand-blue/30">
+            <div className="clay-action relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-brand-blue text-white">
               <Smartphone className="h-7 w-7" aria-hidden />
               <span className="absolute -right-1 -top-1 h-3.5 w-3.5 rounded-full border-2 border-ui-surface bg-brand-orange" />
             </div>
@@ -416,11 +416,11 @@ export default function PWARegistrar() {
           </p>
 
           <div className="mt-4 grid grid-cols-2 gap-3">
-            <div className="flex items-center gap-2 rounded-xl border border-ui-border bg-ui-surface-soft px-3 py-3 text-sm font-semibold text-ui-foreground">
+            <div className="clay-inset flex items-center gap-2 rounded-xl border border-ui-border bg-ui-surface-soft px-3 py-3 text-sm font-semibold text-ui-foreground">
               <Zap className="h-4 w-4 shrink-0 text-ui-primary" aria-hidden />
               Faster access
             </div>
-            <div className="flex items-center gap-2 rounded-xl border border-ui-border bg-ui-surface-soft px-3 py-3 text-sm font-semibold text-ui-foreground">
+            <div className="clay-inset flex items-center gap-2 rounded-xl border border-ui-border bg-ui-surface-soft px-3 py-3 text-sm font-semibold text-ui-foreground">
               <WifiOff
                 className="h-4 w-4 shrink-0 text-brand-orange"
                 aria-hidden
@@ -431,7 +431,7 @@ export default function PWARegistrar() {
 
           {showManualInstructions && (
             <div
-              className="mt-4 rounded-xl border border-ui-primary/25 bg-ui-surface-soft p-4 text-sm leading-5 text-ui-foreground"
+              className="clay-inset mt-4 rounded-xl border border-ui-primary/25 bg-ui-surface-soft p-4 text-sm leading-5 text-ui-foreground"
               role="status"
               aria-live="polite"
             >
@@ -464,7 +464,7 @@ export default function PWARegistrar() {
                   type="button"
                   onClick={() => void requestNativeInstall()}
                   disabled={isInstalling}
-                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-brand-blue px-5 py-3 text-sm font-bold text-white shadow-lg shadow-brand-blue/30 transition hover:bg-blue-600 hover:shadow-brand-blue/45 active:scale-[0.98] disabled:cursor-wait disabled:opacity-70"
+                  className="clay-action inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-brand-blue px-5 py-3 text-sm font-bold text-white hover:bg-blue-600 disabled:cursor-wait disabled:opacity-70"
                 >
                   <Download className="h-5 w-5" aria-hidden />
                   {isInstalling ? "Opening install prompt..." : `Install ${BRAND.name}`}
@@ -472,7 +472,7 @@ export default function PWARegistrar() {
                 <button
                   type="button"
                   onClick={handleDismiss}
-                  className="inline-flex min-h-12 items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+                  className="clay-control clay-interactive inline-flex min-h-12 items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
                 >
                   Maybe later
                 </button>
@@ -481,7 +481,7 @@ export default function PWARegistrar() {
               <button
                 type="button"
                 onClick={handleDismiss}
-                className="inline-flex min-h-12 items-center justify-center rounded-xl bg-brand-blue px-5 py-3 text-sm font-bold text-white shadow-lg shadow-brand-blue/30 transition hover:bg-blue-600 active:scale-[0.98] sm:col-span-2"
+                className="clay-action inline-flex min-h-12 items-center justify-center rounded-xl bg-brand-blue px-5 py-3 text-sm font-bold text-white hover:bg-blue-600 sm:col-span-2"
               >
                 Got it
               </button>

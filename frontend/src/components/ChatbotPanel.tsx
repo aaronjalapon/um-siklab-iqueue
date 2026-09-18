@@ -514,7 +514,7 @@ export default function ChatbotPanel({ bookingId, hideLauncher = false }: Chatbo
         <button
           type="button"
           onClick={handleButtonClick}
-          className={`relative flex h-12 w-12 min-h-12 min-w-12 items-center justify-center rounded-lg border border-white/20 bg-ui-navy text-white shadow-sm hover:bg-[#132f4d] ${
+          className={`clay-dark-panel relative flex h-12 w-12 min-h-12 min-w-12 items-center justify-center rounded-2xl border border-white/20 bg-ui-navy text-white hover:bg-[#132f4d] ${
             isDragging
               ? "ring-4 ring-ui-primary/35"
               : "active:scale-95 transition-colors duration-200"
@@ -541,10 +541,10 @@ export default function ChatbotPanel({ bookingId, hideLauncher = false }: Chatbo
           role="dialog"
           aria-modal="false"
           aria-label={UI_STRINGS[lang].title}
-          className="fixed bottom-28 left-3 right-3 mx-0 sm:bottom-6 sm:left-auto sm:right-6
+          className="clay-surface-raised fixed bottom-28 left-3 right-3 mx-0 sm:bottom-6 sm:left-auto sm:right-6
                      w-auto sm:w-96 h-[min(72dvh,540px)] max-h-[calc(100dvh-7rem)]
                      bg-ui-surface
-                     rounded-xl shadow-[0_12px_32px_rgba(11,31,51,0.18)]
+                     rounded-3xl
                      border border-ui-border
                      flex flex-col z-50 overflow-hidden"
         >
@@ -566,7 +566,7 @@ export default function ChatbotPanel({ bookingId, hideLauncher = false }: Chatbo
 
           {/* Language Selector */}
           <div
-            className="flex shrink-0 items-center gap-1 border-b border-ui-border bg-ui-surface-soft px-3 py-2"
+            className="clay-inset flex shrink-0 items-center gap-1 border-b border-ui-border bg-ui-surface-soft px-3 py-2"
           >
             {LANGUAGES.map((l) => (
               <button
@@ -652,7 +652,7 @@ export default function ChatbotPanel({ bookingId, hideLauncher = false }: Chatbo
                   type="button"
                   key={i}
                   onClick={() => handleSuggestionClick(reply)}
-                  className="flex min-h-11 flex-shrink-0 items-center rounded-full border border-ui-border bg-ui-surface px-3.5 py-1.5 text-xs text-ui-muted-foreground transition-colors hover:border-ui-primary hover:text-ui-primary"
+                    className="clay-control clay-interactive flex min-h-11 flex-shrink-0 items-center rounded-full border border-ui-border bg-ui-surface px-3.5 py-1.5 text-xs text-ui-muted-foreground hover:border-ui-primary hover:text-ui-primary"
                 >
                   {reply}
                 </button>
@@ -669,16 +669,16 @@ export default function ChatbotPanel({ bookingId, hideLauncher = false }: Chatbo
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
               placeholder={UI_STRINGS[lang].placeholder}
               disabled={loading}
-              className="min-h-11 flex-1 rounded-lg border border-ui-border bg-ui-surface px-3.5 py-2.5 text-base text-ui-foreground placeholder:text-ui-muted-foreground focus:border-ui-primary focus:ring-2 focus:ring-ui-primary/20 disabled:opacity-50"
+              className="clay-control min-h-11 flex-1 rounded-xl border border-ui-border bg-ui-surface px-3.5 py-2.5 text-base text-ui-foreground placeholder:text-ui-muted-foreground focus:border-ui-primary focus:ring-2 focus:ring-ui-primary/20 disabled:opacity-50"
             />
             <button
               type="button"
               onClick={() => handleSend()}
               disabled={loading || !input.trim()}
-              className="bg-ui-primary text-white dark:text-ui-navy min-h-[44px] min-w-[44px] rounded-lg flex items-center justify-center p-2.5
+              className="clay-action bg-ui-primary text-white dark:text-ui-navy min-h-[44px] min-w-[44px] rounded-xl flex items-center justify-center p-2.5
                          hover:bg-ui-primary-hover
                          disabled:bg-ui-muted disabled:text-ui-muted-foreground
-                         disabled:cursor-not-allowed active:scale-95 transition"
+                         disabled:cursor-not-allowed"
               aria-label="Send message"
             >
               <Send className="w-5 h-5" />

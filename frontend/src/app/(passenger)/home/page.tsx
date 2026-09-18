@@ -103,7 +103,7 @@ export default function HomePage() {
         actions={
           <button
             type="button"
-            className="relative flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full border border-ui-border bg-ui-surface text-slate-600   transition hover:text-ui-primary dark:text-slate-300 active:scale-95"
+            className="clay-control clay-interactive relative flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full border border-ui-border bg-ui-surface text-slate-600 hover:text-ui-primary dark:text-slate-300"
             aria-label="Notifications"
           >
             <Bell className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden />
@@ -116,7 +116,7 @@ export default function HomePage() {
       <Link
         href={buildBuyHref()}
         prefetch={false}
-        className={`${uiStyles.surface} group flex w-full items-center gap-3 p-3.5 sm:p-4 text-left transition-all hover:border-brand-blue/50 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] active:scale-[0.99]`}
+        className={`${uiStyles.surface} clay-interactive group flex w-full items-center gap-3 p-3.5 sm:p-4 text-left hover:border-brand-blue/50`}
       >
         <div className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-brand-blue/10 text-ui-primary transition-colors group-hover:bg-brand-blue group-hover:text-white dark:bg-brand-blue/20">
           <Search className="h-5 w-5" aria-hidden />
@@ -216,7 +216,7 @@ export default function HomePage() {
               </div>
 
               {/* Quick Digital QR Pass Card */}
-              <div className="flex flex-col items-center justify-between gap-3 sm:gap-4 rounded-xl sm:rounded-2xl bg-white p-3.5 sm:p-5 text-center shadow-xs border border-slate-100 dark:border-slate-800 dark:bg-slate-950">
+              <div className="clay-surface-low flex flex-col items-center justify-between gap-3 sm:gap-4 rounded-xl sm:rounded-2xl bg-white p-3.5 sm:p-5 text-center border border-slate-100 dark:border-slate-800 dark:bg-slate-950">
                 <div className="flex items-center sm:flex-col gap-3 sm:gap-2 w-full sm:w-auto text-left sm:text-center">
                   <div className="flex h-12 w-12 sm:h-20 sm:w-20 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-900 dark:bg-slate-900 dark:text-white border border-slate-200/80 dark:border-slate-800">
                     <QrCode className="h-6 w-6 sm:h-10 sm:w-10" aria-hidden />

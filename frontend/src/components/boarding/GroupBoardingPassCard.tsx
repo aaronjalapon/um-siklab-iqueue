@@ -62,14 +62,14 @@ export default function GroupBoardingPassCard({
         {/* Trip Details: Order 1 on mobile, Left Col Row 1 on desktop */}
         <div className="order-1 space-y-2.5 sm:space-y-3 lg:col-start-1 lg:row-start-1">
           <div className="grid grid-cols-2 gap-2 sm:gap-3">
-            <div className="rounded-xl bg-ui-surface p-2.5 sm:p-4 dark:bg-slate-900/40">
+            <div className="clay-inset rounded-xl bg-ui-surface p-2.5 sm:p-4 dark:bg-slate-900/40">
               <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Route</p>
               <p className="mt-0.5 sm:mt-1 flex items-center gap-1.5 text-xs sm:text-sm font-bold text-ui-foreground">
                 <MapPin className="h-3.5 w-3.5 shrink-0 text-ui-primary" />
                 <span className="truncate">{booking.route_origin} → {booking.route_destination}</span>
               </p>
             </div>
-            <div className="rounded-xl bg-ui-surface p-2.5 sm:p-4 dark:bg-slate-900/40">
+            <div className="clay-inset rounded-xl bg-ui-surface p-2.5 sm:p-4 dark:bg-slate-900/40">
               <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Departure</p>
               <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm font-bold text-ui-foreground truncate">{formatDate(booking.departure_date)}</p>
             </div>
@@ -86,12 +86,12 @@ export default function GroupBoardingPassCard({
         </div>
 
         {/* QR Code Card: Order 2 on mobile (prominent), Right Col spanning rows 1-2 on desktop */}
-        <div className="order-2 lg:order-none lg:col-start-2 lg:row-start-1 lg:row-span-2 flex flex-col items-center justify-center rounded-2xl bg-white p-3.5 sm:p-5 text-center shadow-sm dark:bg-slate-900/80 border border-slate-100 dark:border-slate-800">
+        <div className="clay-inset order-2 lg:order-none lg:col-start-2 lg:row-start-1 lg:row-span-2 flex flex-col items-center justify-center rounded-2xl bg-white p-3.5 sm:p-5 text-center dark:bg-slate-900/80 border border-slate-100 dark:border-slate-800">
           <div className="mb-2 sm:mb-2.5 inline-flex items-center gap-1 rounded-full bg-slate-100/90 px-2.5 py-0.5 text-[10px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
             <ShieldCheck className="h-3 w-3 text-ui-primary" />
             <span>Encrypted Offline Pass</span>
           </div>
-          <div ref={qrContainerRef} role="img" aria-label={`Combined QR boarding pass for ${booking.members.length} group members`} className="rounded-2xl border border-slate-200/80 bg-white p-2.5 sm:p-3 shadow-xs">
+          <div ref={qrContainerRef} role="img" aria-label={`Combined QR boarding pass for ${booking.members.length} group members`} className="clay-surface-low rounded-2xl border border-slate-200/80 bg-white p-2.5 sm:p-3">
             <QRCodeSVG value={booking.qr_token} size={184} marginSize={2} className="w-44 h-44 sm:w-48 sm:h-48" level="M" />
           </div>
           <p className="mt-2.5 sm:mt-3 text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100">One QR for the whole group</p>
@@ -105,7 +105,7 @@ export default function GroupBoardingPassCard({
             type="button"
             onClick={handleDownload}
             disabled={downloading}
-            className="mt-3 sm:mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-3.5 py-2 sm:py-2.5 text-xs font-bold text-white shadow-md transition-all hover:bg-slate-800 active:scale-95 dark:bg-slate-800 dark:hover:bg-slate-700 disabled:opacity-50"
+            className="clay-control clay-interactive mt-3 sm:mt-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-3.5 py-2 sm:py-2.5 text-xs font-bold text-white hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 disabled:opacity-50"
           >
             <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-brand-orange" />
             <span>{downloading ? "Saving Pass..." : "Download QR Pass"}</span>

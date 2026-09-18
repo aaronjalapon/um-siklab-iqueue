@@ -65,7 +65,7 @@ export function SeatCell({
       state === "accessibility");
 
   const baseClasses =
-    "rounded font-medium transition-all duration-200 flex items-center justify-center relative border";
+    "clay-seat rounded-lg font-medium transition-all duration-200 flex items-center justify-center relative border";
   const stateClasses = groupAssignment
     ? groupAssignment.is_accessibility
       ? "bg-ui-warning-surface border-ui-warning text-ui-warning font-bold ring-2 ring-ui-warning/30"
@@ -97,6 +97,7 @@ export function SeatCell({
   return (
     <Component
       type={isInteractive ? "button" : undefined}
+      data-state={state}
       className={`${baseClasses} ${stateClasses} ${sizeClasses} ${
         disabled ? "cursor-not-allowed opacity-35" : ""
       }`}

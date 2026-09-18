@@ -1,6 +1,6 @@
 # TripSync Brand Guidelines
 
-Version 1.0 · Warm Civic Mobility
+Version 1.1 · Warm Civic Mobility · Civic Clay
 
 TripSync is the public product brand for the UM Siklab smart-boarding project. `IQueue` may remain in legacy technical identifiers and historical material, but it must not appear as a second customer-facing brand.
 
@@ -75,11 +75,14 @@ Use tabular figures for times, fares, seats, capacity, and forecast values. Avoi
 ## Layout and components
 
 - Use a 4px base grid with primary spacing steps of 8, 12, 16, 24, 32, 48, and 64px.
-- Controls use 8px corners, cards 12px, and major panels 16px.
-- Prefer borders and whitespace over blur or heavy shadow. Use the low elevation token only when a surface must separate from another surface.
+- Controls use 12px corners, cards 20px, and major panels 24px.
+- Civic Clay is the default material language. Use the shared low, raised, inset, and pressed elevation roles; never invent per-component shadow recipes.
+- Light mode uses a warm canvas, bright raised surfaces, and a top-left highlight. Dark mode uses restrained navy depth with lower-contrast highlights rather than a literal inverted light treatment.
+- Passenger surfaces may use expressive raised depth. Operator charts, tables, logs, and dense data regions remain flat or use a shallow inset well so decoration never competes with data.
 - Keep one dominant CTA per view and a minimum 44px interactive height.
 - Use the route-line and station-node motif sparingly to explain travel, progress, or connectivity.
 - Passenger surfaces are welcoming and spacious; operator surfaces are denser but use the same tokens and component states.
+- Hover lift is limited to 2px. Pressed controls replace outer elevation with inset depth without changing layout bounds.
 
 ## Iconography and imagery
 
@@ -96,6 +99,7 @@ Photography should show real regional terminals, vehicles, staff, and passengers
 - Route, progress, seat, and confirmation motion occurs once in response to a user action.
 - No parallax, looping decorative pulses, scroll-jacking, or broad entrance choreography.
 - Under reduced motion, show the final state immediately.
+- Under reduced motion, remove clay lift and depth transitions while preserving clear hover, focus, pressed, and disabled states.
 
 ## Accessibility
 

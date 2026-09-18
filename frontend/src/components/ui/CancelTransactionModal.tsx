@@ -78,7 +78,7 @@ export function CancelTransactionModal({
     >
       <div
         ref={dialogRef}
-        className="relative w-full max-w-md touch-auto select-text overflow-hidden overscroll-contain rounded-2xl border border-ui-border bg-ui-surface p-5 shadow-[0_16px_48px_rgba(11,31,51,0.22)] transition-[opacity,transform] sm:p-6"
+        className="clay-surface-raised relative w-full max-w-md touch-auto select-text overflow-hidden overscroll-contain rounded-3xl border border-ui-border bg-ui-surface p-5 transition-[opacity,transform] sm:p-6"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Close Button */}
@@ -131,7 +131,7 @@ export function CancelTransactionModal({
           <button
             type="button"
             onClick={onConfirm}
-            className="w-full sm:w-auto sm:flex-1 py-2.5 sm:py-3 px-4 rounded-xl border border-red-200 bg-red-50/80 hover:bg-red-100 text-red-600 font-semibold text-xs sm:text-sm active:scale-95 transition-all dark:border-red-900/50 dark:bg-red-950/30 dark:hover:bg-red-950/60 dark:text-red-300 text-center"
+            className="clay-control clay-interactive w-full sm:w-auto sm:flex-1 py-2.5 sm:py-3 px-4 rounded-xl border border-red-200 bg-red-50/80 hover:bg-red-100 text-red-600 font-semibold text-xs sm:text-sm dark:border-red-900/50 dark:bg-red-950/30 dark:hover:bg-red-950/60 dark:text-red-300 text-center"
           >
             Leave & Discard
           </button>
@@ -139,7 +139,7 @@ export function CancelTransactionModal({
             ref={stayButtonRef}
             type="button"
             onClick={onCancel}
-            className="w-full sm:w-auto sm:flex-1 py-2.5 sm:py-3 px-4 rounded-xl bg-brand-blue hover:bg-blue-600 text-white font-bold text-xs sm:text-sm shadow-md shadow-brand-blue/25 active:scale-95 transition-all flex items-center justify-center gap-1.5 text-center"
+            className="clay-action w-full sm:w-auto sm:flex-1 py-2.5 sm:py-3 px-4 rounded-xl bg-brand-blue hover:bg-blue-600 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 text-center"
           >
             <span>Continue Booking</span>
             <ArrowRight className="h-3.5 w-3.5" aria-hidden />

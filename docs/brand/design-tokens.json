@@ -40,9 +40,23 @@
     "data": { "$value": "SFMono-Regular, Consolas, Liberation Mono, monospace" }
   },
   "radius": {
-    "control": { "$value": "8px" },
-    "card": { "$value": "12px" },
-    "panel": { "$value": "16px" }
+    "control": { "$value": "12px", "$cssVariable": "--clay-radius-control" },
+    "card": { "$value": "20px", "$cssVariable": "--clay-radius-card" },
+    "panel": { "$value": "24px", "$cssVariable": "--clay-radius-panel" }
+  },
+  "elevation": {
+    "light": {
+      "low": { "$value": "6px 6px 16px rgba(32, 52, 76, 0.10), -5px -5px 14px rgba(255, 255, 255, 0.92), inset 1px 1px 0 rgba(255, 255, 255, 0.78)", "$cssVariable": "--clay-shadow-low" },
+      "raised": { "$value": "12px 12px 30px rgba(32, 52, 76, 0.14), -9px -9px 24px rgba(255, 255, 255, 0.94), inset 1px 1px 0 rgba(255, 255, 255, 0.84)", "$cssVariable": "--clay-shadow-raised" },
+      "inset": { "$value": "inset 3px 3px 8px rgba(32, 52, 76, 0.10), inset -3px -3px 8px rgba(255, 255, 255, 0.86)", "$cssVariable": "--clay-shadow-inset" },
+      "pressed": { "$value": "inset 4px 4px 10px rgba(20, 43, 72, 0.18), inset -3px -3px 8px rgba(255, 255, 255, 0.74)", "$cssVariable": "--clay-shadow-pressed" }
+    },
+    "dark": {
+      "low": { "$value": "7px 7px 18px rgba(0, 0, 0, 0.34), -4px -4px 12px rgba(82, 110, 151, 0.10), inset 1px 1px 0 rgba(255, 255, 255, 0.05)", "$cssVariable": "--clay-shadow-low", "$theme": "dark" },
+      "raised": { "$value": "13px 13px 30px rgba(0, 0, 0, 0.42), -7px -7px 20px rgba(82, 110, 151, 0.11), inset 1px 1px 0 rgba(255, 255, 255, 0.06)", "$cssVariable": "--clay-shadow-raised", "$theme": "dark" },
+      "inset": { "$value": "inset 4px 4px 10px rgba(0, 0, 0, 0.34), inset -3px -3px 8px rgba(95, 126, 171, 0.10)", "$cssVariable": "--clay-shadow-inset", "$theme": "dark" },
+      "pressed": { "$value": "inset 5px 5px 12px rgba(0, 0, 0, 0.48), inset -3px -3px 8px rgba(95, 126, 171, 0.10)", "$cssVariable": "--clay-shadow-pressed", "$theme": "dark" }
+    }
   },
   "motion": {
     "fast": { "$value": "120ms", "$cssVariable": "--motion-fast" },

@@ -130,7 +130,7 @@ export function GroupSeatSelectionFlow({
         <div role="alert" className="rounded-2xl border border-amber-300 bg-amber-50 p-6 text-amber-900">
           <h1 className="text-lg font-bold">No group booking draft found</h1>
           <p className="mt-1 text-sm">Start a group booking by adding passengers first.</p>
-          <Link href={`/book/${busId}/preferences`} className="mt-4 inline-flex items-center gap-2 font-semibold text-brand-blue hover:underline">
+          <Link href={`/book/${busId}/preferences`} className="mt-4 inline-flex items-center gap-2 font-semibold text-ui-primary hover:underline">
             Go to Preferences →
           </Link>
         </div>
@@ -140,7 +140,7 @@ export function GroupSeatSelectionFlow({
 
   return (
     <div className={`${uiStyles.pageContainer} max-w-7xl`}>
-      <Link href={`/book/${busId}/preferences?${new URLSearchParams({ date, origin, dest: destination })}`} className="inline-flex items-center gap-1 text-xs sm:text-sm text-brand-blue hover:underline">
+      <Link href={`/book/${busId}/preferences?${new URLSearchParams({ date, origin, dest: destination })}`} className="inline-flex items-center gap-1 text-xs sm:text-sm text-ui-primary hover:underline">
         <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Change group preferences
       </Link>
       <BookingProgress current="seat" />
@@ -190,15 +190,15 @@ export function GroupSeatSelectionFlow({
           {preview?.assignments.map((assignment) => {
             const member = draft.members[assignment.member_index];
             return (
-              <article key={assignment.member_index} className={`rounded-lg sm:rounded-xl border p-2.5 sm:p-3 ${member.accessibility_needs ? "border-amber-500 bg-amber-50 dark:bg-amber-950/30" : "border-slate-200 dark:border-slate-700"}`}>
+              <article key={assignment.member_index} className={`rounded-lg sm:rounded-xl border p-2.5 sm:p-3 ${member.accessibility_needs ? "border-amber-500 bg-amber-50 dark:bg-amber-950/30" : "border-ui-border"}`}>
                 <div className="flex items-start justify-between gap-2 sm:gap-3">
                   <div className="min-w-0">
                     <p className="font-bold text-xs sm:text-sm truncate"><span className="mr-1.5 sm:mr-2 inline-flex h-4 w-4 sm:h-5 sm:w-5 items-center justify-center rounded-full bg-slate-950 text-[9px] sm:text-[10px] text-white shrink-0">{assignment.member_index + 1}</span>{member.name}</p>
                     {member.accessibility_needs && <p className="mt-0.5 sm:mt-1 inline-flex items-center gap-1 text-[10px] sm:text-xs font-semibold text-amber-800 dark:text-amber-100"><Accessibility className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0" /> Accessibility passenger</p>}
                   </div>
-                  <span className="text-base sm:text-xl font-extrabold text-brand-blue shrink-0">{assignment.seat_label}</span>
+                  <span className="text-base sm:text-xl font-extrabold text-ui-primary shrink-0">{assignment.seat_label}</span>
                 </div>
-                <ul className="mt-1.5 sm:mt-2 space-y-0.5 sm:space-y-1 text-[10px] sm:text-xs text-slate-600 dark:text-slate-300">
+                <ul className="mt-1.5 sm:mt-2 space-y-0.5 sm:space-y-1 text-[10px] sm:text-xs text-ui-muted-foreground">
                   {assignment.reasons.map((reason) => <li key={reason}>✓ {reason}</li>)}
                 </ul>
               </article>
@@ -214,7 +214,7 @@ export function GroupSeatSelectionFlow({
           <button type="button" onClick={confirm} disabled={!preview || submitting} className="flex min-h-11 sm:min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-blue px-4 text-xs sm:text-sm font-bold text-white disabled:opacity-40 shadow-sm active:scale-95 transition-transform">
             <Check className="h-4 w-4" /> {submitting ? "Confirming everyone…" : "Confirm Group Booking"}
           </button>
-          <button type="button" onClick={() => { setLoading(true); setError(null); setRevision((value) => value + 1); }} disabled={loading} className="flex min-h-10 sm:min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-brand-blue px-4 text-xs sm:text-sm font-semibold text-brand-blue disabled:opacity-40 active:scale-95 transition-transform">
+          <button type="button" onClick={() => { setLoading(true); setError(null); setRevision((value) => value + 1); }} disabled={loading} className="flex min-h-10 sm:min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-brand-blue px-4 text-xs sm:text-sm font-semibold text-ui-primary disabled:opacity-40 active:scale-95 transition-transform">
             <RefreshCw className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Regenerate recommendation
           </button>
           <p className="text-[10px] sm:text-xs text-slate-500">Confirmation is atomic: if any seat changes, {BRAND.name} creates no partial group bookings and asks you to regenerate.</p>

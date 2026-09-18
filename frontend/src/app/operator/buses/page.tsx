@@ -58,7 +58,7 @@ export default function OperatorBusesPage() {
         <div className="flex flex-col gap-1">
           <label
             htmlFor="fleet-route"
-            className="text-sm font-medium text-slate-600 dark:text-slate-300"
+            className="text-sm font-medium text-ui-muted-foreground"
           >
             Route
           </label>
@@ -78,7 +78,7 @@ export default function OperatorBusesPage() {
         <div className="flex flex-col gap-1">
           <label
             htmlFor="fleet-date"
-            className="text-sm font-medium text-slate-600 dark:text-slate-300"
+            className="text-sm font-medium text-ui-muted-foreground"
           >
             Travel date
           </label>
@@ -93,7 +93,7 @@ export default function OperatorBusesPage() {
         <div className="flex flex-col gap-1">
           <label
             htmlFor="fleet-sort"
-            className="text-sm font-medium text-slate-600 dark:text-slate-300"
+            className="text-sm font-medium text-ui-muted-foreground"
           >
             Sort
           </label>

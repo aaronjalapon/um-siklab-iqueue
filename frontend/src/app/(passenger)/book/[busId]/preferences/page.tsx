@@ -193,7 +193,7 @@ export default function PreferencesPage() {
         <Link
           href={`/buy?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(dest)}&date=${date}`}
           prefetch={false}
-          className="inline-flex items-center gap-1 text-xs sm:text-sm font-medium text-brand-blue hover:underline"
+          className="inline-flex items-center gap-1 text-xs sm:text-sm font-medium text-ui-primary hover:underline"
         >
           <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden /> Back to search
         </Link>
@@ -202,13 +202,13 @@ export default function PreferencesPage() {
       <BookingProgress current="preferences" />
 
       <header className="min-w-0">
-        <p className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.18em] text-brand-blue">
+        <p className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.18em] text-ui-primary">
           Passenger profile
         </p>
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-foreground tracking-tight">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-ui-foreground tracking-tight">
           Who are you booking for?
         </h1>
-        <p className="mt-0.5 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+        <p className="mt-0.5 text-xs sm:text-sm text-ui-muted-foreground">
           {BRAND.name} applies assistance needs first, then keeps groups seated together.
         </p>
       </header>
@@ -229,14 +229,14 @@ export default function PreferencesPage() {
                 }}
                 className={`min-h-[42px] sm:min-h-12 w-full rounded-xl border px-2 sm:px-4 py-2 sm:py-2.5 font-bold transition-all text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 active:scale-[0.99] ${
                   mode === value
-                    ? "border-brand-blue bg-blue-50 text-brand-blue dark:bg-blue-950/40 shadow-sm"
-                    : "border-glass-border bg-white/50 text-slate-600 hover:border-brand-blue/40 hover:text-brand-blue dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-300"
+                    ? "border-brand-blue bg-blue-50 text-ui-primary dark:bg-blue-950/40 shadow-sm"
+                    : "border-ui-border bg-ui-surface text-slate-600 hover:border-brand-blue/40 hover:text-ui-primary dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-300"
                 }`}
               >
                 {value === "group" ? (
                   <Users className="h-4 w-4 shrink-0 text-brand-orange" aria-hidden />
                 ) : (
-                  <UserRound className="h-4 w-4 shrink-0 text-brand-blue" aria-hidden />
+                  <UserRound className="h-4 w-4 shrink-0 text-ui-primary" aria-hidden />
                 )}
                 <span className="whitespace-nowrap">
                   {value === "group" ? "Group Booking" : "Single Booking"}
@@ -249,7 +249,7 @@ export default function PreferencesPage() {
         {/* Passenger details section */}
         <section className={`${uiStyles.surface} p-3.5 sm:p-5 md:p-6`}>
           <div className="mb-3 sm:mb-4 flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-sm sm:text-base font-bold text-foreground">
+            <h2 className="text-sm sm:text-base font-bold text-ui-foreground">
               {mode === "group" ? `Group members (${members.length} of 6)` : "Passenger details"}
             </h2>
             {mode === "group" && (
@@ -264,7 +264,7 @@ export default function PreferencesPage() {
                     affinity_opt_in: false,
                   }));
                 }}
-                className="rounded-lg border border-brand-blue/50 px-2.5 py-1 text-[11px] sm:text-xs font-semibold text-brand-blue hover:bg-blue-50 dark:hover:bg-blue-950/30 transition active:scale-95"
+                className="rounded-lg border border-brand-blue/50 px-2.5 py-1 text-[11px] sm:text-xs font-semibold text-ui-primary hover:bg-blue-50 dark:hover:bg-blue-950/30 transition active:scale-95"
               >
                 Load demo group
               </button>
@@ -292,8 +292,8 @@ export default function PreferencesPage() {
           ) : (
             <div className="space-y-3 sm:space-y-4">
               {members.map((member, index) => (
-                <fieldset key={index} className="rounded-xl border border-glass-border/80 bg-white/30 dark:bg-slate-900/30 p-3 sm:p-4 space-y-2.5">
-                  <legend className="px-1 text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200">
+                <fieldset key={index} className="space-y-2.5 rounded-xl border border-ui-border bg-ui-surface-soft p-3 sm:p-4">
+                  <legend className="px-1 text-xs font-bold text-ui-foreground sm:text-sm">
                     {index === 0 ? "Lead passenger (Primary contact)" : `Group member ${index + 1}`}
                   </legend>
                   <div className="grid gap-2.5 sm:gap-3 md:grid-cols-2">
@@ -359,16 +359,16 @@ export default function PreferencesPage() {
         </section>
 
         {/* Accessibility assistance priority box */}
-        <section aria-labelledby="assistance-title" className="rounded-2xl border border-amber-400/80 bg-amber-50/90 p-3.5 sm:p-5 text-amber-950 shadow-sm dark:bg-amber-950/40 dark:border-amber-700/60 dark:text-amber-50">
+        <section aria-labelledby="assistance-title" className="rounded-2xl border border-ui-warning/45 bg-ui-warning-surface p-3.5 text-ui-warning sm:p-5">
           <div className="flex items-start gap-2.5 sm:gap-3">
             <ShieldCheck className="mt-0.5 h-5 w-5 sm:h-6 sm:w-6 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden />
             <div className="min-w-0">
-              <h2 id="assistance-title" className="text-xs sm:text-sm font-extrabold text-amber-950 dark:text-amber-100">Accessibility assistance</h2>
-              <p className="mt-0.5 text-[11px] sm:text-xs leading-relaxed text-amber-900/90 dark:text-amber-200/90">
+              <h2 id="assistance-title" className="text-xs font-extrabold sm:text-sm">Accessibility assistance</h2>
+              <p className="mt-0.5 text-[11px] leading-relaxed sm:text-xs">
                 {accessibilityCount} passenger{accessibilityCount === 1 ? " currently requires" : "s currently require"} priority seating. This is a hard requirement; group proximity is secondary.
               </p>
               {mode === "single" && (
-                <label className="mt-2.5 flex min-h-[36px] sm:min-h-10 items-center gap-1.5 sm:gap-2 rounded-xl border border-amber-300 dark:border-amber-800/60 bg-white/80 dark:bg-slate-900/60 px-2 sm:px-3 py-1.5 text-[10px] sm:text-xs font-semibold text-foreground cursor-pointer">
+                <label className="mt-2.5 flex min-h-11 cursor-pointer items-center gap-1.5 rounded-lg border border-ui-warning/40 bg-ui-surface px-2 py-1.5 text-[10px] font-semibold text-ui-foreground sm:gap-2 sm:px-3 sm:text-xs">
                   <input
                     type="checkbox"
                     checked={formData.accessibility_needs}
@@ -393,7 +393,7 @@ export default function PreferencesPage() {
               <select
                 value={formData.language_pref}
                 onChange={(event) => updateField("language_pref", event.target.value)}
-                className="w-full appearance-none block bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border border-glass-border rounded-xl pl-3 pr-9 sm:pr-10 py-2 sm:py-2.5 text-xs sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-brand-blue/50 cursor-pointer"
+                className="block min-h-11 w-full cursor-pointer appearance-none rounded-lg border border-ui-border bg-ui-surface py-2 pl-3 pr-9 text-xs text-ui-foreground focus:outline-none focus:ring-2 focus:ring-ui-primary/20 sm:pr-10 sm:text-sm"
               >
                 {Object.entries(LANGUAGE_LABELS).map(([code, label]) => (
                   <option key={code} value={code}>{label}</option>
@@ -410,7 +410,7 @@ export default function PreferencesPage() {
               <select
                 value={formData.preferred_seat_type}
                 onChange={(event) => updateField("preferred_seat_type", event.target.value)}
-                className="w-full appearance-none block bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border border-glass-border rounded-xl pl-3 pr-9 sm:pr-10 py-2 sm:py-2.5 text-xs sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-brand-blue/50 cursor-pointer"
+                className="block min-h-11 w-full cursor-pointer appearance-none rounded-lg border border-ui-border bg-ui-surface py-2 pl-3 pr-9 text-xs text-ui-foreground focus:outline-none focus:ring-2 focus:ring-ui-primary/20 sm:pr-10 sm:text-sm"
               >
                 <option value="">No preference</option>
                 <option value="window">Window</option>
@@ -419,7 +419,7 @@ export default function PreferencesPage() {
               <ChevronDown className="pointer-events-none absolute right-3.5 sm:right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" aria-hidden />
             </div>
           </label>
-          <label className="md:col-span-2 flex items-start gap-2.5 rounded-xl border border-glass-border bg-white/30 dark:bg-slate-900/30 p-2.5 sm:p-3 text-xs sm:text-sm cursor-pointer hover:bg-white/40 dark:hover:bg-slate-900/40 transition-colors">
+          <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-ui-border bg-ui-surface-soft p-2.5 text-xs transition-colors hover:border-ui-primary/45 sm:p-3 sm:text-sm md:col-span-2">
             <input
               type="checkbox"
               checked={formData.affinity_opt_in}
@@ -427,10 +427,10 @@ export default function PreferencesPage() {
               className="mt-0.5 h-4 w-4 rounded accent-brand-blue cursor-pointer"
             />
             <div>
-              <strong className="font-semibold text-foreground">
+              <strong className="font-semibold text-ui-foreground">
                 Seatmate affinity matching <span className="text-[10px] sm:text-xs font-normal text-slate-400 dark:text-slate-500">(Optional)</span>
               </strong>
-              <span className="block text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
+              <span className="block text-[11px] sm:text-xs text-ui-muted-foreground mt-0.5 leading-relaxed">
                 Helps place you beside passengers who share your preferred language and compatible travel preferences for a more comfortable journey.
               </span>
             </div>
@@ -459,4 +459,3 @@ export default function PreferencesPage() {
     </div>
   );
 }
-

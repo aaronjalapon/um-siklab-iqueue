@@ -52,7 +52,7 @@ export default function TicketModal({
     <>
       <button
         type="button"
-        className="fixed inset-0 z-40 bg-slate-950/50 backdrop-blur-sm"
+        className="fixed inset-0 z-40 bg-slate-950/50 "
         onClick={onClose}
         aria-label="Close ticket"
       />
@@ -60,7 +60,7 @@ export default function TicketModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="ticket-modal-title"
-        className="fixed bottom-0 left-1/2 z-50 w-full max-w-md -translate-x-1/2 rounded-t-3xl border border-glass-border bg-white p-4 sm:p-6 pt-3 sm:pt-4 shadow-2xl dark:bg-slate-900 md:bottom-6 md:rounded-3xl max-h-[92dvh] overflow-y-auto overscroll-contain"
+        className="fixed bottom-0 left-1/2 z-50 max-h-[92dvh] w-full max-w-md -translate-x-1/2 overflow-y-auto overscroll-contain rounded-t-2xl border border-ui-border bg-ui-surface p-4 pt-3 shadow-[0_16px_48px_rgba(11,31,51,0.22)] sm:p-6 sm:pt-4 md:bottom-6 md:rounded-2xl"
       >
         <div className="mb-3 flex justify-center md:hidden">
           <div className="h-1.5 w-12 rounded-full bg-slate-200 dark:bg-slate-700" />
@@ -74,7 +74,7 @@ export default function TicketModal({
             >
               Your E-ticket
             </h3>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+            <p className="text-xs sm:text-sm text-ui-muted-foreground">
               {data?.route || "Demo QR boarding pass"}
             </p>
           </div>
@@ -100,7 +100,7 @@ export default function TicketModal({
             {code}
           </p>
           {seatInfo && (
-            <p className="mb-3 sm:mb-4 text-xs font-semibold text-brand-blue">
+            <p className="mb-3 sm:mb-4 text-xs font-semibold text-ui-primary">
               {seatInfo}
             </p>
           )}
@@ -115,7 +115,7 @@ export default function TicketModal({
             <span>{downloading ? "Saving..." : "Download QR Pass"}</span>
           </button>
 
-          <p className="px-4 text-center text-xs sm:text-sm leading-5 sm:leading-6 text-slate-500 dark:text-slate-400">
+          <p className="px-4 text-center text-xs sm:text-sm leading-5 sm:leading-6 text-ui-muted-foreground">
             Scan this QR code at the terminal gate during your assigned
             boarding window.
           </p>

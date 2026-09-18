@@ -80,10 +80,10 @@ export default function TicketsPage() {
       ) : (
         <section className={`${uiStyles.surface} flex min-h-[380px] flex-col items-center justify-center p-6 sm:p-8 text-center`}>
           <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-3xl border border-blue-100 bg-blue-50 shadow-inner dark:border-blue-900/40 dark:bg-blue-950/30">
-            <Ticket className="h-9 w-9 text-brand-blue" aria-hidden />
+            <Ticket className="h-9 w-9 text-ui-primary" aria-hidden />
           </div>
-          <h2 className="text-lg sm:text-xl font-bold text-foreground">No active tickets</h2>
-          <p className="mt-1.5 max-w-sm text-xs sm:text-sm leading-5 sm:leading-6 text-slate-500 dark:text-slate-400">
+          <h2 className="text-lg sm:text-xl font-bold text-ui-foreground">No active tickets</h2>
+          <p className="mt-1.5 max-w-sm text-xs sm:text-sm leading-5 sm:leading-6 text-ui-muted-foreground">
             You don&apos;t have any booked trips in this session yet. Search routes to review an accessibility-first seat recommendation.
           </p>
           <Link

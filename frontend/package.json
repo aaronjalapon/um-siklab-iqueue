@@ -10,6 +10,7 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
+    "test:brand": "node ../scripts/validate-brand-tokens.mjs",
     "test:e2e": "playwright test"
   },
   "dependencies": {

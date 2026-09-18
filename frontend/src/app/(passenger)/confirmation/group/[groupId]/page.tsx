@@ -48,7 +48,7 @@ export default function GroupConfirmationPage() {
 
   return (
     <div className={`${uiStyles.pageContainer} max-w-4xl`}>
-      <Link href="/home" className="hidden md:inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium text-brand-blue hover:underline transition-colors"><ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Back home</Link>
+      <Link href="/home" className="hidden md:inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium text-ui-primary hover:underline transition-colors"><ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Back home</Link>
       <BookingProgress current="pass" />
       <PageHeader eyebrow="Combined boarding pass" title="Group Booking Confirmed" description="Everyone was confirmed together. Present this single QR at the connected gate scanner." />
       {savedCopy && <div className="mb-2 sm:mb-4 flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3 sm:p-4 text-xs sm:text-sm font-semibold text-amber-900"><WifiOff className="h-4 w-4 shrink-0" /> Showing the pass saved on this device.</div>}

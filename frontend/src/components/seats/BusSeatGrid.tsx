@@ -96,10 +96,10 @@ export function BusSeatGrid({
           aria-hidden
         />
 
-        <div className="relative rounded-2xl sm:rounded-[2rem] border sm:border-2 border-slate-300 bg-slate-50 px-2.5 py-3 sm:px-4 sm:pb-6 sm:pt-5 shadow-inner dark:border-slate-700 dark:bg-slate-900">
-          <div className="mb-3 sm:mb-5 flex items-center justify-between gap-2 sm:gap-3 rounded-t-xl sm:rounded-t-[1.35rem] border border-slate-200 bg-white/80 px-2.5 py-1.5 sm:px-3 sm:py-2 text-[11px] sm:text-xs font-semibold text-slate-500 dark:border-slate-700 dark:bg-slate-950/70 dark:text-slate-300">
+        <div className="relative rounded-2xl border border-ui-border bg-ui-surface-soft px-2.5 py-3 sm:border-2 sm:px-4 sm:pb-6 sm:pt-5">
+          <div className="mb-3 flex items-center justify-between gap-2 rounded-t-xl border border-ui-border bg-ui-surface px-2.5 py-1.5 text-[11px] font-semibold text-ui-muted-foreground sm:mb-5 sm:gap-3 sm:px-3 sm:py-2 sm:text-xs">
             <span className="inline-flex items-center gap-1.5">
-              <BusFront className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-brand-blue" aria-hidden />
+              <BusFront className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-ui-primary" aria-hidden />
               Front
             </span>
             {accessibilityCount > 0 && (
@@ -162,7 +162,7 @@ export function BusSeatGrid({
                       />
                     ) : (
                       <div
-                        className="h-8 sm:h-9 w-5 sm:w-6 rounded-full border border-dashed border-slate-300 bg-white/50 dark:border-slate-700 dark:bg-slate-950/40"
+                        className="h-8 sm:h-9 w-5 sm:w-6 rounded-full border border-dashed border-slate-300 bg-ui-surface dark:border-slate-700 dark:bg-slate-950/40"
                         aria-hidden
                       />
                     )}
@@ -185,7 +185,7 @@ export function BusSeatGrid({
             })}
           </div>
 
-          <div className="mt-3 sm:mt-5 rounded-b-xl sm:rounded-b-[1.35rem] border border-slate-200 bg-white/70 py-1.5 sm:py-2 text-center text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-slate-400 dark:border-slate-700 dark:bg-slate-950/60">
+          <div className="mt-3 rounded-b-xl border border-ui-border bg-ui-surface py-1.5 text-center text-[10px] font-semibold uppercase tracking-widest text-ui-muted-foreground sm:mt-5 sm:py-2 sm:text-xs">
             Back
           </div>
         </div>

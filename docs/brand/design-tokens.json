@@ -1,0 +1,57 @@
+{
+  "$schema": "https://design-tokens.github.io/community-group/format/",
+  "name": "TripSync Warm Civic Mobility",
+  "version": "1.0.0",
+  "color": {
+    "brand": {
+      "logoBlue": { "$value": "#1A73E8", "$cssVariable": "--brand-logo-blue" },
+      "actionBlue": { "$value": "#175CD3", "$cssVariable": "--ui-primary" },
+      "actionBlueHover": { "$value": "#124CAE", "$cssVariable": "--ui-primary-hover" },
+      "navy": { "$value": "#0B1F33", "$cssVariable": "--ui-navy" },
+      "teal": { "$value": "#087A55", "$cssVariable": "--ui-success" },
+      "signalOrange": { "$value": "#F97316", "$cssVariable": "--brand-signal-orange" }
+    },
+    "light": {
+      "canvas": { "$value": "#F6F7F4", "$cssVariable": "--ui-canvas" },
+      "surface": { "$value": "#FFFFFF", "$cssVariable": "--ui-surface" },
+      "foreground": { "$value": "#132238", "$cssVariable": "--ui-foreground" },
+      "muted": { "$value": "#EEF1F4", "$cssVariable": "--ui-muted" },
+      "mutedForeground": { "$value": "#5F6B7A", "$cssVariable": "--ui-muted-foreground" },
+      "border": { "$value": "#D8DEE8", "$cssVariable": "--ui-border" },
+      "warning": { "$value": "#B45309", "$cssVariable": "--ui-warning" },
+      "danger": { "$value": "#B42318", "$cssVariable": "--ui-danger" }
+    },
+    "dark": {
+      "canvas": { "$value": "#0B1220", "$cssVariable": "--ui-canvas", "$theme": "dark" },
+      "surface": { "$value": "#111B2E", "$cssVariable": "--ui-surface", "$theme": "dark" },
+      "foreground": { "$value": "#F6F8FB", "$cssVariable": "--ui-foreground", "$theme": "dark" },
+      "muted": { "$value": "#1B2940", "$cssVariable": "--ui-muted", "$theme": "dark" },
+      "mutedForeground": { "$value": "#B7C2D0", "$cssVariable": "--ui-muted-foreground", "$theme": "dark" },
+      "border": { "$value": "#33425A", "$cssVariable": "--ui-border", "$theme": "dark" },
+      "primary": { "$value": "#6EA8FE", "$cssVariable": "--ui-primary", "$theme": "dark" },
+      "warning": { "$value": "#F6B84A", "$cssVariable": "--ui-warning", "$theme": "dark" },
+      "success": { "$value": "#31B983", "$cssVariable": "--ui-success", "$theme": "dark" },
+      "danger": { "$value": "#FF8178", "$cssVariable": "--ui-danger", "$theme": "dark" }
+    }
+  },
+  "typography": {
+    "heading": { "$value": "Lexend, Arial, sans-serif" },
+    "body": { "$value": "Source Sans 3, Arial, sans-serif" },
+    "data": { "$value": "SFMono-Regular, Consolas, Liberation Mono, monospace" }
+  },
+  "radius": {
+    "control": { "$value": "8px" },
+    "card": { "$value": "12px" },
+    "panel": { "$value": "16px" }
+  },
+  "motion": {
+    "fast": { "$value": "120ms", "$cssVariable": "--motion-fast" },
+    "standard": { "$value": "200ms", "$cssVariable": "--motion-standard" },
+    "emphasis": { "$value": "300ms", "$cssVariable": "--motion-emphasis" }
+  },
+  "icon": {
+    "small": { "$value": "16px" },
+    "medium": { "$value": "20px" },
+    "large": { "$value": "24px" }
+  }
+}

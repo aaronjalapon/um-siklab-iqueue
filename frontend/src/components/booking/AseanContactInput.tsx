@@ -179,7 +179,7 @@ export function AseanContactInput({
   }
 
   return (
-    <div ref={containerRef} className="relative block text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300">
+    <div ref={containerRef} className="relative block text-xs sm:text-sm font-medium text-ui-foreground">
       <div className="mb-1 flex items-center gap-1 text-slate-600 dark:text-slate-400">
         <label htmlFor={id} className="flex items-center gap-1 cursor-pointer">
           <Phone className="h-3.5 w-3.5 text-slate-500" aria-hidden />
@@ -192,12 +192,12 @@ export function AseanContactInput({
         </label>
       </div>
 
-      <div className="relative flex items-stretch rounded-xl border border-glass-border bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm focus-within:ring-2 focus-within:ring-brand-blue/50 transition-all">
+      <div className="relative flex items-stretch rounded-xl border border-ui-border bg-ui-surface dark:bg-slate-900/50  focus-within:ring-2 focus-within:ring-brand-blue/50 transition-all">
         {/* Country code selector button: space-optimized for mobile devices */}
         <button
           type="button"
           onClick={() => setIsOpen((prev) => !prev)}
-          className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 sm:py-2 bg-slate-100/70 dark:bg-slate-800/70 border-r border-glass-border rounded-l-xl text-xs sm:text-sm font-semibold text-foreground hover:bg-slate-200/70 dark:hover:bg-slate-700/70 transition-colors select-none shrink-0"
+          className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 sm:py-2 bg-slate-100/70 dark:bg-slate-800/70 border-r border-ui-border rounded-l-xl text-xs sm:text-sm font-semibold text-ui-foreground hover:bg-slate-200/70 dark:hover:bg-slate-700/70 transition-colors select-none shrink-0"
           aria-haspopup="listbox"
           aria-expanded={isOpen}
           title={`Selected: ${selectedCountry.name} (${selectedCountry.dialCode})`}
@@ -227,7 +227,7 @@ export function AseanContactInput({
           onChange={handleDigitsChange}
           required={required}
           placeholder={placeholder !== undefined ? placeholder : (required ? "" : "Optional")}
-          className="w-full bg-transparent px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-foreground focus:outline-none placeholder:text-slate-400 placeholder:italic font-medium"
+          className="w-full bg-transparent px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-ui-foreground focus:outline-none placeholder:text-slate-400 placeholder:italic font-medium"
         />
 
         {/* Counter indicator */}
@@ -253,18 +253,18 @@ export function AseanContactInput({
           aria-label="Select country dial code"
           className={`absolute left-0 ${
             openUpward ? "bottom-full mb-1.5" : "top-full mt-1.5"
-          } z-50 w-72 sm:w-80 rounded-xl border border-glass-border bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-2xl overflow-hidden py-1 animate-in fade-in ${
+          } z-50 w-72 sm:w-80 rounded-xl border border-ui-border bg-ui-surface shadow-[0_12px_32px_rgba(11,31,51,0.16)] overflow-hidden py-1 animate-in fade-in ${
             openUpward ? "slide-in-from-bottom-2" : "slide-in-from-top-2"
           } duration-150`}
         >
-          <div className="px-3 py-1.5 border-b border-glass-border bg-slate-50/70 dark:bg-slate-800/50 flex items-center justify-between">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          <div className="px-3 py-1.5 border-b border-ui-border bg-slate-50/70 dark:bg-slate-800/50 flex items-center justify-between">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-ui-muted-foreground">
               ASEAN Route Network
             </span>
             <span className="text-[10px] text-slate-400">Connected Hubs</span>
           </div>
 
-          <div className="max-h-72 overflow-y-auto divide-y divide-glass-border/40">
+          <div className="max-h-72 divide-y divide-ui-border overflow-y-auto">
             {ASEAN_COUNTRIES.map((country) => {
               const isSelected = country.code === selectedCountry.code;
               return (
@@ -276,8 +276,8 @@ export function AseanContactInput({
                   onClick={() => handleCountrySelect(country)}
                   className={`w-full text-left px-3 py-1.5 sm:py-2 flex items-center gap-2.5 transition-colors ${
                     isSelected
-                      ? "bg-blue-50 dark:bg-blue-950/50 text-brand-blue font-semibold"
-                      : "hover:bg-slate-100/80 dark:hover:bg-slate-800/60 text-foreground"
+                      ? "bg-blue-50 dark:bg-blue-950/50 text-ui-primary font-semibold"
+                      : "hover:bg-slate-100/80 dark:hover:bg-slate-800/60 text-ui-foreground"
                   }`}
                 >
                   <span className="text-base sm:text-lg leading-none" role="img" aria-label={country.name}>
@@ -286,7 +286,7 @@ export function AseanContactInput({
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-1">
                       <span className="text-xs font-bold truncate">{country.name}</span>
-                      <span className="font-mono text-xs font-extrabold text-brand-blue">
+                      <span className="font-mono text-xs font-extrabold text-ui-primary">
                         {country.dialCode}
                       </span>
                     </div>
@@ -295,7 +295,7 @@ export function AseanContactInput({
                     </p>
                   </div>
                   {isSelected && (
-                    <Check className="h-3.5 w-3.5 text-brand-blue shrink-0" aria-hidden />
+                    <Check className="h-3.5 w-3.5 text-ui-primary shrink-0" aria-hidden />
                   )}
                 </button>
               );
@@ -334,7 +334,7 @@ export function NameInput({
   }
 
   return (
-    <label htmlFor={id} className="block text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300">
+    <label htmlFor={id} className="block text-xs sm:text-sm font-medium text-ui-foreground">
       <span className="mb-1 flex items-center gap-1 text-slate-600 dark:text-slate-400">
         <UserRound className="h-3.5 w-3.5 text-slate-500" aria-hidden />
         <span>{label}</span>
@@ -352,7 +352,7 @@ export function NameInput({
         required={required}
         placeholder={placeholder || ""}
         maxLength={60}
-        className="w-full block bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border border-glass-border rounded-xl px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/50 transition-all text-foreground placeholder:text-slate-400 font-medium"
+        className="w-full block bg-ui-surface dark:bg-slate-900/50  border border-ui-border rounded-xl px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/50 transition-all text-ui-foreground placeholder:text-slate-400 font-medium"
       />
     </label>
   );

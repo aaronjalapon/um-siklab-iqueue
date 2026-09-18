@@ -104,7 +104,7 @@ export function BoardingQueueTable({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap gap-2 text-sm text-slate-600 dark:text-slate-300">
+      <div className="flex flex-wrap gap-2 text-sm text-ui-muted-foreground">
         <span className={`${uiStyles.badge} bg-slate-100 dark:bg-slate-800`}>
           {summary.waiting} waiting
         </span>
@@ -168,7 +168,7 @@ export function BoardingQueueTable({
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="font-semibold text-foreground">
+                    <p className="font-semibold text-ui-foreground">
                       {entry.passengerName}
                     </p>
                     <p className="mt-1 text-xs text-slate-500">
@@ -208,11 +208,11 @@ export function BoardingQueueTable({
               Boarding queue — passengers sorted by boarding window
             </caption>
             <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-700 text-left text-slate-500 dark:text-slate-400">
+              <tr className="border-b border-ui-border text-left text-ui-muted-foreground">
                 <th className="p-3 font-medium" aria-sort={sortAria("name")}>
                   <button
                     type="button"
-                    className="inline-flex items-center gap-1 hover:text-foreground"
+                    className="inline-flex items-center gap-1 hover:text-ui-foreground"
                     onClick={() => toggleSort("name")}
                   >
                     Passenger <ArrowUpDown className="w-3.5 h-3.5" aria-hidden />
@@ -222,7 +222,7 @@ export function BoardingQueueTable({
                 <th className="p-3 font-medium" aria-sort={sortAria("seat")}>
                   <button
                     type="button"
-                    className="inline-flex items-center gap-1 hover:text-foreground"
+                    className="inline-flex items-center gap-1 hover:text-ui-foreground"
                     onClick={() => toggleSort("seat")}
                   >
                     Seat <ArrowUpDown className="w-3.5 h-3.5" aria-hidden />
@@ -231,7 +231,7 @@ export function BoardingQueueTable({
                 <th className="p-3 font-medium" aria-sort={sortAria("window")}>
                   <button
                     type="button"
-                    className="inline-flex items-center gap-1 hover:text-foreground"
+                    className="inline-flex items-center gap-1 hover:text-ui-foreground"
                     onClick={() => toggleSort("window")}
                   >
                     Window <ArrowUpDown className="w-3.5 h-3.5" aria-hidden />
@@ -254,7 +254,7 @@ export function BoardingQueueTable({
                     }`}
                   >
                     <td className="p-3">
-                      <div className="font-medium text-foreground">
+                      <div className="font-medium text-ui-foreground">
                         {entry.passengerName}
                       </div>
                       <div className="text-xs text-slate-500 sm:hidden">

@@ -25,15 +25,15 @@ interface SeatCellProps {
 
 const STATE_STYLES: Record<SeatCellState, string> = {
   available:
-    "bg-white border-slate-300 text-slate-900 shadow-sm hover:bg-blue-50 hover:border-blue-400 cursor-pointer",
+    "bg-ui-surface border-ui-border text-ui-foreground hover:bg-ui-muted hover:border-ui-primary cursor-pointer",
   occupied:
-    "bg-slate-500 border-slate-600 text-white font-medium cursor-not-allowed",
-  selected: "bg-brand-blue border-blue-700 text-white font-bold ring-2 ring-blue-300 shadow-md",
+    "bg-ui-muted border-ui-border text-ui-muted-foreground font-medium cursor-not-allowed",
+  selected: "bg-ui-primary border-ui-primary text-white dark:text-ui-navy font-bold ring-2 ring-ui-primary/30",
   auto_assigned:
-    "bg-brand-blue border-blue-700 text-white font-bold ring-2 ring-blue-400 ring-offset-1 shadow-md animate-pulse",
-  group_reserved: "bg-brand-blue border-blue-700 text-white font-bold ring-2 ring-blue-400 shadow-md",
-  accessibility: "bg-amber-200 border-amber-400 text-amber-800 cursor-pointer hover:bg-amber-300",
-  blocked: "bg-red-100 border-red-300 text-red-300 cursor-not-allowed",
+    "seat-recommended bg-ui-primary border-ui-primary text-white dark:text-ui-navy font-bold ring-2 ring-ui-primary/30 ring-offset-1",
+  group_reserved: "bg-ui-primary border-ui-primary text-white dark:text-ui-navy font-bold ring-2 ring-ui-primary/30",
+  accessibility: "bg-ui-warning-surface border-ui-warning text-ui-warning cursor-pointer hover:brightness-95",
+  blocked: "bg-ui-danger-surface border-ui-danger/40 text-ui-danger/55 cursor-not-allowed",
 };
 
 const STATE_ICONS: Partial<Record<SeatCellState, LucideIcon>> = {
@@ -68,8 +68,8 @@ export function SeatCell({
     "rounded font-medium transition-all duration-200 flex items-center justify-center relative border";
   const stateClasses = groupAssignment
     ? groupAssignment.is_accessibility
-      ? "bg-amber-400 border-blue-600 text-amber-950 font-bold ring-2 ring-blue-500 shadow-md"
-      : "bg-brand-blue border-blue-700 text-white font-bold ring-2 ring-blue-300 shadow-md"
+      ? "bg-ui-warning-surface border-ui-warning text-ui-warning font-bold ring-2 ring-ui-warning/30"
+      : "bg-ui-primary border-ui-primary text-white dark:text-ui-navy font-bold ring-2 ring-ui-primary/30"
     : STATE_STYLES[state] || STATE_STYLES.available;
   const sizeClasses = SIZE_CLASSES[size];
   const Icon = STATE_ICONS[state];

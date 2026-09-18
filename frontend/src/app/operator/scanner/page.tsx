@@ -465,7 +465,7 @@ export default function BoardingScannerPage() {
                 <h2 id="camera-scanner-title" className="text-lg font-bold text-slate-950 dark:text-white">
                   Gate QR Scanner
                 </h2>
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                <p className="mt-1 text-xs text-ui-muted-foreground">
                   Passenger video remains private on-device; only the HMAC-signed payload is verified.
                 </p>
               </div>
@@ -591,7 +591,7 @@ export default function BoardingScannerPage() {
                 unoptimized
                 className="h-14 w-14 rounded-lg object-cover border border-slate-300 dark:border-slate-700 shadow-sm"
               />
-              <div className="text-xs text-slate-600 dark:text-slate-300">
+              <div className="text-xs text-ui-muted-foreground">
                 <p className="font-bold">
                   {photoScanning ? "Processing captured photo…" : "Photo analyzed"}
                 </p>
@@ -610,7 +610,7 @@ export default function BoardingScannerPage() {
                 Instant Demo Shortcuts
               </p>
             </div>
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            <p className="mt-1 text-xs text-ui-muted-foreground">
               Test full cryptographic verification and gate admission in one tap:
             </p>
 
@@ -758,35 +758,35 @@ export default function BoardingScannerPage() {
               </div>
 
               <dl className="grid grid-cols-2 gap-2.5 rounded-xl border border-slate-200 bg-slate-50/50 p-3 text-xs dark:border-slate-800 dark:bg-slate-900/40">
-                <dt className="text-slate-500 dark:text-slate-400">Status</dt>
+                <dt className="text-ui-muted-foreground">Status</dt>
                 <dd className="font-bold capitalize text-slate-900 dark:text-white">
                   {result.boarding_status || (result.valid ? "Ready" : "Invalid")}
                 </dd>
 
-                <dt className="text-slate-500 dark:text-slate-400">Signature</dt>
+                <dt className="text-ui-muted-foreground">Signature</dt>
                 <dd className={`font-bold ${result.signature_valid ? "text-green-600" : "text-red-600"}`}>
                   {result.signature_valid ? "HMAC Valid ✓" : "Invalid Signature ✖"}
                 </dd>
 
-                <dt className="text-slate-500 dark:text-slate-400">Pass Type</dt>
+                <dt className="text-ui-muted-foreground">Pass Type</dt>
                 <dd className="font-bold capitalize text-slate-900 dark:text-white">
                   {result.pass_type || "Individual"}
                 </dd>
 
-                <dt className="text-slate-500 dark:text-slate-400">Seat(s)</dt>
+                <dt className="text-ui-muted-foreground">Seat(s)</dt>
                 <dd className="font-bold text-slate-900 dark:text-white">
                   {result.seat || (result.members?.map((m) => m.seat).join(", ") ?? "N/A")}
                 </dd>
 
-                <dt className="text-slate-500 dark:text-slate-400">Window</dt>
-                <dd className="font-mono text-[11px] text-slate-700 dark:text-slate-300 truncate">
+                <dt className="text-ui-muted-foreground">Window</dt>
+                <dd className="font-mono text-[11px] text-ui-foreground truncate">
                   {result.boarding_window ? new Date(result.boarding_window).toLocaleTimeString() : "N/A"}
                 </dd>
               </dl>
 
               {result.pass_type === "group" && result.members && result.members.length > 0 && (
                 <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-800">
-                  <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-ui-muted-foreground">
                     Group Member Manifest ({result.members.length} seats)
                   </h3>
                   <ul className="space-y-1.5">

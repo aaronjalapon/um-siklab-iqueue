@@ -274,7 +274,7 @@ function SingleSeatSelectionFlow() {
       <Link
         href={`/book/${busId}/preferences?${new URLSearchParams({ date, origin, dest })}`}
         prefetch={false}
-        className="text-xs sm:text-sm text-brand-blue hover:underline inline-flex items-center gap-1"
+        className="text-xs sm:text-sm text-ui-primary hover:underline inline-flex items-center gap-1"
       >
         <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Back to preferences
       </Link>

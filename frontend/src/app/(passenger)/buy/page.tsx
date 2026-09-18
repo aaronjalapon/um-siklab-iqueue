@@ -237,7 +237,7 @@ function BuyPageInner() {
       <div className="hidden md:flex items-center justify-between">
         <Link
           href="/home"
-          className="inline-flex items-center gap-1 text-xs sm:text-sm font-medium text-brand-blue hover:underline"
+          className="inline-flex items-center gap-1 text-xs sm:text-sm font-medium text-ui-primary hover:underline"
         >
           <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden />
           Back home
@@ -247,10 +247,10 @@ function BuyPageInner() {
       <BookingProgress current="search" />
 
       <header className="min-w-0">
-        <p className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.18em] text-brand-blue">
+        <p className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.18em] text-ui-primary">
           Passenger booking
         </p>
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-foreground tracking-tight">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-ui-foreground tracking-tight">
           Find Your Bus
         </h1>
         <p className="mt-0.5 text-xs text-ui-muted-foreground sm:text-sm">
@@ -341,12 +341,12 @@ function BuyPageInner() {
         <section className="space-y-3 sm:space-y-4">
           <div className="flex items-center justify-between gap-2">
             <div>
-              <p className="text-sm sm:text-base font-bold text-foreground">
+              <p className="text-sm sm:text-base font-bold text-ui-foreground">
                 {loading
                   ? "Checking available buses..."
                   : `${buses.length} ${buses.length === 1 ? "bus" : "buses"} found`}
               </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[200px] sm:max-w-none">
+              <p className="text-xs text-ui-muted-foreground truncate max-w-[200px] sm:max-w-none">
                 {origin.trim()} {"->"} {destination.trim()}
               </p>
             </div>
@@ -392,7 +392,7 @@ function BuyPageInner() {
                 return (
                   <article
                     key={bus.id}
-                    className={`${uiStyles.surface} relative flex flex-col justify-between p-3.5 sm:p-5 transition-all hover:border-brand-blue/40`}
+                    className={`${uiStyles.surface} route-motif relative flex flex-col justify-between p-3.5 transition-colors duration-200 hover:border-ui-primary/45 sm:p-5`}
                   >
                     {/* Top Row: Badges, Route & Price */}
                     <div className="flex items-start justify-between gap-3">
@@ -401,7 +401,7 @@ function BuyPageInner() {
                           <span className="rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
                             {bus.plate_number}
                           </span>
-                          <span className="rounded-md bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/50 dark:border-blue-800/40 px-1.5 py-0.5 text-[11px] font-semibold text-brand-blue dark:text-blue-300">
+                          <span className="rounded-md bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/50 dark:border-blue-800/40 px-1.5 py-0.5 text-[11px] font-semibold text-ui-primary dark:text-blue-300">
                             {bus.capacity >= 45 ? "Regular Aircon Bus" : "Express Mini Bus"}
                           </span>
                           <span
@@ -412,16 +412,16 @@ function BuyPageInner() {
                             {surgeLabel(bus.surge_probability)} demand
                           </span>
                           <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400">
-                            <Clock className="h-3 w-3 text-brand-blue" />
+                            <Clock className="h-3 w-3 text-ui-primary" />
                             Today window
                           </span>
                         </div>
-                        <h2 className="text-base sm:text-lg font-bold text-foreground truncate">
-                          {bus.origin} <span className="text-brand-blue font-semibold">→</span> {bus.destination}
+                        <h2 className="truncate text-base font-bold text-ui-foreground sm:text-lg">
+                          {bus.origin} <span className="text-ui-primary font-semibold">→</span> {bus.destination}
                         </h2>
                       </div>
                       <div className="shrink-0 text-right">
-                        <p className="text-lg sm:text-xl font-extrabold text-brand-blue leading-tight">
+                        <p className="text-lg sm:text-xl font-extrabold text-ui-primary leading-tight">
                           PHP {estimateFare(bus)}
                         </p>
                         <span className="text-[10px] text-slate-400 font-medium">per seat</span>
@@ -429,7 +429,7 @@ function BuyPageInner() {
                     </div>
 
                     {/* Middle strip: Capacity & Accessibility in one sleek horizontal row */}
-                    <div className="mt-2.5 pt-2.5 border-t border-glass-border/60 flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <div className="mt-2.5 pt-2.5 border-t border-ui-border/60 flex flex-wrap items-center justify-between gap-2 text-xs">
                       <div className="flex items-center gap-2 min-w-0">
                         <span className="flex items-center gap-1 font-semibold text-slate-700 dark:text-slate-200">
                           <BusFront className="h-3.5 w-3.5 text-brand-orange shrink-0" />
@@ -485,8 +485,8 @@ function BuyPageInner() {
             !error && (
               <div className={`${uiStyles.surface} py-8 text-center`}>
                 <MapPin className="mx-auto mb-2 h-10 w-10 text-slate-300" />
-                <p className="font-semibold text-foreground text-sm sm:text-base">No buses found</p>
-                <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+                <p className="font-semibold text-ui-foreground text-sm sm:text-base">No buses found</p>
+                <p className="mt-1 text-xs sm:text-sm text-ui-muted-foreground">
                   Try a different origin, destination, or date.
                 </p>
               </div>

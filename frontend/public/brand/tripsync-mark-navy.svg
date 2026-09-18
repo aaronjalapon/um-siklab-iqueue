@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8243 8450" role="img" aria-labelledby="title">
+  <title id="title">TripSync monochrome navy mark</title>
+  <defs>
+    <filter id="navy" color-interpolation-filters="sRGB">
+      <feFlood flood-color="#0B1F33" result="color"/>
+      <feComposite in="color" in2="SourceAlpha" operator="in"/>
+    </filter>
+  </defs>
+  <image href="../logo.svg" width="8243" height="8450" filter="url(#navy)"/>
+</svg>

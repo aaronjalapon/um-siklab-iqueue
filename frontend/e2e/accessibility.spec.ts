@@ -24,10 +24,14 @@ test.beforeEach(async ({ page }) => {
 });
 
 test("critical public and booking views have no serious axe violations", async ({ page }) => {
-  for (const path of ["/", "/buy", "/operator"]) {
-    await page.goto(path);
-    await expect(page.locator("main")).toBeVisible();
-    await expectNoSeriousAxeViolations(page);
+  for (const theme of ["light", "dark"] as const) {
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: "reduce" });
+    for (const path of ["/", "/buy", "/operator"]) {
+      await page.goto(path);
+      await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
+      await expect(page.locator("main")).toBeVisible();
+      await expectNoSeriousAxeViolations(page);
+    }
   }
 });
 

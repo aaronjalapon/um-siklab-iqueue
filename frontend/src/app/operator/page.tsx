@@ -273,7 +273,7 @@ export default function OperatorDashboard() {
         title="Operator Dashboard"
         description={`Route: ${routeLabel}`}
         actions={
-          <label className="flex w-full flex-col gap-1 text-sm font-medium text-slate-600 dark:text-slate-300 sm:min-w-[260px] sm:w-auto">
+          <label className="flex w-full flex-col gap-1 text-sm font-medium text-ui-muted-foreground sm:min-w-[260px] sm:w-auto">
             Forecast route
             <select
               value={routeId}
@@ -318,7 +318,7 @@ export default function OperatorDashboard() {
             icon={Bus}
             label="Active Buses"
             value={String(stats.activeBuses)}
-            iconClassName="text-brand-blue"
+            iconClassName="text-ui-primary"
           />
           <StatCard
             icon={Users}
@@ -355,12 +355,12 @@ export default function OperatorDashboard() {
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div>
               <h2 className={uiStyles.sectionTitle}>Forecast Decision</h2>
-              <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+              <p className="mt-1 text-sm text-ui-muted-foreground">
                 {primaryPrediction
                   ? primaryPrediction.recommended_action
                   : "No forecast recommendation available."}
               </p>
-              <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500 dark:text-slate-400">
+              <div className="mt-3 flex flex-wrap gap-2 text-xs text-ui-muted-foreground">
                 <span className="rounded border border-slate-200 px-2 py-1 dark:border-slate-700">
                   Source: {modelSource ?? "unknown"}
                 </span>
@@ -427,37 +427,37 @@ export default function OperatorDashboard() {
 
         <section className={`${uiStyles.surface} p-5`}>
           <div className="flex items-center gap-2">
-            <BrainCircuit className="h-5 w-5 text-brand-blue" />
+            <BrainCircuit className="h-5 w-5 text-ui-primary" />
             <h2 className={uiStyles.sectionTitle}>AI Learning Log</h2>
           </div>
           <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
             <div>
-              <dt className="text-slate-500 dark:text-slate-400">Snapshots</dt>
+              <dt className="text-ui-muted-foreground">Snapshots</dt>
               <dd className="text-lg font-semibold">
                 {learningSummary?.forecast_snapshots ?? 0}
               </dd>
             </div>
             <div>
-              <dt className="text-slate-500 dark:text-slate-400">Actions</dt>
+              <dt className="text-ui-muted-foreground">Actions</dt>
               <dd className="text-lg font-semibold">
                 {learningSummary?.operator_actions ?? 0}
               </dd>
             </div>
             <div>
-              <dt className="text-slate-500 dark:text-slate-400">Outcomes</dt>
+              <dt className="text-ui-muted-foreground">Outcomes</dt>
               <dd className="text-lg font-semibold">
                 {learningSummary?.operational_outcomes ?? 0}
               </dd>
             </div>
             <div>
-              <dt className="text-slate-500 dark:text-slate-400">Ready Rows</dt>
+              <dt className="text-ui-muted-foreground">Ready Rows</dt>
               <dd className="text-lg font-semibold">
                 {learningSummary?.ground_truth_ready_rows ?? 0}
               </dd>
             </div>
           </dl>
           {metricsSummary?.avg_surge_f1 !== undefined && (
-            <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">
+            <p className="mt-4 text-xs text-ui-muted-foreground">
               Active model avg Surge F1: {String(metricsSummary.avg_surge_f1)}
             </p>
           )}
@@ -496,12 +496,12 @@ export default function OperatorDashboard() {
       </div>
 
       {outcomeOpen && primaryPrediction && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70  p-4 animate-in fade-in duration-200">
           <form onSubmit={submitOutcome} className={`${uiStyles.surface} max-h-[90vh] w-full max-w-2xl overflow-y-auto p-6 sm:p-7 shadow-2xl border border-slate-700/60 bg-slate-900/95`}>
             <div className="flex items-start justify-between gap-4 pb-4 border-b border-slate-800">
               <div>
                 <div className="flex items-center gap-2">
-                  <ClipboardCheck className="h-5 w-5 text-brand-blue" />
+                  <ClipboardCheck className="h-5 w-5 text-ui-primary" />
                   <h2 className={uiStyles.sectionTitle}>Record Route Outcome</h2>
                 </div>
                 <p className="mt-1 text-xs sm:text-sm text-slate-400">
@@ -549,7 +549,7 @@ export default function OperatorDashboard() {
                 type="checkbox"
                 checked={outcomeForm.overcrowdingIncident}
                 onChange={(event) => setOutcomeForm((current) => ({ ...current, overcrowdingIncident: event.target.checked }))}
-                className="h-4 w-4 rounded border-slate-700 text-brand-blue focus:ring-brand-blue/50"
+                className="h-4 w-4 rounded border-slate-700 text-ui-primary focus:ring-brand-blue/50"
               />
               <span>Terminal overcrowding incident occurred during departure</span>
             </label>
@@ -577,7 +577,7 @@ export default function OperatorDashboard() {
       )}
 
       {overrideMode && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70  p-4 animate-in fade-in duration-200">
           <form
             onSubmit={submitOverride}
             className={`${uiStyles.surface} w-full max-w-xl p-6 sm:p-7 shadow-2xl border border-slate-700/60 bg-slate-900/95`}

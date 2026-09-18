@@ -4,6 +4,8 @@ import { config } from "@fortawesome/fontawesome-svg-core";
 import "@fortawesome/fontawesome-svg-core/styles.css";
 import DevelopmentRuntimeGate from "@/components/DevelopmentRuntimeGate";
 import PWARegistrar from "@/components/PWARegistrar";
+import { ThemeProvider } from "@/components/theme/ThemeProvider";
+import { themeBootstrapScript } from "@/lib/theme";
 import { BRAND } from "@/lib/brand";
 import { SHOULD_ENABLE_PWA } from "@/lib/pwa-runtime";
 import "./globals.css";
@@ -69,25 +71,27 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#1A73E8" },
-    { media: "(prefers-color-scheme: dark)", color: "#0f172a" },
-  ],
+  themeColor: "#1A73E8",
 };
 
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${lexend.variable} ${sourceSans.variable} h-full antialiased`} suppressHydrationWarning>
+    <html lang="en" data-theme="light" className={`${lexend.variable} ${sourceSans.variable} h-full antialiased`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
+      </head>
       <body suppressHydrationWarning className="relative flex min-h-full flex-col overflow-x-hidden bg-ui-canvas font-sans text-ui-foreground">
-        <a href="#main-content" className="sr-only z-[100] rounded-lg bg-white px-4 py-3 text-slate-950 focus:not-sr-only focus:fixed focus:left-4 focus:top-4">
-          Skip to main content
-        </a>
-        <div className="relative z-0 w-full flex-1">
-          <DevelopmentRuntimeGate>{children}</DevelopmentRuntimeGate>
-        </div>
-        <PWARegistrar />
+        <ThemeProvider>
+          <a href="#main-content" className="sr-only z-[100] rounded-lg bg-ui-surface px-4 py-3 text-ui-foreground focus:not-sr-only focus:fixed focus:left-4 focus:top-4">
+            Skip to main content
+          </a>
+          <div className="relative z-0 w-full flex-1">
+            <DevelopmentRuntimeGate>{children}</DevelopmentRuntimeGate>
+          </div>
+          <PWARegistrar />
+        </ThemeProvider>
       </body>
     </html>
   );

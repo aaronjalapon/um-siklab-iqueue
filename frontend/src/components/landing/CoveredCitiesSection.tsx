@@ -21,7 +21,7 @@ export default function CoveredCitiesSection() {
           <div className="mb-5 flex items-center justify-between"><div><p className="text-sm font-semibold text-blue-200">Network diagram</p><p className="font-heading text-xl font-semibold">TripSync pilot terminals</p></div><MapPinned className="h-7 w-7 text-blue-300" aria-hidden /></div>
           <svg viewBox="0 0 680 380" role="img" aria-labelledby="network-map-title network-map-desc" className="w-full">
             <title id="network-map-title">TripSync pilot route network</title><desc id="network-map-desc">A static schematic connecting Davao City with six Mindanao demonstration terminals.</desc>
-            <g stroke="#6484a4" strokeWidth="3" fill="none"><path d="M330 190 L105 85 M330 190 L145 295 M330 190 L350 55 M330 190 L520 80 M330 190 L555 220 M330 190 L470 330" /></g>
+            <g className="route-reveal" stroke="#6484a4" strokeWidth="3" fill="none"><path d="M330 190 L105 85 M330 190 L145 295 M330 190 L350 55 M330 190 L520 80 M330 190 L555 220 M330 190 L470 330" /></g>
             {[[330,190,"Davao City"],[105,85,"Cagayan de Oro"],[145,295,"Cotabato City"],[350,55,"Iligan City"],[520,80,"Butuan City"],[555,220,"General Santos"],[470,330,"Zamboanga City"]].map(([x,y,label]) => <g key={String(label)}><circle cx={Number(x)} cy={Number(y)} r="10" fill={label === "Davao City" ? "#6ea8fe" : "#ffffff"} stroke="#0b1f33" strokeWidth="4"/><text x={Number(x)} y={Number(y) + 28} textAnchor="middle" fill="#ffffff" fontSize="15" fontWeight="600">{label}</text></g>)}
           </svg>
           <p className="mt-4 border-t border-white/15 pt-4 text-sm text-slate-300">Static portfolio diagram · not real-time vehicle tracking</p>

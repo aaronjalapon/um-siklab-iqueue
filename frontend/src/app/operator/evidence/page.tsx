@@ -68,7 +68,7 @@ export default function EvidencePage() {
         <>
           <section className="grid gap-4 md:grid-cols-4">
             <div className={`${uiStyles.surface} p-4`}>
-              <Database className="h-5 w-5 text-brand-blue" />
+              <Database className="h-5 w-5 text-ui-primary" />
               <p className="mt-3 text-xs text-slate-500">Bundle</p>
               <p className="font-semibold">{evidence.active_bundle.version ?? "Unversioned"}</p>
             </div>
@@ -78,7 +78,7 @@ export default function EvidencePage() {
               <p className="font-semibold capitalize">{evidence.active_bundle.status}</p>
             </div>
             <div className={`${uiStyles.surface} p-4`}>
-              <FileCheck2 className="h-5 w-5 text-brand-blue" />
+              <FileCheck2 className="h-5 w-5 text-ui-primary" />
               <p className="mt-3 text-xs text-slate-500">Loaded routes</p>
               <p className="font-semibold">{evidence.active_bundle.loaded_routes.length}</p>
             </div>

@@ -77,7 +77,7 @@ export default function OperatorSeatDashboardPage() {
         <button
           type="button"
           onClick={refreshSeats}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-ui-border rounded-lg text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition"
         >
           <RefreshCw className="w-4 h-4" />
           Refresh
@@ -99,7 +99,7 @@ export default function OperatorSeatDashboardPage() {
           className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition ${
             viewMode === "grid"
               ? "bg-blue-600 text-white"
-              : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700"
+              : "bg-white dark:bg-slate-800 text-ui-muted-foreground hover:bg-slate-50 dark:hover:bg-slate-700 border border-ui-border"
           }`}
         >
           <LayoutGrid className="w-4 h-4" />
@@ -113,7 +113,7 @@ export default function OperatorSeatDashboardPage() {
           className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition ${
             viewMode === "list"
               ? "bg-blue-600 text-white"
-              : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700"
+              : "bg-white dark:bg-slate-800 text-ui-muted-foreground hover:bg-slate-50 dark:hover:bg-slate-700 border border-ui-border"
           }`}
         >
           <List className="w-4 h-4" />

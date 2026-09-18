@@ -514,9 +514,9 @@ export default function ChatbotPanel({ bookingId, hideLauncher = false }: Chatbo
         <button
           type="button"
           onClick={handleButtonClick}
-          className={`relative flex h-12 w-12 min-h-12 min-w-12 items-center justify-center rounded-lg border border-blue-300/40 bg-ui-navy text-white shadow-sm hover:bg-slate-800 ${
+          className={`relative flex h-12 w-12 min-h-12 min-w-12 items-center justify-center rounded-lg border border-white/20 bg-ui-navy text-white shadow-sm hover:bg-[#132f4d] ${
             isDragging
-              ? "ring-4 ring-blue-400/60 shadow-2xl shadow-blue-900/70"
+              ? "ring-4 ring-ui-primary/35"
               : "active:scale-95 transition-colors duration-200"
           } focus:outline-none focus:ring-4 focus:ring-blue-400/40`}
           aria-label={isOpen ? `Close ${BRAND.assistantName}` : `Chat with ${BRAND.assistantName}`}
@@ -543,16 +543,16 @@ export default function ChatbotPanel({ bookingId, hideLauncher = false }: Chatbo
           aria-label={UI_STRINGS[lang].title}
           className="fixed bottom-28 left-3 right-3 mx-0 sm:bottom-6 sm:left-auto sm:right-6
                      w-auto sm:w-96 h-[min(72dvh,540px)] max-h-[calc(100dvh-7rem)]
-                     bg-white dark:bg-slate-900
-                     rounded-xl shadow-lg
+                     bg-ui-surface
+                     rounded-xl shadow-[0_12px_32px_rgba(11,31,51,0.18)]
                      border border-ui-border
                      flex flex-col z-50 overflow-hidden"
         >
           {/* Header */}
-          <div className="bg-blue-700 text-white p-4 flex items-center justify-between shrink-0">
+          <div className="flex shrink-0 items-center justify-between bg-ui-navy p-4 text-white">
             <div>
               <h3 className="font-bold text-base">{UI_STRINGS[lang].title}</h3>
-              <p className="text-xs text-blue-200">{UI_STRINGS[lang].subtitle}</p>
+              <p className="text-xs text-slate-300">{UI_STRINGS[lang].subtitle}</p>
             </div>
             <button
               type="button"
@@ -566,8 +566,7 @@ export default function ChatbotPanel({ bookingId, hideLauncher = false }: Chatbo
 
           {/* Language Selector */}
           <div
-            className="flex items-center gap-1 px-3 py-2 border-b
-                       dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 shrink-0"
+            className="flex shrink-0 items-center gap-1 border-b border-ui-border bg-ui-surface-soft px-3 py-2"
           >
             {LANGUAGES.map((l) => (
               <button
@@ -576,8 +575,8 @@ export default function ChatbotPanel({ bookingId, hideLauncher = false }: Chatbo
                 onClick={() => handleLanguageChange(l.code)}
                 className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                   lang === l.code
-                    ? "bg-blue-700 text-white shadow-sm"
-                    : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10"
+                    ? "bg-ui-primary text-white dark:text-ui-navy"
+                    : "text-ui-muted-foreground hover:bg-ui-muted"
                 }`}
                 title={l.label}
               >
@@ -596,8 +595,8 @@ export default function ChatbotPanel({ bookingId, hideLauncher = false }: Chatbo
                 <div
                   className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
                     msg.role === "user"
-                      ? "bg-blue-700 text-white"
-                      : "bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-slate-200"
+                      ? "bg-ui-primary text-white dark:text-ui-navy"
+                      : "bg-ui-muted text-ui-foreground"
                   }`}
                 >
                   <p>{msg.text}</p>
@@ -617,11 +616,11 @@ export default function ChatbotPanel({ bookingId, hideLauncher = false }: Chatbo
                             key={ai}
                             onClick={() => handleSuggestionClick(action)}
                             disabled={loading}
-                            className="text-xs bg-blue-50 dark:bg-blue-900/30
-                                       text-blue-700 dark:text-blue-300
-                                       border border-blue-200 dark:border-blue-800
+                            className="text-xs bg-ui-surface-soft
+                                       text-ui-primary
+                                       border border-ui-primary/25
                                        rounded-full px-2.5 py-1
-                                       hover:bg-blue-100 dark:hover:bg-blue-900/50
+                                       hover:bg-ui-muted
                                        disabled:opacity-50 disabled:cursor-not-allowed
                                        transition-colors"
                           >
@@ -636,10 +635,10 @@ export default function ChatbotPanel({ bookingId, hideLauncher = false }: Chatbo
               </div>
             ))}
             {loading && (
-              <div className="flex items-center gap-2 text-gray-400 dark:text-slate-500 text-sm px-2">
-                <span className="w-2 h-2 bg-blue-700 rounded-full animate-bounce [animation-delay:0ms]" />
-                <span className="w-2 h-2 bg-blue-700 rounded-full animate-bounce [animation-delay:150ms]" />
-                <span className="w-2 h-2 bg-blue-700 rounded-full animate-bounce [animation-delay:300ms]" />
+              <div className="flex items-center gap-2 px-2 text-sm text-ui-muted-foreground" aria-label="Assistant is typing">
+                <span className="h-2 w-2 animate-bounce rounded-full bg-ui-primary motion-reduce:animate-none [animation-delay:0ms]" />
+                <span className="h-2 w-2 animate-bounce rounded-full bg-ui-primary motion-reduce:animate-none [animation-delay:150ms]" />
+                <span className="h-2 w-2 animate-bounce rounded-full bg-ui-primary motion-reduce:animate-none [animation-delay:300ms]" />
               </div>
             )}
             <div ref={messagesEndRef} />
@@ -647,13 +646,13 @@ export default function ChatbotPanel({ bookingId, hideLauncher = false }: Chatbo
 
           {/* Quick reply buttons */}
           {messages.length > 0 && !loading && (
-            <div className="px-3 py-2 flex gap-1.5 overflow-x-auto border-t dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 shrink-0">
+            <div className="flex shrink-0 gap-1.5 overflow-x-auto border-t border-ui-border bg-ui-surface-soft px-3 py-2">
               {QUICK_REPLIES[lang].map((reply, i) => (
                 <button
                   type="button"
                   key={i}
                   onClick={() => handleSuggestionClick(reply)}
-                  className="flex-shrink-0 min-h-[38px] text-xs px-3.5 py-1.5 rounded-full bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-200 border dark:border-white/10 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-700 dark:hover:text-blue-300 transition-colors flex items-center"
+                  className="flex min-h-11 flex-shrink-0 items-center rounded-full border border-ui-border bg-ui-surface px-3.5 py-1.5 text-xs text-ui-muted-foreground transition-colors hover:border-ui-primary hover:text-ui-primary"
                 >
                   {reply}
                 </button>
@@ -662,7 +661,7 @@ export default function ChatbotPanel({ bookingId, hideLauncher = false }: Chatbo
           )}
 
           {/* Input */}
-          <div className="border-t dark:border-slate-800 p-3 flex gap-2 shrink-0">
+          <div className="flex shrink-0 gap-2 border-t border-ui-border p-3">
             <input
               type="text"
               value={input}
@@ -670,20 +669,15 @@ export default function ChatbotPanel({ bookingId, hideLauncher = false }: Chatbo
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
               placeholder={UI_STRINGS[lang].placeholder}
               disabled={loading}
-              className="flex-1 border border-gray-300 dark:border-slate-700
-                         rounded-xl px-3.5 py-2.5 text-base
-                         dark:bg-slate-800 dark:text-slate-200 dark:placeholder-slate-500
-                         focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400
-                         focus:border-blue-500 dark:focus:border-blue-400
-                         disabled:opacity-50"
+              className="min-h-11 flex-1 rounded-lg border border-ui-border bg-ui-surface px-3.5 py-2.5 text-base text-ui-foreground placeholder:text-ui-muted-foreground focus:border-ui-primary focus:ring-2 focus:ring-ui-primary/20 disabled:opacity-50"
             />
             <button
               type="button"
               onClick={() => handleSend()}
               disabled={loading || !input.trim()}
-              className="bg-blue-700 text-white min-h-[44px] min-w-[44px] rounded-xl flex items-center justify-center p-2.5
-                         hover:bg-blue-800
-                         disabled:bg-gray-300 dark:disabled:bg-slate-700
+              className="bg-ui-primary text-white dark:text-ui-navy min-h-[44px] min-w-[44px] rounded-lg flex items-center justify-center p-2.5
+                         hover:bg-ui-primary-hover
+                         disabled:bg-ui-muted disabled:text-ui-muted-foreground
                          disabled:cursor-not-allowed active:scale-95 transition"
               aria-label="Send message"
             >

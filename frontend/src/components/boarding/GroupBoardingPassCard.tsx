@@ -39,14 +39,14 @@ export default function GroupBoardingPassCard({
   }
 
   return (
-    <section className={`${uiStyles.surface} overflow-hidden`}>
-      <header className="flex flex-wrap items-center justify-between gap-2 border-b border-glass-border p-3 sm:p-5">
+    <section className={`${uiStyles.surface} confirmation-reveal overflow-hidden`}>
+      <header className="flex flex-wrap items-center justify-between gap-2 border-b border-ui-border p-3 sm:p-5">
         <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-          <div className="flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl bg-green-50 text-green-600 dark:bg-green-950/40 dark:text-green-400">
+          <div className="flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl bg-ui-success-surface text-ui-success">
             <CheckCircle2 className="h-5 w-5 sm:h-6 sm:w-6" aria-hidden />
           </div>
           <div className="min-w-0">
-            <h2 className="text-xs sm:text-base font-bold text-foreground truncate">{BRAND.name} Combined Group Pass</h2>
+            <h2 className="text-xs sm:text-base font-bold text-ui-foreground truncate">{BRAND.name} Combined Group Pass</h2>
             <p className="text-[10px] sm:text-xs text-slate-500 truncate">Group {booking.group_id.slice(0, 8)} · {booking.members.length} passengers</p>
           </div>
         </div>
@@ -62,16 +62,16 @@ export default function GroupBoardingPassCard({
         {/* Trip Details: Order 1 on mobile, Left Col Row 1 on desktop */}
         <div className="order-1 space-y-2.5 sm:space-y-3 lg:col-start-1 lg:row-start-1">
           <div className="grid grid-cols-2 gap-2 sm:gap-3">
-            <div className="rounded-xl bg-white/60 p-2.5 sm:p-4 dark:bg-slate-900/40">
+            <div className="rounded-xl bg-ui-surface p-2.5 sm:p-4 dark:bg-slate-900/40">
               <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Route</p>
-              <p className="mt-0.5 sm:mt-1 flex items-center gap-1.5 text-xs sm:text-sm font-bold text-foreground">
-                <MapPin className="h-3.5 w-3.5 shrink-0 text-brand-blue" />
+              <p className="mt-0.5 sm:mt-1 flex items-center gap-1.5 text-xs sm:text-sm font-bold text-ui-foreground">
+                <MapPin className="h-3.5 w-3.5 shrink-0 text-ui-primary" />
                 <span className="truncate">{booking.route_origin} → {booking.route_destination}</span>
               </p>
             </div>
-            <div className="rounded-xl bg-white/60 p-2.5 sm:p-4 dark:bg-slate-900/40">
+            <div className="rounded-xl bg-ui-surface p-2.5 sm:p-4 dark:bg-slate-900/40">
               <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Departure</p>
-              <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm font-bold text-foreground truncate">{formatDate(booking.departure_date)}</p>
+              <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm font-bold text-ui-foreground truncate">{formatDate(booking.departure_date)}</p>
             </div>
           </div>
           <div className="flex items-center justify-between gap-2 rounded-xl border border-brand-orange/30 bg-orange-50/70 px-3 py-2 sm:px-3.5 sm:py-2.5 text-orange-950 dark:bg-orange-950/30 dark:text-orange-100">
@@ -88,7 +88,7 @@ export default function GroupBoardingPassCard({
         {/* QR Code Card: Order 2 on mobile (prominent), Right Col spanning rows 1-2 on desktop */}
         <div className="order-2 lg:order-none lg:col-start-2 lg:row-start-1 lg:row-span-2 flex flex-col items-center justify-center rounded-2xl bg-white p-3.5 sm:p-5 text-center shadow-sm dark:bg-slate-900/80 border border-slate-100 dark:border-slate-800">
           <div className="mb-2 sm:mb-2.5 inline-flex items-center gap-1 rounded-full bg-slate-100/90 px-2.5 py-0.5 text-[10px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-            <ShieldCheck className="h-3 w-3 text-brand-blue" />
+            <ShieldCheck className="h-3 w-3 text-ui-primary" />
             <span>Encrypted Offline Pass</span>
           </div>
           <div ref={qrContainerRef} role="img" aria-label={`Combined QR boarding pass for ${booking.members.length} group members`} className="rounded-2xl border border-slate-200/80 bg-white p-2.5 sm:p-3 shadow-xs">
@@ -97,7 +97,7 @@ export default function GroupBoardingPassCard({
           <p className="mt-2.5 sm:mt-3 text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100">One QR for the whole group</p>
           <div className="mt-1 flex flex-wrap items-center justify-center gap-1 text-[11px] text-slate-500">
             <span>Assigned Seats:</span>
-            <span className="font-bold text-brand-blue">{booking.members.map((m) => m.seat_label).join(", ")}</span>
+            <span className="font-bold text-ui-primary">{booking.members.map((m) => m.seat_label).join(", ")}</span>
           </div>
           <p className="mt-1 text-[10px] sm:text-[11px] text-slate-400 max-w-[230px]">Offline-verified by gate scanner · Present at boarding gate</p>
           
@@ -114,8 +114,8 @@ export default function GroupBoardingPassCard({
 
         {/* Group Members: Order 3 on mobile, Left Col Row 2 on desktop */}
         <div className="order-3 lg:order-none lg:col-start-1 lg:row-start-2">
-          <h3 className="mb-2 flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-bold text-foreground">
-            <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-brand-blue" />
+          <h3 className="mb-2 flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-bold text-ui-foreground">
+            <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-ui-primary" />
             <span>Group members ({booking.members.length})</span>
           </h3>
           <div className="space-y-2">
@@ -125,7 +125,7 @@ export default function GroupBoardingPassCard({
                 className={`flex items-center gap-2.5 sm:gap-3 rounded-xl border p-2.5 sm:p-3 transition-colors ${
                   member.accessibility_needs
                     ? "border-amber-400/60 bg-amber-50/60 dark:border-amber-600/40 dark:bg-amber-950/20"
-                    : "border-slate-200/80 bg-white/50 dark:border-slate-700/60 dark:bg-slate-900/40"
+                    : "border-slate-200/80 bg-ui-surface dark:border-slate-700/60 dark:bg-slate-900/40"
                 }`}
               >
                 {/* Member Index Avatar */}
@@ -135,7 +135,7 @@ export default function GroupBoardingPassCard({
 
                 {/* Member Info: Name + Status Row aligned together */}
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs sm:text-sm font-bold text-foreground truncate">
+                  <p className="text-xs sm:text-sm font-bold text-ui-foreground truncate">
                     {member.name}
                   </p>
                   <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] sm:text-xs">
@@ -155,7 +155,7 @@ export default function GroupBoardingPassCard({
                 {/* Seat Assignment Column */}
                 <div className="shrink-0 text-right pl-2 sm:pl-3 border-l border-slate-200/70 dark:border-slate-700/60">
                   <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-400">Seat</p>
-                  <p className="text-base sm:text-lg font-black text-brand-blue leading-none mt-0.5">{member.seat_label}</p>
+                  <p className="text-base sm:text-lg font-black text-ui-primary leading-none mt-0.5">{member.seat_label}</p>
                 </div>
               </article>
             ))}

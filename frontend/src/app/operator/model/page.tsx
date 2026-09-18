@@ -48,8 +48,8 @@ function statusColor(status: RetrainJobStatus): string {
     case "failed": return "text-red-600 dark:text-red-400";
     case "training":
     case "evaluating":
-    case "promoting": return "text-brand-blue";
-    default: return "text-slate-500 dark:text-slate-400";
+    case "promoting": return "text-ui-primary";
+    default: return "text-ui-muted-foreground";
   }
 }
 
@@ -95,8 +95,8 @@ function MetricsCompare({
     ? (((candidate - champion) / Math.abs(champion)) * 100).toFixed(1)
     : "—";
   return (
-    <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white/60 dark:bg-slate-900/60 p-4">
-      <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">
+    <div className="rounded-xl border border-ui-border bg-ui-surface dark:bg-slate-900/60 p-4">
+      <p className="text-xs font-medium text-ui-muted-foreground uppercase tracking-wide mb-3">
         {label}
       </p>
       <div className="flex items-end justify-between gap-4">
@@ -239,7 +239,7 @@ export default function ModelRetrainingPage() {
         {/* Trigger panel */}
         <section className={`${uiStyles.surface} p-5 lg:col-span-2`}>
           <div className="flex items-center gap-2 mb-4">
-            <FlaskConical className="h-5 w-5 text-brand-blue" />
+            <FlaskConical className="h-5 w-5 text-ui-primary" />
             <h2 className={uiStyles.sectionTitle}>Trigger Retraining</h2>
           </div>
 
@@ -288,7 +288,7 @@ export default function ModelRetrainingPage() {
               type="button"
               disabled={reloadState === "loading"}
               onClick={() => void handleReload()}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 px-5 py-2.5 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 transition-colors"
+              className="inline-flex items-center gap-2 rounded-xl border border-ui-border px-5 py-2.5 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 transition-colors"
             >
               {reloadState === "loading"
                 ? <Loader2 className="h-4 w-4 animate-spin" />
@@ -307,11 +307,11 @@ export default function ModelRetrainingPage() {
           )}
 
           {/* Pipeline stages legend */}
-          <div className="mt-5 pt-4 border-t border-slate-200 dark:border-slate-700">
-            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-3">Pipeline stages</p>
+          <div className="mt-5 pt-4 border-t border-ui-border">
+            <p className="text-xs font-medium text-ui-muted-foreground mb-3">Pipeline stages</p>
             <div className="flex flex-wrap gap-2">
               {["checking_data", "training", "evaluating", "promoting"].map((s) => (
-                <span key={s} className="rounded-full border border-slate-200 dark:border-slate-700 px-3 py-1 text-xs font-medium text-slate-600 dark:text-slate-400">
+                <span key={s} className="rounded-full border border-ui-border px-3 py-1 text-xs font-medium text-slate-600 dark:text-slate-400">
                   {statusLabel(s as RetrainJobStatus)}
                 </span>
               ))}
@@ -326,12 +326,12 @@ export default function ModelRetrainingPage() {
             <ShieldCheck className="h-5 w-5 text-emerald-500" />
             <h2 className={uiStyles.sectionTitle}>Promotion Gate</h2>
           </div>
-          <ul className="space-y-3 text-sm text-slate-600 dark:text-slate-300">
+          <ul className="space-y-3 text-sm text-ui-muted-foreground">
             {[
               { icon: ArrowUpCircle, color: "text-green-500", rule: "Surge F1 must improve" },
               { icon: ArrowUpCircle, color: "text-green-500", rule: "OR Surge Recall must improve" },
               { icon: AlertTriangle, color: "text-amber-500", rule: "AND MAE regression ≤ 5%" },
-              { icon: Database, color: "text-brand-blue", rule: `≥ ${minRows} ground-truth rows required` },
+              { icon: Database, color: "text-ui-primary", rule: `≥ ${minRows} ground-truth rows required` },
             ].map(({ icon: Icon, color, rule }) => (
               <li key={rule} className="flex items-start gap-2.5">
                 <Icon className={`h-4 w-4 mt-0.5 shrink-0 ${color}`} />
@@ -339,7 +339,7 @@ export default function ModelRetrainingPage() {
               </li>
             ))}
           </ul>
-          <div className="mt-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 p-3 text-xs text-slate-500 dark:text-slate-400">
+          <div className="mt-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 p-3 text-xs text-ui-muted-foreground">
             On promotion, the previous champion is archived with a timestamp and the live service hot-swaps without a restart.
           </div>
         </section>
@@ -355,29 +355,29 @@ export default function ModelRetrainingPage() {
                 <h2 className="text-base font-semibold text-slate-800 dark:text-slate-100">
                   {statusLabel(activeJob.status)}
                 </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+                <p className="text-xs text-ui-muted-foreground font-mono">
                   Job {activeJob.job_id.slice(0, 8)}…
                 </p>
               </div>
             </div>
             <div className="flex flex-wrap gap-3 text-xs">
               {activeJob.epochs != null && (
-                <span className="rounded border border-slate-200 dark:border-slate-700 px-2 py-1">
+                <span className="rounded border border-ui-border px-2 py-1">
                   {activeJob.epochs} epochs
                 </span>
               )}
               {activeJob.ground_truth_rows != null && (
-                <span className="rounded border border-slate-200 dark:border-slate-700 px-2 py-1">
+                <span className="rounded border border-ui-border px-2 py-1">
                   {activeJob.ground_truth_rows} GT rows
                 </span>
               )}
               {activeJob.started_at && (
-                <span className="rounded border border-slate-200 dark:border-slate-700 px-2 py-1">
+                <span className="rounded border border-ui-border px-2 py-1">
                   Started {new Date(activeJob.started_at).toLocaleTimeString()}
                 </span>
               )}
               {activeJob.finished_at && (
-                <span className="rounded border border-slate-200 dark:border-slate-700 px-2 py-1">
+                <span className="rounded border border-ui-border px-2 py-1">
                   Finished {new Date(activeJob.finished_at).toLocaleTimeString()}
                 </span>
               )}
@@ -385,7 +385,7 @@ export default function ModelRetrainingPage() {
           </div>
 
           {activeJob.message && (
-            <p className="text-sm text-slate-600 dark:text-slate-300 mb-3">{activeJob.message}</p>
+            <p className="text-sm text-ui-muted-foreground mb-3">{activeJob.message}</p>
           )}
           {activeJob.error && (
             <pre className="mb-3 whitespace-pre-wrap break-words rounded-lg bg-red-50/70 p-3 text-xs text-red-700 dark:bg-red-950/30 dark:text-red-300">
@@ -396,7 +396,7 @@ export default function ModelRetrainingPage() {
           {/* Metrics comparison */}
           {activeJob.decision && activeJob.decision.champion_metrics && activeJob.decision.candidate_metrics && (
             <div className="mt-2">
-              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">
+              <p className="text-xs font-semibold text-ui-muted-foreground uppercase tracking-wide mb-3">
                 Champion vs Candidate — {activeJob.decision.champion_metrics.routes_evaluated} routes evaluated
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -439,8 +439,8 @@ export default function ModelRetrainingPage() {
                 </div>
               )}
               {activeJob.archived_champion && (
-                <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
-                  <span className="font-medium text-slate-700 dark:text-slate-300">Archived:</span>{" "}
+                <p className="mt-3 text-xs text-ui-muted-foreground">
+                  <span className="font-medium text-ui-foreground">Archived:</span>{" "}
                   <span className="font-mono">{activeJob.archived_champion.split("/").pop()}</span>
                 </p>
               )}
@@ -470,7 +470,7 @@ export default function ModelRetrainingPage() {
             id="btn-refresh-jobs"
             type="button"
             onClick={() => void fetchJobs()}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-1.5 text-xs font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-ui-border px-3 py-1.5 text-xs font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
           >
             <RefreshCw className="h-3.5 w-3.5" /> Refresh
           </button>
@@ -485,7 +485,7 @@ export default function ModelRetrainingPage() {
         ) : jobs.length === 0 ? (
           <div className="py-12 text-center">
             <Activity className="mx-auto h-10 w-10 text-slate-300 dark:text-slate-600 mb-3" />
-            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">No jobs yet</p>
+            <p className="text-sm font-medium text-ui-muted-foreground">No jobs yet</p>
             <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
               Click &ldquo;Start Retraining&rdquo; to queue your first job.
             </p>
@@ -495,7 +495,7 @@ export default function ModelRetrainingPage() {
             {jobs.map((job) => (
               <div
                 key={job.job_id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-900/40 px-4 py-3"
+                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ui-border bg-ui-surface dark:bg-slate-900/40 px-4 py-3"
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <StatusIcon status={job.status} />

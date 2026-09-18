@@ -177,7 +177,7 @@ export function SurgeForecastChart({
           })}
         </svg>
       </div>
-      <div className="flex flex-wrap justify-center gap-4 mt-4 text-xs text-slate-500 dark:text-slate-400">
+      <div className="flex flex-wrap justify-center gap-4 mt-4 text-xs text-ui-muted-foreground">
         <span className="flex items-center gap-1">
           <span className="w-3 h-3 bg-green-500 rounded" aria-hidden /> Low Surge
           (&lt;40%)

@@ -73,12 +73,12 @@ export function CancelTransactionModal({
       aria-modal="true"
       aria-labelledby="cancel-modal-title"
       aria-describedby="cancel-modal-description"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/65 backdrop-blur-md overscroll-contain transition-all animate-in fade-in duration-200 select-none touch-none"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/65  overscroll-contain transition-all animate-in fade-in duration-200 select-none touch-none"
       onClick={onCancel}
     >
       <div
         ref={dialogRef}
-        className="relative w-full max-w-md overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-2xl transition-all dark:border-slate-800 dark:bg-slate-900 overscroll-contain select-text touch-auto"
+        className="relative w-full max-w-md touch-auto select-text overflow-hidden overscroll-contain rounded-2xl border border-ui-border bg-ui-surface p-5 shadow-[0_16px_48px_rgba(11,31,51,0.22)] transition-[opacity,transform] sm:p-6"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Close Button */}
@@ -104,7 +104,7 @@ export function CancelTransactionModal({
             </span>
             <h3
               id="cancel-modal-title"
-              className="mt-1.5 text-base sm:text-lg font-bold text-foreground leading-snug"
+              className="mt-1.5 text-base sm:text-lg font-bold text-ui-foreground leading-snug"
             >
               Stop this booking transaction?
             </h3>
@@ -113,7 +113,7 @@ export function CancelTransactionModal({
 
         <p
           id="cancel-modal-description"
-          className="mt-3 text-xs sm:text-sm leading-relaxed text-slate-500 dark:text-slate-400"
+          className="mt-3 text-xs sm:text-sm leading-relaxed text-ui-muted-foreground"
         >
           You are currently in the middle of booking your trip. If you navigate away
           {targetLabel ? ` to ${targetLabel}` : ""}, your entered preferences, passenger details, and allocated seats will not be saved.

@@ -98,7 +98,7 @@ export function OperatorSeatList({
       {/* Capacity progress bar */}
       <div className="space-y-1">
         <div className="flex items-center justify-between text-sm">
-          <span className="font-medium text-slate-700 dark:text-slate-300">
+          <span className="font-medium text-ui-foreground">
             Capacity
           </span>
           <span className="text-slate-500">
@@ -139,11 +139,11 @@ export function OperatorSeatList({
       )}
 
       {/* Table */}
-      <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
+      <div className="overflow-x-auto rounded-lg border border-ui-border">
         <table className="w-full text-sm">
           <caption className="sr-only">Seat assignments — sortable list</caption>
           <thead>
-            <tr className="border-b border-slate-200 dark:border-slate-700 text-left text-slate-500 dark:text-slate-400">
+            <tr className="border-b border-ui-border text-left text-ui-muted-foreground">
               {onSwapRequest && (
                 <th className="p-3 w-8">
                   <span className="sr-only">Select</span>
@@ -152,7 +152,7 @@ export function OperatorSeatList({
               <th className="p-3 font-medium" aria-sort={sortAria("seat")}>
                 <button
                   type="button"
-                  className="inline-flex items-center gap-1 hover:text-foreground"
+                  className="inline-flex items-center gap-1 hover:text-ui-foreground"
                   onClick={() => toggleSort("seat")}
                 >
                   Seat <ArrowUpDown className="w-3.5 h-3.5" aria-hidden />
@@ -161,7 +161,7 @@ export function OperatorSeatList({
               <th className="p-3 font-medium" aria-sort={sortAria("status")}>
                 <button
                   type="button"
-                  className="inline-flex items-center gap-1 hover:text-foreground"
+                  className="inline-flex items-center gap-1 hover:text-ui-foreground"
                   onClick={() => toggleSort("status")}
                 >
                   Status <ArrowUpDown className="w-3.5 h-3.5" aria-hidden />
@@ -170,7 +170,7 @@ export function OperatorSeatList({
               <th className="p-3 font-medium" aria-sort={sortAria("passenger")}>
                 <button
                   type="button"
-                  className="inline-flex items-center gap-1 hover:text-foreground"
+                  className="inline-flex items-center gap-1 hover:text-ui-foreground"
                   onClick={() => toggleSort("passenger")}
                 >
                   Passenger <ArrowUpDown className="w-3.5 h-3.5" aria-hidden />
@@ -183,7 +183,7 @@ export function OperatorSeatList({
               <th className="p-3 font-medium" aria-sort={sortAria("affinity")}>
                 <button
                   type="button"
-                  className="inline-flex items-center gap-1 hover:text-foreground"
+                  className="inline-flex items-center gap-1 hover:text-ui-foreground"
                   onClick={() => toggleSort("affinity")}
                 >
                   Affinity <ArrowUpDown className="w-3.5 h-3.5" aria-hidden />

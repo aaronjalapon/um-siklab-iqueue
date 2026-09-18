@@ -6,7 +6,7 @@ const proof = ["Accessibility-first seats", "Signed QR passes", "Four supported 
 
 export default function HeroSection() {
   return (
-    <section id="hero" className="bg-ui-navy px-4 pb-16 pt-28 text-white sm:px-6 sm:pb-20 sm:pt-32 lg:px-8 lg:py-36">
+    <section id="hero" className="route-motif bg-ui-navy px-4 pb-16 pt-28 text-white sm:px-6 sm:pb-20 sm:pt-32 lg:px-8 lg:py-36">
       <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
         <div className="min-w-0">
           <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-blue-300/30 px-3 py-1.5 text-sm font-semibold text-blue-100">
@@ -29,9 +29,9 @@ export default function HeroSection() {
             <BusFront className="h-7 w-7 shrink-0 text-blue-600" aria-hidden />
           </div>
           <div className="grid gap-3 py-5 sm:grid-cols-3">
-            <div className="min-w-0 rounded-lg bg-slate-100 p-3 text-slate-950 dark:bg-slate-800 dark:text-white"><p className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">Departure</p><p className="mt-1 font-semibold">06:00</p></div>
-            <div className="min-w-0 rounded-lg bg-slate-100 p-3 text-slate-950 dark:bg-slate-800 dark:text-white"><p className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">Seat</p><p className="mt-1 font-semibold">12A · Window</p></div>
-            <div className="min-w-0 rounded-lg bg-slate-100 p-3 text-slate-950 dark:bg-slate-800 dark:text-white"><p className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">Pass</p><p className="mt-1 flex items-center gap-1.5 font-semibold"><QrCode className="h-4 w-4 shrink-0" aria-hidden /> Signed QR</p></div>
+            <div className="min-w-0 rounded-lg bg-slate-100 p-3 text-slate-950 dark:bg-slate-800 dark:text-white"><p className="text-xs font-semibold uppercase tracking-wide text-ui-muted-foreground">Departure</p><p className="mt-1 font-semibold">06:00</p></div>
+            <div className="min-w-0 rounded-lg bg-slate-100 p-3 text-slate-950 dark:bg-slate-800 dark:text-white"><p className="text-xs font-semibold uppercase tracking-wide text-ui-muted-foreground">Seat</p><p className="mt-1 font-semibold">12A · Window</p></div>
+            <div className="min-w-0 rounded-lg bg-slate-100 p-3 text-slate-950 dark:bg-slate-800 dark:text-white"><p className="text-xs font-semibold uppercase tracking-wide text-ui-muted-foreground">Pass</p><p className="mt-1 flex items-center gap-1.5 font-semibold"><QrCode className="h-4 w-4 shrink-0" aria-hidden /> Signed QR</p></div>
           </div>
           <div className="border-t border-slate-300 pt-4 text-sm text-slate-600">This portfolio demonstrates booking, seat allocation, and gate verification. It does not process payments.</div>
         </div>

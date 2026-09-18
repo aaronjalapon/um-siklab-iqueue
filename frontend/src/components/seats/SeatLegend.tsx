@@ -24,7 +24,7 @@ export function SeatLegend({ variant }: SeatLegendProps) {
 
   return (
     <div
-      className="mx-auto w-max sm:w-full max-w-full grid grid-cols-2 sm:flex sm:flex-wrap items-center sm:justify-center gap-x-4 sm:gap-x-6 gap-y-2 sm:gap-y-2 text-[11px] sm:text-xs text-slate-600 dark:text-slate-300"
+      className="mx-auto w-max sm:w-full max-w-full grid grid-cols-2 sm:flex sm:flex-wrap items-center sm:justify-center gap-x-4 sm:gap-x-6 gap-y-2 sm:gap-y-2 text-[11px] sm:text-xs text-ui-muted-foreground"
       aria-label="Seat legend"
     >
       {items.map((item) => (

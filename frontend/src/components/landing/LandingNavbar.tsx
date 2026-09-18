@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { uiStyles } from "@/lib/design-system";
 
 const links = [
@@ -23,11 +24,15 @@ export default function LandingNavbar() {
         <nav className="hidden items-center gap-7 md:flex" aria-label="Primary navigation">
           {links.map((link) => <Link key={link.href} href={link.href} className="text-sm font-semibold text-slate-200 transition-colors hover:text-white">{link.label}</Link>)}
           <Link href="/operator" className="text-sm font-semibold text-slate-200 transition-colors hover:text-white">Operator demo</Link>
+          <ThemeToggle className="text-white" />
           <Link href="/buy" className={`${uiStyles.primaryButton} min-h-10 px-4 py-1.5`}>Find a bus</Link>
         </nav>
-        <button type="button" className="flex h-11 w-11 items-center justify-center rounded-lg border border-white/20 md:hidden" aria-label={open ? "Close navigation" : "Open navigation"} aria-expanded={open} onClick={() => setOpen((value) => !value)}>
-          {open ? <X aria-hidden className="h-5 w-5" /> : <Menu aria-hidden className="h-5 w-5" />}
-        </button>
+        <div className="flex items-center gap-2 md:hidden">
+          <ThemeToggle className="text-white" />
+          <button type="button" className="flex h-11 w-11 items-center justify-center rounded-lg border border-white/20" aria-label={open ? "Close navigation" : "Open navigation"} aria-expanded={open} onClick={() => setOpen((value) => !value)}>
+            {open ? <X aria-hidden className="h-5 w-5" /> : <Menu aria-hidden className="h-5 w-5" />}
+          </button>
+        </div>
       </div>
       {open && (
         <nav className="border-t border-white/15 px-4 py-4 md:hidden" aria-label="Mobile navigation">

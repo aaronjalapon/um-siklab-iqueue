@@ -77,7 +77,7 @@ export default function AccountPage() {
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-              <h2 className="text-base sm:text-lg font-bold text-foreground truncate">
+              <h2 className="text-base sm:text-lg font-bold text-ui-foreground truncate">
                 Demo Passenger
               </h2>
               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] sm:text-[10px] font-bold text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
@@ -85,7 +85,7 @@ export default function AccountPage() {
                 <span>Prototype profile</span>
               </span>
             </div>
-            <p className="mt-0.5 text-xs sm:text-sm text-slate-500 dark:text-slate-400 truncate">
+            <p className="mt-0.5 text-xs sm:text-sm text-ui-muted-foreground truncate">
               passenger.demo@tripsync.local
             </p>
           </div>
@@ -108,10 +108,10 @@ export default function AccountPage() {
                     <Icon className={`h-4.5 w-4.5 sm:h-5 sm:w-5 ${item.color}`} aria-hidden />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <span className="block text-xs sm:text-sm font-semibold text-foreground truncate">
+                    <span className="block text-xs sm:text-sm font-semibold text-ui-foreground truncate">
                       {item.label}
                     </span>
-                    <span className="block text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">
+                    <span className="block text-[11px] sm:text-xs text-ui-muted-foreground truncate">
                       {item.description}
                     </span>
                   </div>

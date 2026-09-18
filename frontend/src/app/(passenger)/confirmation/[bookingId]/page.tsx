@@ -73,7 +73,7 @@ export default function ConfirmationPage() {
           <p className="mt-1 text-sm">{error || "Invalid booking ID"}</p>
           <Link
             href="/buy"
-            className="mt-4 inline-block text-sm font-medium text-brand-blue hover:underline"
+            className="mt-4 inline-block text-sm font-medium text-ui-primary hover:underline"
           >
             Back to search
           </Link>
@@ -86,7 +86,7 @@ export default function ConfirmationPage() {
     <div className={`${uiStyles.pageContainer} max-w-2xl`}>
       <Link
         href="/home"
-        className="hidden md:inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium text-brand-blue hover:underline transition-colors"
+        className="hidden md:inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium text-ui-primary hover:underline transition-colors"
       >
         <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden />
         Back home

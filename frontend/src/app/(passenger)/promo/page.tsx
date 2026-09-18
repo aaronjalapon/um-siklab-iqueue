@@ -35,11 +35,11 @@ export default function PromoPage() {
           <Gift className="h-8 w-8 sm:h-10 sm:w-10 text-brand-orange" aria-hidden />
         </div>
 
-        <h2 className="text-base sm:text-xl font-bold text-foreground">
+        <h2 className="text-base sm:text-xl font-bold text-ui-foreground">
           No promos available right now
         </h2>
 
-        <p className="mt-1.5 max-w-md text-xs sm:text-sm leading-5 sm:leading-6 text-slate-500 dark:text-slate-400">
+        <p className="mt-1.5 max-w-md text-xs sm:text-sm leading-5 sm:leading-6 text-ui-muted-foreground">
           The passenger app is ready for rewards, but this prototype keeps promo redemption out of scope.
         </p>
 
@@ -48,7 +48,7 @@ export default function PromoPage() {
           {UPCOMING_REWARDS.map((reward) => (
             <div
               key={reward}
-              className="flex items-center gap-2.5 rounded-xl border border-slate-200/60 bg-white/60 px-3 py-2 text-xs sm:text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-300 shadow-2xs text-left"
+              className="flex items-center gap-2.5 rounded-xl border border-slate-200/60 bg-ui-surface px-3 py-2 text-xs sm:text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-300 shadow-2xs text-left"
             >
               <TicketPercent className="h-4 w-4 text-brand-orange shrink-0" />
               <span>{reward}</span>

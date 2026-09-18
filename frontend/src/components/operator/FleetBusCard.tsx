@@ -18,8 +18,8 @@ export function FleetBusCard({ bus }: FleetBusCardProps) {
     <article className={`${uiStyles.surface} p-5 flex flex-col gap-3`}>
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2">
-          <Bus className="w-5 h-5 text-brand-blue shrink-0" aria-hidden />
-          <span className="font-mono font-semibold text-foreground">
+          <Bus className="w-5 h-5 text-ui-primary shrink-0" aria-hidden />
+          <span className="font-mono font-semibold text-ui-foreground">
             {bus.plate_number}
           </span>
         </div>
@@ -29,7 +29,7 @@ export function FleetBusCard({ bus }: FleetBusCardProps) {
           {surgeLabel(bus.surge_probability)} surge
         </span>
       </div>
-      <p className="text-sm text-slate-500 dark:text-slate-400">
+      <p className="text-sm text-ui-muted-foreground">
         {bus.origin} → {bus.destination}
       </p>
       <CapacityMeter booked={booked} capacity={bus.capacity} label="Booked" />

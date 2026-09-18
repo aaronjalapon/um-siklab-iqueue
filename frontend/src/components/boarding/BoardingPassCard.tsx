@@ -39,17 +39,17 @@ export default function BoardingPassCard({
   }
 
   return (
-    <section className={`${uiStyles.surface} overflow-hidden ${className}`}>
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-glass-border p-3 sm:p-5">
+    <section className={`${uiStyles.surface} confirmation-reveal overflow-hidden ${className}`}>
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-ui-border p-3 sm:p-5">
         <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-          <div className="flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-lg bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300">
+          <div className="flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-lg bg-ui-success-surface text-ui-success">
             <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6" aria-hidden />
           </div>
           <div className="min-w-0">
-            <h2 className="text-xs sm:text-base font-bold text-foreground truncate">
+            <h2 className="text-xs sm:text-base font-bold text-ui-foreground truncate">
               {BRAND.name} Boarding Pass
             </h2>
-            <p className="text-[10px] sm:text-xs text-slate-500 truncate">ID {booking.id.slice(0, 8)}</p>
+            <p className="truncate text-[10px] text-ui-muted-foreground sm:text-xs">ID {booking.id.slice(0, 8)}</p>
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
@@ -71,42 +71,42 @@ export default function BoardingPassCard({
 
       <div className="grid gap-3 sm:gap-5 p-3 sm:p-5 md:grid-cols-[1fr_250px]">
         <div className="space-y-2.5 sm:space-y-3">
-          <div className="rounded-lg border border-slate-200 bg-slate-50 p-2.5 sm:p-4 dark:border-slate-700 dark:bg-slate-900">
-            <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">
+          <div className="route-motif rounded-lg border border-ui-border bg-ui-surface-soft p-2.5 sm:p-4">
+            <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-ui-muted-foreground">
               Route
             </p>
-            <p className="mt-0.5 sm:mt-1 flex items-center gap-1.5 text-xs sm:text-base font-bold text-foreground truncate">
-              <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0 text-brand-blue" aria-hidden />
+            <p className="mt-0.5 sm:mt-1 flex items-center gap-1.5 text-xs sm:text-base font-bold text-ui-foreground truncate">
+              <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0 text-ui-primary" aria-hidden />
               <span>{routeOrigin} → {routeDestination}</span>
             </p>
           </div>
 
           <div className="grid grid-cols-2 gap-2 sm:gap-3">
-            <div className="rounded-lg border border-slate-200 bg-slate-50 p-2.5 sm:p-4 dark:border-slate-700 dark:bg-slate-900">
-              <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">
+            <div className="rounded-lg border border-ui-border bg-ui-surface-soft p-2.5 sm:p-4">
+              <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-ui-muted-foreground">
                 Seat
               </p>
-              <p className="mt-0.5 sm:mt-1 flex items-center gap-1.5 text-lg sm:text-2xl font-black text-brand-blue">
+              <p className="mt-0.5 sm:mt-1 flex items-center gap-1.5 text-lg sm:text-2xl font-black text-ui-primary">
                 <Ticket className="h-4 w-4 sm:h-5 sm:w-5 text-brand-orange shrink-0" aria-hidden />
                 <span>{booking.seat_number}</span>
               </p>
             </div>
-            <div className="rounded-lg border border-slate-200 bg-slate-50 p-2.5 sm:p-4 dark:border-slate-700 dark:bg-slate-900">
-              <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">
+            <div className="rounded-lg border border-ui-border bg-ui-surface-soft p-2.5 sm:p-4">
+              <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-ui-muted-foreground">
                 Departure
               </p>
-              <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm font-bold text-foreground truncate">
+              <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm font-bold text-ui-foreground truncate">
                 {formatDate(booking.departure_date)}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center justify-between gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 sm:px-3.5 sm:py-2.5 text-amber-950 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100">
+          <div className="flex items-center justify-between gap-2 rounded-lg border border-ui-warning/40 bg-ui-warning-surface px-3 py-2 text-ui-warning sm:px-3.5 sm:py-2.5">
             <p className="flex items-center gap-1.5 text-[11px] sm:text-xs font-bold shrink-0">
               <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0 text-brand-orange" aria-hidden />
               <span>Boarding window</span>
             </p>
-            <p className="text-[11px] sm:text-xs font-extrabold text-brand-orange tracking-tight shrink-0">
+            <p className="shrink-0 text-[11px] font-extrabold tracking-tight sm:text-xs">
               {formatBoardingWindow(
                 booking.boarding_window_start,
                 booking.boarding_window_end
@@ -115,16 +115,16 @@ export default function BoardingPassCard({
           </div>
         </div>
 
-        <div className="flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-slate-50 p-3.5 text-center sm:p-5 dark:border-slate-700 dark:bg-slate-900">
+        <div className="flex flex-col items-center justify-center rounded-xl border border-ui-border bg-ui-surface-soft p-3.5 text-center sm:p-5">
           <div className="mb-2 inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[10px] font-semibold text-slate-700 sm:mb-2.5 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">
-            <ShieldCheck className="h-3 w-3 text-brand-blue" />
+            <ShieldCheck className="h-3 w-3 text-ui-primary" />
             <span>Signed QR pass</span>
           </div>
           <div ref={qrContainerRef} role="img" aria-label={`QR boarding pass for seat ${booking.seat_number}`} className="rounded-lg border border-slate-300 bg-white p-2.5 sm:p-3">
             <QRCodeSVG value={getQrValue(booking)} size={184} marginSize={2} className="w-44 h-44 sm:w-48 sm:h-48" level="M" />
           </div>
           <p className="mt-2.5 sm:mt-3 text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100">Scan at Terminal Gate</p>
-          <p className="mt-0.5 text-[11px] font-semibold text-brand-blue">
+          <p className="mt-0.5 text-[11px] font-semibold text-ui-primary">
             Seat {booking.seat_number} · {booking.passenger_name || "Confirmed"}
           </p>
           <p className="mt-1 text-[10px] sm:text-[11px] text-slate-400 max-w-[220px]">

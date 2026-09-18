@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 const widths = [375, 768, 1024, 1440] as const;
+const themes = ["light", "dark"] as const;
 const pages = [
   { name: "landing", path: "/", fullPage: true },
   { name: "booking-search", path: "/buy", fullPage: true },
@@ -90,28 +91,32 @@ test.beforeEach(async ({ page }, testInfo) => {
   );
   await page.addInitScript(() => {
     localStorage.setItem("iqueue:pwa-install-dismissed:v1", String(Date.now()));
+    localStorage.removeItem("tripsync:theme:v1");
   });
-  await page.emulateMedia({ reducedMotion: "reduce", colorScheme: "light" });
   await installJourneyFixtures(page);
 });
 
 for (const width of widths) {
-  for (const target of pages) {
-    test(`${target.name} remains stable at ${width}px`, async ({ page }) => {
-      await page.setViewportSize({ width, height: width < 768 ? 844 : 900 });
-      await page.goto(target.path);
-      await expect(page.locator("main")).toBeVisible();
-      if (target.name === "seat-selection") {
-        await expect(page.getByText("Seat 4A")).toBeVisible();
-      }
-      if (target.name === "boarding-pass") {
-        await expect(page.getByText("TripSync Boarding Pass")).toBeVisible();
-      }
-      await expect(page).toHaveScreenshot(`${target.name}-${width}.png`, {
-        animations: "disabled",
-        fullPage: target.fullPage,
-        maxDiffPixelRatio: 0.01,
+  for (const theme of themes) {
+    for (const target of pages) {
+      test(`${target.name} remains stable in ${theme} mode at ${width}px`, async ({ page }) => {
+        await page.emulateMedia({ reducedMotion: "reduce", colorScheme: theme });
+        await page.setViewportSize({ width, height: width < 768 ? 844 : 900 });
+        await page.goto(target.path);
+        await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
+        await expect(page.locator("main")).toBeVisible();
+        if (target.name === "seat-selection") {
+          await expect(page.getByText("Seat 4A")).toBeVisible();
+        }
+        if (target.name === "boarding-pass") {
+          await expect(page.getByText("TripSync Boarding Pass")).toBeVisible();
+        }
+        await expect(page).toHaveScreenshot(`${target.name}-${theme}-${width}.png`, {
+          animations: "disabled",
+          fullPage: target.fullPage,
+          maxDiffPixelRatio: 0.01,
+        });
       });
-    });
+    }
   }
 }

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BarChart3, BrainCircuit, Bus, FileCheck2, Home, QrCode, Users } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { BRAND } from "@/lib/brand";
 import { uiStyles } from "@/lib/design-system";
 
@@ -29,6 +30,12 @@ export function OperatorShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-dvh min-w-0 bg-ui-canvas md:flex">
+      <header className="fixed inset-x-0 top-0 z-30 flex h-16 items-center justify-between border-b border-white/10 bg-ui-navy px-4 text-white md:hidden">
+        <Link href="/operator" aria-label={`${BRAND.operatorName} — Operator Dashboard`}>
+          <BrandLogo label={BRAND.operatorName} markClassName="h-9 w-9" textClassName="font-heading text-lg font-semibold text-white" />
+        </Link>
+        <ThemeToggle className="text-white" />
+      </header>
       <aside className="fixed z-30 hidden h-full w-64 flex-col border-r border-white/10 bg-ui-navy text-white md:flex">
         <div className="p-6">
           <Link
@@ -65,9 +72,12 @@ export function OperatorShell({ children }: { children: React.ReactNode }) {
             );
           })}
         </nav>
+        <div className="border-t border-white/10 p-4">
+          <ThemeToggle variant="menu" />
+        </div>
       </aside>
 
-      <main id="main-content" className="min-h-dvh min-w-0 flex-1 overflow-x-clip pb-28 md:ml-64 md:pb-0">
+      <main id="main-content" className="min-h-dvh min-w-0 flex-1 overflow-x-clip pb-28 pt-16 md:ml-64 md:pb-0 md:pt-0">
         {children}
       </main>
 
@@ -85,7 +95,7 @@ export function OperatorShell({ children }: { children: React.ReactNode }) {
               aria-current={active ? "page" : undefined}
               className={`flex flex-col items-center justify-center gap-0.5 flex-1 py-2 min-w-0 ${
                 active
-                  ? "text-brand-blue"
+                  ? "text-ui-primary"
                   : "text-slate-600 hover:text-slate-800 dark:text-slate-300 dark:hover:text-white"
               } transition-colors`}
             >

@@ -376,7 +376,7 @@ export default function PWARegistrar() {
       aria-describedby="pwa-install-description"
     >
       <div
-        className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-white/20 bg-white shadow-2xl shadow-slate-950/40 dark:border-slate-700 dark:bg-slate-900"
+        className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-ui-border bg-ui-surface shadow-[0_16px_48px_rgba(11,31,51,0.22)]"
       >
         <div className="h-1.5 bg-gradient-to-r from-brand-blue via-cyan-400 to-brand-orange" />
         <button
@@ -392,10 +392,10 @@ export default function PWARegistrar() {
           <div className="mb-5 flex items-center gap-4 pr-10">
             <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-brand-blue text-white shadow-lg shadow-brand-blue/30">
               <Smartphone className="h-7 w-7" aria-hidden />
-              <span className="absolute -right-1 -top-1 h-3.5 w-3.5 animate-pulse rounded-full border-2 border-white bg-brand-orange dark:border-slate-900" />
+              <span className="absolute -right-1 -top-1 h-3.5 w-3.5 rounded-full border-2 border-ui-surface bg-brand-orange" />
             </div>
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-blue">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-ui-primary">
                 {BRAND.name} mobile app
               </p>
               <h2
@@ -409,18 +409,18 @@ export default function PWARegistrar() {
 
           <p
             id="pwa-install-description"
-            className="text-sm leading-6 text-slate-600 dark:text-slate-300"
+            className="text-sm leading-6 text-ui-muted-foreground"
           >
             Keep your trips and boarding passes one tap away, even when the
             terminal connection is unreliable.
           </p>
 
           <div className="mt-4 grid grid-cols-2 gap-3">
-            <div className="flex items-center gap-2 rounded-2xl bg-blue-50 px-3 py-3 text-sm font-semibold text-slate-700 dark:bg-blue-950/30 dark:text-slate-200">
-              <Zap className="h-4 w-4 shrink-0 text-brand-blue" aria-hidden />
+            <div className="flex items-center gap-2 rounded-xl border border-ui-border bg-ui-surface-soft px-3 py-3 text-sm font-semibold text-ui-foreground">
+              <Zap className="h-4 w-4 shrink-0 text-ui-primary" aria-hidden />
               Faster access
             </div>
-            <div className="flex items-center gap-2 rounded-2xl bg-orange-50 px-3 py-3 text-sm font-semibold text-slate-700 dark:bg-orange-950/25 dark:text-slate-200">
+            <div className="flex items-center gap-2 rounded-xl border border-ui-border bg-ui-surface-soft px-3 py-3 text-sm font-semibold text-ui-foreground">
               <WifiOff
                 className="h-4 w-4 shrink-0 text-brand-orange"
                 aria-hidden
@@ -431,7 +431,7 @@ export default function PWARegistrar() {
 
           {showManualInstructions && (
             <div
-              className="mt-4 rounded-2xl border border-brand-blue/20 bg-blue-50 p-4 text-sm leading-5 text-slate-700 dark:border-brand-blue/30 dark:bg-blue-950/30 dark:text-slate-200"
+              className="mt-4 rounded-xl border border-ui-primary/25 bg-ui-surface-soft p-4 text-sm leading-5 text-ui-foreground"
               role="status"
               aria-live="polite"
             >
@@ -450,7 +450,7 @@ export default function PWARegistrar() {
                 ))}
               </ol>
               {installGuide.note && (
-                <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+                <p className="mt-3 text-xs text-ui-muted-foreground">
                   {installGuide.note}
                 </p>
               )}

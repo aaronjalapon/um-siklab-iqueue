@@ -30,13 +30,13 @@ export function OperatorShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="operator-clay min-h-dvh min-w-0 bg-ui-canvas md:flex">
-      <header className="fixed inset-x-0 top-0 z-30 flex h-16 items-center justify-between border-b border-white/10 bg-ui-navy px-4 text-white md:hidden">
+      <header className="fixed inset-x-0 top-0 z-30 flex h-16 items-center justify-between border-b border-ui-border/70 bg-ui-surface px-4 text-ui-foreground dark:border-white/10 dark:bg-ui-navy dark:text-white md:hidden">
         <Link href="/operator" aria-label={`${BRAND.operatorName} — Operator Dashboard`}>
-          <BrandLogo label={BRAND.operatorName} markClassName="h-9 w-9" textClassName="font-heading text-lg font-semibold text-white" />
+          <BrandLogo label={BRAND.operatorName} markClassName="h-9 w-9" textClassName="font-heading text-lg font-semibold text-ui-foreground dark:text-white" />
         </Link>
-        <ThemeToggle className="text-white" />
+        <ThemeToggle className="text-ui-foreground dark:text-white" />
       </header>
-      <aside className="fixed z-30 hidden h-full w-64 flex-col border-r border-white/10 bg-ui-navy text-white md:flex">
+      <aside className="fixed z-30 hidden h-full w-64 flex-col border-r border-ui-border bg-ui-surface text-ui-foreground dark:border-white/10 dark:bg-ui-navy dark:text-white md:flex">
         <div className="p-6">
           <Link
             href="/operator"
@@ -45,10 +45,10 @@ export function OperatorShell({ children }: { children: React.ReactNode }) {
           >
             <BrandLogo
               label={BRAND.operatorName}
-              textClassName="font-heading text-xl font-semibold text-white"
+              textClassName="font-heading text-xl font-semibold text-ui-foreground dark:text-white"
             />
           </Link>
-          <p className="ml-9 mt-1 text-xs text-slate-400">
+          <p className="ml-9 mt-1 text-xs text-ui-muted-foreground dark:text-slate-400">
             Operator Dashboard
           </p>
         </div>
@@ -72,7 +72,7 @@ export function OperatorShell({ children }: { children: React.ReactNode }) {
             );
           })}
         </nav>
-        <div className="border-t border-white/10 p-4">
+        <div className="border-t border-ui-border dark:border-white/10 p-4">
           <ThemeToggle variant="menu" />
         </div>
       </aside>

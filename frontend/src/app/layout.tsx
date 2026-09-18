@@ -4,6 +4,7 @@ import { config } from "@fortawesome/fontawesome-svg-core";
 import "@fortawesome/fontawesome-svg-core/styles.css";
 import DevelopmentRuntimeGate from "@/components/DevelopmentRuntimeGate";
 import PWARegistrar from "@/components/PWARegistrar";
+import SmoothScroll from "@/components/SmoothScroll";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { themeBootstrapScript } from "@/lib/theme";
 import { BRAND } from "@/lib/brand";
@@ -84,6 +85,7 @@ export default function RootLayout({
       </head>
       <body suppressHydrationWarning className="relative flex min-h-full flex-col overflow-x-hidden bg-ui-canvas font-sans text-ui-foreground">
         <ThemeProvider>
+          <SmoothScroll />
           <a href="#main-content" className="sr-only z-[100] rounded-lg bg-ui-surface px-4 py-3 text-ui-foreground focus:not-sr-only focus:fixed focus:left-4 focus:top-4">
             Skip to main content
           </a>

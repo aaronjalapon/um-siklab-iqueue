@@ -119,14 +119,14 @@ export default function PassengerLayout({
 
   return (
     <div className="passenger-clay min-h-dvh min-w-0 bg-ui-canvas md:flex">
-      <header className="fixed inset-x-0 top-0 z-30 flex h-16 items-center justify-between border-b border-white/10 bg-ui-navy px-4 text-white md:hidden">
+      <header className="fixed inset-x-0 top-0 z-30 flex h-16 items-center justify-between border-b border-ui-border/70 bg-ui-surface px-4 text-ui-foreground dark:border-white/10 dark:bg-ui-navy dark:text-white md:hidden">
         <Link href="/home" onClick={handleLogoClick} aria-label={`${BRAND.name} passenger home`}>
-          <BrandLogo markClassName="h-9 w-9" textClassName="font-heading text-lg font-semibold text-white" />
+          <BrandLogo markClassName="h-9 w-9" textClassName="font-heading text-lg font-semibold text-ui-foreground dark:text-white" />
         </Link>
-        <ThemeToggle className="text-white" />
+        <ThemeToggle className="text-ui-foreground dark:text-white" />
       </header>
       {/* Desktop Sidebar (hidden on mobile) */}
-      <aside className="fixed z-30 hidden h-full w-64 flex-col border-r border-white/10 bg-ui-navy text-white md:flex">
+      <aside className="fixed z-30 hidden h-full w-64 flex-col border-r border-ui-border bg-ui-surface text-ui-foreground dark:border-white/10 dark:bg-ui-navy dark:text-white md:flex">
         <div className="p-6">
           <Link
             href="/home"
@@ -135,7 +135,7 @@ export default function PassengerLayout({
             className="inline-flex"
             aria-label={`${BRAND.name} passenger home`}
           >
-            <BrandLogo textClassName="font-heading text-xl font-semibold text-white" />
+            <BrandLogo textClassName="font-heading text-xl font-semibold text-ui-foreground dark:text-white" />
           </Link>
         </div>
         <nav className="flex-1 px-4 space-y-2 mt-4 overflow-y-auto">
@@ -148,10 +148,10 @@ export default function PassengerLayout({
                 href={item.href}
                 prefetch={false}
                 onClick={(e) => handleNavClick(e, item)}
-                className={`flex items-center gap-4 px-4 py-3 rounded-xl transition-colors font-semibold ${
+                className={`flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-150 font-semibold text-sm ${
                   isActive 
-                    ? "bg-white text-slate-950"
-                    : "text-slate-300 hover:bg-white/10 hover:text-white"
+                    ? "bg-ui-primary text-white shadow-sm shadow-ui-primary/25 dark:bg-white dark:text-slate-950 dark:shadow-none"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
                 }`}
               >
                 <Icon className="w-5 h-5" />
@@ -162,12 +162,12 @@ export default function PassengerLayout({
         </nav>
 
         {/* Sidebar Footer / Log Out Action */}
-        <div className="border-t border-white/10 p-4">
+        <div className="border-t border-ui-border p-4 dark:border-white/10">
           <ThemeToggle variant="menu" className="mb-1" />
           <button
             type="button"
             onClick={handleLogoutClick}
-            className="group flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 font-semibold text-slate-300 transition-colors duration-150 hover:bg-white/10 hover:text-white"
+            className="group flex min-h-11 w-full items-center gap-3 rounded-xl px-4 py-2.5 font-semibold text-slate-600 transition-colors duration-150 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-primary"
             title="Log out and return to landing page"
             aria-label="Log Out"
           >

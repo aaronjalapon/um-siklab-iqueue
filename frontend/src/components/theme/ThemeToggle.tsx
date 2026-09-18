@@ -22,7 +22,7 @@ export function ThemeToggle({ variant = "icon", className = "" }: ThemeTogglePro
         aria-label={label}
         aria-pressed={theme === "dark"}
         title={label}
-        className={`flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 font-semibold text-slate-300 transition-colors duration-150 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 ${className}`}
+        className={`flex min-h-11 w-full items-center gap-3 rounded-xl px-4 py-2.5 font-semibold text-slate-600 transition-colors duration-150 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-primary ${className}`}
       >
         <Icon className="h-5 w-5" aria-hidden />
         <span>{ready && theme === "dark" ? "Light theme" : "Dark theme"}</span>

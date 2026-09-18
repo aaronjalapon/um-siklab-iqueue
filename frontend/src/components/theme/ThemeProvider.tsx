@@ -23,7 +23,6 @@ type ThemeContextValue = {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-let transitionTimer: number | undefined;
 const themeListeners = new Set<() => void>();
 
 function subscribeToTheme(listener: () => void) {
@@ -39,11 +38,8 @@ function readDocumentTheme(): Theme {
   return document.documentElement.dataset.theme === "dark" ? "dark" : "light";
 }
 
-function applyTheme(theme: Theme, animate: boolean) {
+function applyTheme(theme: Theme) {
   const root = document.documentElement;
-  if (transitionTimer !== undefined) window.clearTimeout(transitionTimer);
-  if (animate) root.classList.add("theme-transition");
-  else root.classList.remove("theme-transition");
   root.dataset.theme = theme;
   root.classList.toggle("dark", theme === "dark");
   root.style.colorScheme = theme;
@@ -57,13 +53,6 @@ function applyTheme(theme: Theme, animate: boolean) {
   }
   meta.content = themeColor;
   notifyThemeChange();
-
-  if (animate) {
-    transitionTimer = window.setTimeout(() => {
-      root.classList.remove("theme-transition");
-      transitionTimer = undefined;
-    }, 220);
-  }
 }
 
 function readSavedTheme(): Theme | null {
@@ -102,14 +91,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const handleSystemChange = (event: MediaQueryListEvent) => {
       if (readSavedTheme()) return;
       const next: Theme = event.matches ? "dark" : "light";
-      applyTheme(next, false);
+      applyTheme(next);
     };
     media.addEventListener("change", handleSystemChange);
     return () => media.removeEventListener("change", handleSystemChange);
   }, []);
 
   const setTheme = useCallback((next: Theme) => {
-    applyTheme(next, true);
+    applyTheme(next);
     saveTheme(next);
   }, []);
 

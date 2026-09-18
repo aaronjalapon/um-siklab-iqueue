@@ -36,9 +36,9 @@ export const uiStyles = {
   segmentedInactive:
     "shrink-0 cursor-pointer rounded-lg px-3 py-1.5 text-ui-muted-foreground transition-colors duration-150 hover:bg-ui-surface hover:text-ui-foreground",
   navItem:
-    "flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 font-semibold text-slate-300 transition-[background-color,color,box-shadow,transform] duration-150 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 active:translate-y-px",
+    "flex min-h-11 items-center gap-3 rounded-xl px-4 py-2.5 font-semibold text-slate-600 transition-[background-color,color,box-shadow,transform] duration-150 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-primary active:translate-y-px",
   navItemActive:
-    "flex min-h-11 items-center gap-3 rounded-xl border border-white/70 bg-white px-3 py-2.5 font-semibold text-slate-950 shadow-[7px_8px_18px_rgba(0,0,0,0.30),inset_1px_1px_0_rgba(255,255,255,0.9)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300",
+    "flex min-h-11 items-center gap-3 rounded-xl bg-ui-primary px-4 py-2.5 font-semibold text-white shadow-sm shadow-ui-primary/25 dark:border dark:border-white/70 dark:bg-white dark:text-slate-950 dark:shadow-[7px_8px_18px_rgba(0,0,0,0.30),inset_1px_1px_0_rgba(255,255,255,0.9)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-primary",
   pageContainer:
     "mx-auto w-full max-w-7xl space-y-5 px-4 py-5 pb-28 sm:px-6 sm:py-7 md:pb-8 lg:px-8",
 } as const;

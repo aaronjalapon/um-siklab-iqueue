@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { sendChatMessage, createChatSession } from "@/lib/api";
 import { applyFrontendBrand, BRAND } from "@/lib/brand";
 import type { ChatbotAction, ChatbotResponse } from "@/lib/types";
-import { MessageCircle, Send, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, MessageCircle, Send, X } from "lucide-react";
 
 // ---------------------------------------------------------------------------
 // Language config
@@ -184,6 +184,16 @@ export default function ChatbotPanel({ bookingId, hideLauncher = false }: Chatbo
   const [loading, setLoading] = useState(false);
   const initializedRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const quickRepliesRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const updateQuickRepliesScroll = useCallback(() => {
+    const el = quickRepliesRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 6);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 6);
+  }, []);
 
   useEffect(() => {
     const openAssistant = () => setIsOpen(true);
@@ -203,9 +213,80 @@ export default function ChatbotPanel({ bookingId, hideLauncher = false }: Chatbo
     hasMoved: boolean;
   }>({ pointerX: 0, pointerY: 0, elemX: 0, elemY: 0, hasMoved: false });
   const justDraggedRef = useRef(false);
+  const lastToggleTimeRef = useRef(0);
+
+  const toggleAssistant = useCallback(() => {
+    setIsOpen((prev) => !prev);
+    lastToggleTimeRef.current = Date.now();
+  }, []);
+
+  // Lock background scroll on mobile screen devices when chatbot panel is open
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const syncScrollLock = () => {
+      // Mobile screen devices (< 640px)
+      if (window.innerWidth < 640) {
+        document.body.style.overflow = "hidden";
+        document.documentElement.style.overflow = "hidden";
+        document.body.style.touchAction = "none";
+        window.__lenis?.stop();
+      } else {
+        document.body.style.overflow = "";
+        document.documentElement.style.overflow = "";
+        document.body.style.touchAction = "";
+        window.__lenis?.start();
+      }
+    };
+
+    syncScrollLock();
+    window.addEventListener("resize", syncScrollLock);
+
+    return () => {
+      window.removeEventListener("resize", syncScrollLock);
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+      document.body.style.touchAction = "";
+      window.__lenis?.start();
+    };
+  }, [isOpen]);
+
+  // Handle escape key to close assistant
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isOpen) {
+        setIsOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen]);
+
+  // Detect if an external modal or dialog is open in the application
+  const [isExternalModalOpen, setIsExternalModalOpen] = useState(false);
+
+  useEffect(() => {
+    const detectExternalModal = () => {
+      const modal = document.querySelector('[role="dialog"]:not(#iqueue-chatbot-panel)');
+      setIsExternalModalOpen(Boolean(modal));
+    };
+
+    detectExternalModal();
+
+    const observer = new MutationObserver(detectExternalModal);
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["role", "aria-modal", "class"],
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
   // Pointer drag handlers for mobile touch and desktop mouse
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isExternalModalOpen) return;
     if (e.button !== 0) return; // Only primary button
     const el = triggerRef.current;
     if (!el) return;
@@ -227,13 +308,14 @@ export default function ChatbotPanel({ bookingId, hideLauncher = false }: Chatbo
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isExternalModalOpen) return;
     if (!e.currentTarget.hasPointerCapture(e.pointerId)) return;
 
     const dx = e.clientX - dragStartRef.current.pointerX;
     const dy = e.clientY - dragStartRef.current.pointerY;
 
     if (!dragStartRef.current.hasMoved) {
-      if (Math.hypot(dx, dy) > 5) {
+      if (Math.hypot(dx, dy) >= 8) {
         dragStartRef.current.hasMoved = true;
         setIsDragging(true);
       } else {
@@ -242,7 +324,7 @@ export default function ChatbotPanel({ bookingId, hideLauncher = false }: Chatbo
     }
 
     const buttonSize = 56;
-    const margin = 8;
+    const margin = 12;
     const maxX = Math.max(margin, window.innerWidth - buttonSize - margin);
     const maxY = Math.max(margin, window.innerHeight - buttonSize - margin);
 
@@ -253,6 +335,7 @@ export default function ChatbotPanel({ bookingId, hideLauncher = false }: Chatbo
   };
 
   const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isExternalModalOpen) return;
     if (e.currentTarget.hasPointerCapture(e.pointerId)) {
       try {
         e.currentTarget.releasePointerCapture(e.pointerId);
@@ -266,7 +349,10 @@ export default function ChatbotPanel({ bookingId, hideLauncher = false }: Chatbo
       justDraggedRef.current = true;
       setTimeout(() => {
         justDraggedRef.current = false;
-      }, 150);
+      }, 200);
+    } else {
+      setIsDragging(false);
+      toggleAssistant();
     }
   };
 
@@ -282,12 +368,17 @@ export default function ChatbotPanel({ bookingId, hideLauncher = false }: Chatbo
   };
 
   const handleButtonClick = (e: React.MouseEvent) => {
-    if (justDraggedRef.current) {
+    if (isExternalModalOpen) {
       e.preventDefault();
       e.stopPropagation();
       return;
     }
-    setIsOpen((prev) => !prev);
+    if (justDraggedRef.current || Date.now() - lastToggleTimeRef.current < 350) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    toggleAssistant();
   };
 
   // Re-clamp position on window resize or device orientation change
@@ -346,6 +437,25 @@ export default function ChatbotPanel({ bookingId, hideLauncher = false }: Chatbo
     }
     if (isOpen) scrollToBottom();
   }, [isOpen, lang, scrollToBottom]);
+
+  // Keep messages scrolled to bottom as the conversation progresses
+  useEffect(() => {
+    if (isOpen) {
+      scrollToBottom();
+    }
+  }, [messages.length, loading, isOpen, scrollToBottom]);
+
+  // Synchronize quick replies horizontal scroll indicators on desktop & mobile
+  useEffect(() => {
+    if (isOpen && messages.length > 0 && !loading) {
+      const timer = setTimeout(updateQuickRepliesScroll, 60);
+      window.addEventListener("resize", updateQuickRepliesScroll);
+      return () => {
+        clearTimeout(timer);
+        window.removeEventListener("resize", updateQuickRepliesScroll);
+      };
+    }
+  }, [isOpen, messages.length, loading, lang, updateQuickRepliesScroll]);
 
   // --- Handlers ---
 
@@ -487,104 +597,121 @@ export default function ChatbotPanel({ bookingId, hideLauncher = false }: Chatbo
 
   return (
     <>
-      {/* Floating Chatbot Button — Placed by default on the upper right side of the bottom navbar on mobile; freely draggable */}
-      {!hideLauncher && <div
-        ref={triggerRef}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerCancel}
-        onDragStart={(e) => e.preventDefault()}
-        style={
-          position
-            ? {
-                left: `${position.x}px`,
-                top: `${position.y}px`,
-                bottom: "auto",
-                right: "auto",
-              }
-            : undefined
-        }
-        className={`fixed z-40 flex h-12 w-12 items-center justify-center touch-none select-none ${
-          position
-            ? ""
-            : "bottom-24 right-4 md:bottom-6 md:right-6"
-        } ${isDragging ? "cursor-grabbing scale-105" : "cursor-grab"}`}
-      >
-        {/* Ambient looping light pulse behind the floating icon */}
-        <div className="pointer-events-none absolute inset-0 -z-10 flex items-center justify-center">
-          <div
-            className="h-12 w-12 rounded-full bg-blue-500/35 dark:bg-cyan-400/40 blur-md chatbot-pulse-glow"
-            aria-hidden="true"
-          />
-        </div>
-
-        <button
-          type="button"
+      {/* Floating Chatbot Button — Draggable launcher with reliable mobile touch & desktop click */}
+      {!hideLauncher && (
+        <div
+          ref={triggerRef}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerCancel}
           onClick={handleButtonClick}
-          className={`relative flex h-12 w-12 min-h-12 min-w-12 items-center justify-center rounded-2xl border border-ui-border/80 dark:border-white/20 bg-ui-surface dark:bg-[#0c1b30] text-ui-foreground dark:text-white shadow-md hover:shadow-lg dark:shadow-slate-950/60 hover:bg-ui-muted dark:hover:bg-[#132f4d] ${
-            isDragging
-              ? "ring-4 ring-ui-primary/35"
-              : "active:scale-95 transition-colors duration-200"
-          } focus:outline-none focus:ring-4 focus:ring-blue-400/40`}
-          aria-label={isOpen ? `Close ${BRAND.assistantName}` : `Chat with ${BRAND.assistantName}`}
-          title={isOpen ? `Close ${BRAND.assistantName}` : `Chat with ${BRAND.assistantName}`}
-          aria-expanded={isOpen}
-          aria-controls="iqueue-chatbot-panel"
+          onDragStart={(e) => e.preventDefault()}
+          style={
+            position
+              ? {
+                  left: `${position.x}px`,
+                  top: `${position.y}px`,
+                  bottom: "auto",
+                  right: "auto",
+                }
+              : undefined
+          }
+          className={`fixed z-30 ${isOpen ? "hidden sm:flex" : "flex"} h-14 w-14 items-center justify-center select-none ${
+            position
+              ? ""
+              : "bottom-24 right-4 md:bottom-6 md:right-6"
+          } ${isDragging ? "cursor-grabbing scale-105" : "cursor-grab"} ${
+            isExternalModalOpen
+              ? "pointer-events-none opacity-40 transition-opacity duration-200"
+              : "touch-none"
+          }`}
         >
-          {isOpen ? (
-            <X className="h-6 w-6 pointer-events-none" />
-          ) : (
-            <>
-              <MessageCircle className="h-6 w-6 pointer-events-none" />
-            </>
+          {/* Ambient looping light pulse behind the floating icon — suppressed when a modal is open */}
+          {!isExternalModalOpen && (
+            <div className="pointer-events-none absolute inset-0 -z-10 flex items-center justify-center">
+              <div
+                className="h-14 w-14 rounded-full bg-blue-500/35 dark:bg-cyan-400/40 blur-md chatbot-pulse-glow"
+                aria-hidden="true"
+              />
+            </div>
           )}
-        </button>
-      </div>}
+
+          <button
+            type="button"
+            onClick={handleButtonClick}
+            disabled={isExternalModalOpen}
+            tabIndex={isExternalModalOpen ? -1 : 0}
+            className={`relative flex h-14 w-14 min-h-14 min-w-14 items-center justify-center rounded-2xl border border-ui-border/80 dark:border-white/20 bg-ui-surface dark:bg-[#0c1b30] text-ui-foreground dark:text-white shadow-xl hover:shadow-2xl dark:shadow-slate-950/70 hover:bg-ui-muted dark:hover:bg-[#132f4d] ${
+              isDragging
+                ? "ring-4 ring-ui-primary/35"
+                : "active:scale-95 transition-transform duration-150"
+            } focus:outline-none focus:ring-4 focus:ring-blue-400/40 disabled:cursor-not-allowed`}
+            aria-label={isOpen ? `Close ${BRAND.assistantName}` : `Chat with ${BRAND.assistantName}`}
+            title={isOpen ? `Close ${BRAND.assistantName}` : `Chat with ${BRAND.assistantName}`}
+            aria-expanded={isOpen}
+            aria-controls="iqueue-chatbot-panel"
+          >
+            {isOpen ? (
+              <X className="h-6 w-6 pointer-events-none" />
+            ) : (
+              <MessageCircle className="h-6 w-6 pointer-events-none text-ui-primary dark:text-cyan-400" />
+            )}
+          </button>
+        </div>
+      )}
 
       {/* Chat Panel */}
       {isOpen && (
         <div
           id="iqueue-chatbot-panel"
           role="dialog"
-          aria-modal="false"
+          aria-modal="true"
           aria-label={UI_STRINGS[lang].title}
-          className="clay-surface-raised fixed bottom-28 left-3 right-3 mx-0 sm:bottom-6 sm:left-auto sm:right-6
-                     w-auto sm:w-96 h-[min(72dvh,540px)] max-h-[calc(100dvh-7rem)]
-                     bg-ui-surface
-                     rounded-3xl
-                     border border-ui-border
-                     flex flex-col z-50 overflow-hidden"
+          data-lenis-prevent
+          style={{ boxShadow: "0 20px 45px -10px rgba(0, 0, 0, 0.35)" }}
+          className="fixed inset-0 z-[70] flex h-dvh max-h-dvh w-full flex-col overflow-hidden bg-ui-surface text-ui-foreground touch-auto
+                     sm:inset-auto sm:bottom-6 sm:right-6 sm:left-auto
+                     sm:h-[min(80dvh,620px)] sm:max-h-[calc(100dvh-4.5rem)] sm:w-[26.5rem]
+                     sm:rounded-3xl sm:border sm:border-ui-border sm:shadow-2xl sm:shadow-slate-950/20 dark:sm:shadow-slate-950/60"
         >
           {/* Header */}
-          <div className="flex shrink-0 items-center justify-between border-b border-ui-border/70 bg-ui-surface p-4 text-ui-foreground dark:border-white/10 dark:bg-ui-navy dark:text-white">
-            <div>
-              <h3 className="font-bold text-base">{UI_STRINGS[lang].title}</h3>
-              <p className="text-xs text-ui-muted-foreground dark:text-slate-300">{UI_STRINGS[lang].subtitle}</p>
+          <div className="flex shrink-0 items-center justify-between border-b border-ui-border/70 bg-ui-surface px-4 sm:px-5 pb-3 sm:pb-3.5 pt-[max(1.25rem,calc(env(safe-area-inset-top,0px)+0.75rem))] sm:pt-4 text-ui-foreground dark:border-white/10 dark:bg-ui-navy dark:text-white">
+            <div className="flex items-center gap-2.5 sm:gap-3">
+              <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-ui-primary/10 text-ui-primary dark:bg-cyan-500/20 dark:text-cyan-300">
+                <MessageCircle className="h-5 w-5" aria-hidden="true" />
+              </div>
+              <div>
+                <h3 className="font-bold text-base sm:text-lg leading-tight">{UI_STRINGS[lang].title}</h3>
+                <p className="text-xs text-ui-muted-foreground dark:text-slate-300">{UI_STRINGS[lang].subtitle}</p>
+              </div>
             </div>
             <button
               type="button"
               onClick={() => setIsOpen(false)}
               aria-label="Close assistant"
-              className="h-10 w-10 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl hover:bg-ui-muted dark:hover:bg-white/15 active:bg-ui-muted-foreground/10 transition-colors"
+              className="flex h-11 w-11 min-h-[44px] min-w-[44px] sm:h-9 sm:w-9 sm:min-h-0 sm:min-w-0 items-center justify-center rounded-xl border border-ui-border/80 dark:border-white/15 hover:bg-ui-muted dark:hover:bg-white/15 text-ui-muted-foreground hover:text-ui-foreground active:scale-95 transition-all"
             >
-              <X className="w-5 h-5" />
+              <X className="w-5 h-5 sm:w-4 sm:h-4" />
             </button>
           </div>
 
           {/* Language Selector */}
           <div
-            className="clay-inset flex shrink-0 items-center gap-1 border-b border-ui-border bg-ui-surface-soft px-3 py-2"
+            onWheel={(e) => {
+              if (e.deltaY !== 0) e.currentTarget.scrollLeft += e.deltaY;
+            }}
+            className="flex shrink-0 items-center gap-1.5 border-b border-ui-border/70 bg-ui-muted/30 dark:bg-white/[0.02] px-3.5 sm:px-5 py-2 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
           >
             {LANGUAGES.map((l) => (
               <button
                 type="button"
                 key={l.code}
                 onClick={() => handleLanguageChange(l.code)}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                className={`flex min-h-[32px] sm:min-h-[34px] items-center gap-1.5 px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-lg text-xs font-semibold select-none transition-[background-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.97] ${
                   lang === l.code
-                    ? "bg-ui-primary text-white dark:text-ui-navy"
-                    : "text-ui-muted-foreground hover:bg-ui-muted"
+                    ? "bg-ui-primary text-white shadow-sm shadow-ui-primary/25 dark:text-ui-navy"
+                    : "text-ui-muted-foreground hover:bg-ui-muted hover:text-ui-foreground"
                 }`}
                 title={l.label}
               >
@@ -594,17 +721,21 @@ export default function ChatbotPanel({ bookingId, hideLauncher = false }: Chatbo
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          <div
+            data-lenis-prevent
+            className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5 space-y-3.5 sm:space-y-4 touch-auto"
+            style={{ WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}
+          >
             {messages.map((msg, i) => (
               <div
                 key={i}
                 className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
               >
                 <div
-                  className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
+                  className={`max-w-[85%] sm:max-w-[82%] rounded-2xl px-3.5 py-2.5 sm:px-4 sm:py-3 text-sm leading-relaxed shadow-xs ${
                     msg.role === "user"
                       ? "bg-ui-primary text-white dark:text-ui-navy"
-                      : "bg-ui-muted text-ui-foreground"
+                      : "bg-ui-muted/80 text-ui-foreground dark:bg-slate-800/90 dark:text-slate-100 border border-ui-border/50 dark:border-white/10"
                   }`}
                 >
                   <p>{msg.text}</p>
@@ -617,20 +748,21 @@ export default function ChatbotPanel({ bookingId, hideLauncher = false }: Chatbo
                           ? msg.actions
                           : msg.suggested_actions || [];
                       return actionItems.length > 0 ? (
-                      <div className="mt-2 flex flex-wrap gap-1.5">
+                      <div className="mt-2.5 sm:mt-3 flex flex-wrap gap-1.5 sm:gap-2">
                         {actionItems.map((action, ai) => (
                           <button
                             type="button"
                             key={ai}
                             onClick={() => handleSuggestionClick(action)}
                             disabled={loading}
-                            className="text-xs bg-ui-surface-soft
-                                       text-ui-primary
-                                       border border-ui-primary/25
-                                       rounded-full px-2.5 py-1
-                                       hover:bg-ui-muted
+                            className="text-xs bg-ui-surface dark:bg-slate-900/90
+                                       text-ui-primary dark:text-cyan-300
+                                       border border-ui-primary/30 dark:border-cyan-400/30
+                                       rounded-full px-3 py-1.5 font-medium
+                                       hover:bg-ui-primary hover:text-white
+                                       dark:hover:bg-cyan-500 dark:hover:text-slate-950
                                        disabled:opacity-50 disabled:cursor-not-allowed
-                                       transition-colors"
+                                       select-none transition-all duration-150 active:scale-[0.96] shadow-xs"
                           >
                             {typeof action === "string" ? action : action.label}
                           </button>
@@ -654,22 +786,56 @@ export default function ChatbotPanel({ bookingId, hideLauncher = false }: Chatbo
 
           {/* Quick reply buttons */}
           {messages.length > 0 && !loading && (
-            <div className="flex shrink-0 gap-1.5 overflow-x-auto border-t border-ui-border bg-ui-surface-soft px-3 py-2">
-              {QUICK_REPLIES[lang].map((reply, i) => (
+            <div className="relative flex shrink-0 items-center border-t border-ui-border/70 bg-ui-surface-soft/60 dark:bg-white/[0.02]">
+              {canScrollLeft && (
                 <button
                   type="button"
-                  key={i}
-                  onClick={() => handleSuggestionClick(reply)}
-                    className="clay-control clay-interactive flex min-h-11 flex-shrink-0 items-center rounded-full border border-ui-border bg-ui-surface px-3.5 py-1.5 text-xs text-ui-muted-foreground hover:border-ui-primary hover:text-ui-primary"
+                  onClick={() => quickRepliesRef.current?.scrollBy({ left: -140, behavior: "smooth" })}
+                  className="hidden sm:flex absolute left-1.5 z-10 h-7 w-7 items-center justify-center rounded-full bg-ui-surface/95 dark:bg-slate-800 border border-ui-border shadow-md text-ui-muted-foreground hover:text-ui-foreground transition-transform active:scale-90"
+                  aria-label="Scroll options left"
                 >
-                  {reply}
+                  <ChevronLeft className="w-4 h-4" />
                 </button>
-              ))}
+              )}
+
+              <div
+                ref={quickRepliesRef}
+                onScroll={updateQuickRepliesScroll}
+                onWheel={(e) => {
+                  if (e.deltaY !== 0) {
+                    e.currentTarget.scrollLeft += e.deltaY;
+                    updateQuickRepliesScroll();
+                  }
+                }}
+                className="flex w-full gap-2 overflow-x-auto px-3.5 py-2.5 sm:px-5 sm:py-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden scroll-smooth"
+              >
+                {QUICK_REPLIES[lang].map((reply, i) => (
+                  <button
+                    type="button"
+                    key={i}
+                    onClick={() => handleSuggestionClick(reply)}
+                    className="flex min-h-9 sm:min-h-9 shrink-0 items-center rounded-full border border-ui-border bg-ui-surface px-3.5 py-1.5 sm:px-4 text-xs font-medium text-ui-muted-foreground hover:border-ui-primary/50 hover:bg-ui-surface hover:text-ui-foreground select-none transition-[background-color,border-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.96] shadow-xs"
+                  >
+                    {reply}
+                  </button>
+                ))}
+              </div>
+
+              {canScrollRight && (
+                <button
+                  type="button"
+                  onClick={() => quickRepliesRef.current?.scrollBy({ left: 140, behavior: "smooth" })}
+                  className="hidden sm:flex absolute right-1.5 z-10 h-7 w-7 items-center justify-center rounded-full bg-ui-surface/95 dark:bg-slate-800 border border-ui-border shadow-md text-ui-muted-foreground hover:text-ui-foreground transition-transform active:scale-90"
+                  aria-label="Scroll options right"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              )}
             </div>
           )}
 
           {/* Input */}
-          <div className="flex shrink-0 gap-2 border-t border-ui-border p-3">
+          <div className="flex shrink-0 gap-2.5 border-t border-ui-border/80 bg-ui-surface px-3.5 pt-3 pb-[max(1.25rem,calc(env(safe-area-inset-bottom,0px)+0.85rem))] sm:p-4 dark:bg-ui-navy">
             <input
               type="text"
               value={input}
@@ -677,16 +843,16 @@ export default function ChatbotPanel({ bookingId, hideLauncher = false }: Chatbo
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
               placeholder={UI_STRINGS[lang].placeholder}
               disabled={loading}
-              className="clay-control min-h-11 flex-1 rounded-xl border border-ui-border bg-ui-surface px-3.5 py-2.5 text-base text-ui-foreground placeholder:text-ui-muted-foreground focus:border-ui-primary focus:ring-2 focus:ring-ui-primary/20 disabled:opacity-50"
+              className="clay-control min-h-11 sm:min-h-12 flex-1 rounded-xl border border-ui-border bg-ui-surface px-3.5 py-2.5 sm:px-4 text-sm sm:text-base text-ui-foreground placeholder:text-ui-muted-foreground focus:border-ui-primary focus:ring-2 focus:ring-ui-primary/20 disabled:opacity-50"
             />
             <button
               type="button"
               onClick={() => handleSend()}
               disabled={loading || !input.trim()}
-              className="clay-action bg-ui-primary text-white dark:text-ui-navy min-h-[44px] min-w-[44px] rounded-xl flex items-center justify-center p-2.5
+              className="clay-action bg-ui-primary text-white dark:text-ui-navy min-h-[44px] min-w-[44px] sm:min-h-12 sm:min-w-12 rounded-xl flex items-center justify-center p-2.5
                          hover:bg-ui-primary-hover
                          disabled:bg-ui-muted disabled:text-ui-muted-foreground
-                         disabled:cursor-not-allowed"
+                         disabled:cursor-not-allowed transition-colors shrink-0"
               aria-label="Send message"
             >
               <Send className="w-5 h-5" />

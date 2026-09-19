@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { geoMercator, geoPath } from "d3-geo";
 import { feature } from "topojson-client";
@@ -25,7 +25,6 @@ import {
   type NetworkFilter,
   type NetworkHub,
   type NetworkMode,
-  type NetworkRoute,
 } from "./network-data";
 
 const WIDTH = 900;
@@ -39,10 +38,6 @@ function featureId(value: CountryFeature["id"]): string {
   return String(value ?? "").padStart(3, "0");
 }
 
-function connectedRoutes(hubId: string, routes: NetworkRoute[]): number {
-  return routes.filter((route) => route.from === hubId || route.to === hubId).length;
-}
-
 const PHILIPPINE_FILTERS = [
   { value: "all", label: "All Regions" },
   { value: "luzon", label: "Luzon" },
@@ -51,9 +46,9 @@ const PHILIPPINE_FILTERS = [
 ] as const;
 
 const ASEAN_FILTERS = [
-  { value: "all", label: "All Hubs" },
-  { value: "philippines", label: "Philippine Corridors" },
   { value: "cross-border", label: "Cross-border ASEAN" },
+  { value: "philippines", label: "Philippine Corridors" },
+  { value: "all", label: "All Hubs" },
 ] as const;
 
 export default function CoveredCitiesSection() {
@@ -107,9 +102,23 @@ export default function CoveredCitiesSection() {
   }, [routes, visibleHubIds]);
 
   const activeHub = visibleHubs.find((hub) => hub.id === activeId) ?? visibleHubs[0] ?? hubs[0];
-  const highlightedRoutes = new Set(
-    visibleRoutes.filter((route) => route.from === activeHub.id || route.to === activeHub.id).map((route) => route.id)
+  const highlightedRoutes = useMemo(
+    () =>
+      new Set(
+        visibleRoutes
+          .filter((route) => route.from === activeHub.id || route.to === activeHub.id)
+          .map((route) => route.id)
+      ),
+    [activeHub.id, visibleRoutes]
   );
+
+  const renderedRoutes = useMemo(() => {
+    return [...visibleRoutes].sort((a, b) => {
+      const aActive = highlightedRoutes.has(a.id) ? 1 : 0;
+      const bActive = highlightedRoutes.has(b.id) ? 1 : 0;
+      return aActive - bActive;
+    });
+  }, [visibleRoutes, highlightedRoutes]);
 
   // Re-check scroll state when hubs change or filter updates
   useEffect(() => {
@@ -201,10 +210,10 @@ export default function CoveredCitiesSection() {
               type="button"
               aria-pressed={mode === value}
               onClick={() => changeMode(value)}
-              className={`min-h-9 sm:min-h-10 flex-1 rounded-lg px-3 py-1.5 text-xs sm:text-sm font-bold transition-[background-color,color,box-shadow,transform] ${
+              className={`min-h-9 sm:min-h-10 flex-1 rounded-lg px-3 py-1.5 text-xs sm:text-sm font-bold select-none transition-[background-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.98] ${
                 mode === value
-                  ? "clay-action bg-blue-600 text-white hover:bg-blue-500"
-                  : "clay-interactive text-ui-muted-foreground hover:bg-ui-surface hover:text-ui-foreground"
+                  ? "bg-blue-600 text-white shadow-sm shadow-blue-600/30"
+                  : "text-ui-muted-foreground hover:bg-ui-surface hover:text-ui-foreground"
               }`}
             >
               {label}
@@ -212,23 +221,30 @@ export default function CoveredCitiesSection() {
           ))}
         </div>
 
-        {/* Region Filters Row — Fixed height container so layout never shifts or jumps */}
-        <div className="terminal-scroll mx-auto mt-2 flex h-9 sm:h-10 max-w-2xl items-center justify-center gap-1.5 overflow-x-auto pb-1" aria-label="Region filters">
-          {currentFilters.map(({ value, label }) => (
-            <button
-              key={value}
-              type="button"
-              aria-pressed={filter === value}
-              onClick={() => changeFilter(value as NetworkFilter)}
-              className={`clay-control clay-interactive min-h-8 sm:min-h-9 shrink-0 rounded-lg border px-3 py-1 text-xs font-semibold ${
-                filter === value
-                  ? "border-ui-primary bg-ui-primary/10 text-ui-primary"
-                  : "border-ui-border bg-ui-surface text-ui-muted-foreground hover:text-ui-foreground"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
+        {/* Region Filters Row — Unclipped and smooth across mobile, tablet, and desktop */}
+        <div className="mx-auto mt-2 flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 px-1.5 sm:px-2 py-1" aria-label="Region filters">
+          {currentFilters.map(({ value, label }) => {
+            const isSelected = filter === value;
+            return (
+              <Fragment key={value}>
+                {mode === "asean" && value === "all" && (
+                  <div className="basis-full h-0 sm:hidden" aria-hidden="true" />
+                )}
+                <button
+                  type="button"
+                  aria-pressed={isSelected}
+                  onClick={() => changeFilter(value as NetworkFilter)}
+                  className={`min-h-8 sm:min-h-9 shrink-0 rounded-full border px-2.5 xs:px-3 sm:px-3.5 py-1 text-xs font-semibold select-none transition-[background-color,border-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 ${
+                    isSelected
+                      ? "border-blue-600 bg-blue-600 text-white shadow-sm shadow-blue-600/30 dark:border-blue-500 dark:bg-blue-600 dark:text-white"
+                      : "border-ui-border bg-ui-surface text-ui-muted-foreground hover:border-ui-primary/50 hover:bg-ui-surface hover:text-ui-foreground dark:border-white/15 dark:bg-white/[0.04] dark:hover:bg-white/10"
+                  }`}
+                >
+                  {label}
+                </button>
+              </Fragment>
+            );
+          })}
         </div>
 
         {/* Map and Directory Grid — Stacked vertically on mobile, side-by-side on desktop */}
@@ -237,18 +253,18 @@ export default function CoveredCitiesSection() {
           <div className="network-map relative h-[16rem] xs:h-[18rem] sm:h-[22rem] lg:h-[calc(100dvh-17.5rem)] lg:min-h-[20rem] lg:max-h-[28rem] overflow-hidden rounded-2xl sm:rounded-3xl border border-map-border bg-map-water shadow-[0_28px_80px_-48px_rgba(15,83,175,0.55)]">
             {/* Top-Left Badges */}
             <div className="absolute left-3 top-3 z-10 flex flex-wrap gap-1.5 sm:left-4 sm:top-4">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-map-border bg-map-panel/90 px-2.5 py-1 text-[0.65rem] sm:text-xs font-bold text-map-text backdrop-blur-md">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-map-border bg-map-panel/90 px-2 py-0.5 sm:px-2.5 sm:py-1 text-[0.6rem] sm:text-xs font-bold text-map-text backdrop-blur-md">
                 <Route className="h-3 w-3 text-map-selected" aria-hidden /> Vector network
               </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-map-border bg-map-panel/90 px-2.5 py-1 text-[0.65rem] sm:text-xs font-bold text-map-muted backdrop-blur-md">
+              <span className="hidden xs:inline-flex items-center gap-1.5 rounded-full border border-map-border bg-map-panel/90 px-2.5 py-1 text-[0.65rem] sm:text-xs font-bold text-map-muted backdrop-blur-md">
                 <ShieldCheck className="h-3 w-3" aria-hidden /> Synthetic data
               </span>
             </div>
 
-            {/* Selected Terminal Card — Positioned in Top-Right open ocean area so Mindanao is never blocked! */}
+            {/* Selected Terminal Card — Hidden on mobile screens to prevent blocking map view, visible on sm+ */}
             {!mapError && (
               <div
-                className="clay-surface-raised absolute top-3 right-3 sm:top-4 sm:right-4 z-10 max-w-[13.5rem] sm:max-w-xs rounded-xl sm:rounded-2xl border border-map-border bg-map-panel/95 p-2.5 sm:p-3.5 text-map-text backdrop-blur-md shadow-md"
+                className="clay-surface-raised hidden sm:block absolute top-3 right-3 sm:top-4 sm:right-4 z-10 max-w-[13.5rem] sm:max-w-xs rounded-xl sm:rounded-2xl border border-map-border bg-map-panel/95 p-2.5 sm:p-3.5 text-map-text backdrop-blur-md shadow-md"
                 aria-live="polite"
               >
                 <div className="flex items-center justify-between gap-2">
@@ -298,7 +314,7 @@ export default function CoveredCitiesSection() {
                       />
                     );
                   })}
-                  {visibleRoutes.map((route) => {
+                  {renderedRoutes.map((route) => {
                     const from = hubById.get(route.from);
                     const to = hubById.get(route.to);
                     if (!from || !to) return null;
@@ -402,7 +418,6 @@ export default function CoveredCitiesSection() {
             >
               {visibleHubs.map((hub) => {
                 const selected = hub.id === activeHub.id;
-                const connectionCount = connectedRoutes(hub.id, routes);
                 return (
                   <article
                     key={hub.id}
@@ -416,24 +431,19 @@ export default function CoveredCitiesSection() {
                       onClick={() => selectHub(hub)}
                       className="w-full rounded-2xl p-3.5 sm:p-4 text-left cursor-pointer"
                     >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex min-w-0 items-start gap-3">
-                          <MapPin
-                            className={`mt-0.5 h-5 w-5 shrink-0 ${
-                              selected ? "text-ui-primary" : "text-ui-muted-foreground"
-                            }`}
-                            aria-hidden
-                          />
-                          <div className="min-w-0">
-                            <p className="font-heading text-base sm:text-lg font-semibold text-ui-foreground">{hub.name}</p>
-                            <p className="mt-0.5 truncate text-xs sm:text-sm text-ui-muted-foreground">
-                              {hub.country} · {hub.terminal}
-                            </p>
-                          </div>
+                      <div className="flex min-w-0 items-start gap-3">
+                        <MapPin
+                          className={`mt-0.5 h-5 w-5 shrink-0 ${
+                            selected ? "text-ui-primary" : "text-ui-muted-foreground"
+                          }`}
+                          aria-hidden
+                        />
+                        <div className="min-w-0">
+                          <p className="font-heading text-base sm:text-lg font-semibold text-ui-foreground">{hub.name}</p>
+                          <p className="mt-0.5 truncate text-xs sm:text-sm text-ui-muted-foreground">
+                            {hub.country} · {hub.terminal}
+                          </p>
                         </div>
-                        <span className="shrink-0 rounded-full border border-ui-warning/35 bg-ui-warning-surface px-2 py-0.5 sm:py-1 text-xs font-bold text-ui-warning">
-                          {connectionCount} {connectionCount === 1 ? "link" : "links"}
-                        </span>
                       </div>
                     </button>
 

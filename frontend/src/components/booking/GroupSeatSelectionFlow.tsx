@@ -33,12 +33,14 @@ export function GroupSeatSelectionFlow({
   date,
   origin,
   destination,
+  departureTime,
 }: {
   busId: string;
   draftId: string;
   date: string;
   origin: string;
   destination: string;
+  departureTime?: string;
 }) {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
@@ -52,23 +54,35 @@ export function GroupSeatSelectionFlow({
     return () => cancelAnimationFrame(frame);
   }, [draftId]);
 
-  const { seats, loading: seatsLoading, error: seatsError } = useSeatMap(busId, date);
+  const effectiveDate = draft?.date || date;
+  const effectiveDepartureTime = draft?.departureTime || departureTime || undefined;
+  const { seats, loading: seatsLoading, error: seatsError } = useSeatMap(busId, effectiveDate);
   const [preview, setPreview] = useState<GroupBookingPreview | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [revision, setRevision] = useState(0);
 
+  const totalSeats = seats.length;
+  const occupiedCount = useMemo(
+    () => seats.filter((s) => s.status === "occupied" || s.status === "blocked").length,
+    [seats]
+  );
+  const groupCount = preview?.assignments.length || draft?.members.length || 0;
+  const busAvailableBeforeGroup = Math.max(0, totalSeats - occupiedCount);
+  const remainingAvailableSeats = Math.max(0, busAvailableBeforeGroup - groupCount);
+
   const request = useMemo<GroupBookingRequest | null>(() => {
     if (!draft || isPastLocalDate(draft.date)) return null;
     return {
       tenant_id: DEMO_TENANT_ID,
       bus_id: busId,
-      departure_date: toServiceDepartureIso(draft.date),
+      departure_date: toServiceDepartureIso(draft.date, effectiveDepartureTime),
+      departure_time: effectiveDepartureTime,
       members: draft.members,
       preferences: draft.preferences,
     };
-  }, [busId, draft]);
+  }, [busId, draft, effectiveDepartureTime]);
 
   useEffect(() => {
     if (!request) return;
@@ -176,6 +190,26 @@ export function GroupSeatSelectionFlow({
             <div className="p-4 sm:p-6 text-xs sm:text-sm text-red-700">{seatsError}</div>
           ) : (
             <>
+              {/* Live Dynamic Seat Availability Metrics */}
+              <div className="mb-3 sm:mb-4 flex flex-wrap items-center justify-between gap-2 sm:gap-3 rounded-xl border border-ui-border bg-ui-surface p-2.5 sm:p-3.5 shadow-sm text-xs sm:text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" aria-hidden />
+                  <span className="font-semibold text-ui-foreground">
+                    Seat Availability:
+                  </span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                    {remainingAvailableSeats} {remainingAvailableSeats === 1 ? "seat" : "seats"} vacant
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-[11px] sm:text-xs text-ui-muted-foreground">
+                  <span>{busAvailableBeforeGroup} open before group</span>
+                  <span>•</span>
+                  <span>{groupCount} for your group</span>
+                  <span>•</span>
+                  <span>{occupiedCount} occupied</span>
+                </div>
+              </div>
+
               <BusSeatGrid seats={seats} readOnly groupAssignments={preview?.assignments || []} />
               <div className="mt-3 sm:mt-4"><SeatLegend variant="passenger" /></div>
             </>
@@ -186,6 +220,10 @@ export function GroupSeatSelectionFlow({
           <div className="flex items-center justify-between gap-2">
             <h2 className="flex items-center gap-1.5 sm:gap-2 text-base sm:text-lg font-bold"><Users className="h-4 w-4 sm:h-5 sm:w-5" /> Group of {draft.members.length}</h2>
             <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] sm:text-xs font-semibold dark:bg-slate-800">One QR</span>
+          </div>
+          <div className="flex items-center justify-between text-[11px] sm:text-xs text-ui-muted-foreground pt-1 border-t border-ui-border/50">
+            <span>Remaining vacancy:</span>
+            <span className="font-bold text-emerald-600 dark:text-emerald-400">{remainingAvailableSeats} of {totalSeats} seats</span>
           </div>
           {preview?.assignments.map((assignment) => {
             const member = draft.members[assignment.member_index];

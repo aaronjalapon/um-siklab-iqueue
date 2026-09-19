@@ -8,7 +8,7 @@ test.beforeEach(async ({ page }) => {
 
 test("network starts with the pilot and keeps map and directory selection synchronized", async ({ page }) => {
   await page.goto("/");
-  const pilotMode = page.getByRole("button", { name: "Mindanao Pilot (7)" });
+  const pilotMode = page.getByRole("button", { name: "Philippine Concept (13)" });
   await expect(pilotMode).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByTestId("network-map")).toBeVisible();
   await expect(page.getByRole("button", { name: "Select Davao City" })).toHaveAttribute("aria-pressed", "true");
@@ -25,21 +25,21 @@ test("network starts with the pilot and keeps map and directory selection synchr
 
 test("ASEAN concept filters hubs and never presents concept locations as bookable", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "ASEAN Concept (7)" }).click();
+  await page.getByRole("button", { name: "ASEAN Concept (8)" }).click();
 
-  await expect(page.getByRole("button", { name: "All hubs" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: "All Hubs" })).toHaveAttribute("aria-pressed", "true");
   await page.getByRole("button", { name: "Cross-border ASEAN" }).click();
-  await expect(page.getByText("4 hubs", { exact: true })).toBeVisible();
+  await expect(page.getByText("5 hubs", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Select Kuala Lumpur" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Select Manila" })).toHaveCount(0);
 
   await page.getByRole("button", { name: "Select Kuala Lumpur" }).click();
-  await expect(page.getByText("Illustrative concept", { exact: true })).toBeVisible();
+  await expect(page.getByText("ASEAN Concept", { exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "Find routes" })).toHaveCount(0);
 
-  await page.getByRole("button", { name: "Philippine corridors" }).click();
+  await page.getByRole("button", { name: "Philippine Corridors" }).click();
   await expect(page.getByText("3 hubs", { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Select Davao" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: "Select Manila" })).toHaveAttribute("aria-pressed", "true");
 });
 
 test("install action dispatches the existing PWA request event", async ({ page }) => {

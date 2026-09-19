@@ -115,7 +115,10 @@ async def get_seat_map(
     """
     allocator = SeatAllocator(session)
     try:
-        service_date = travel_date or date.today()
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+        from app.core.config import get_settings
+        service_date = travel_date or datetime.now(ZoneInfo(get_settings().BOOKING_TIMEZONE)).date()
         return await get_travel_date_seat_map(session, bus_id, service_date)
     except Exception:
         raise HTTPException(
@@ -139,7 +142,10 @@ async def get_seat_map_summary(
 ) -> dict:
     """Return the seat map with occupancy summary counts."""
     try:
-        service_date = travel_date or date.today()
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+        from app.core.config import get_settings
+        service_date = travel_date or datetime.now(ZoneInfo(get_settings().BOOKING_TIMEZONE)).date()
         seats = await get_travel_date_seat_map(session, bus_id, service_date)
     except Exception:
         raise HTTPException(

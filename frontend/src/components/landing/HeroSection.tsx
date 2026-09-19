@@ -53,7 +53,7 @@ export default function HeroSection() {
               type="button"
               onClick={handleInstallApp}
               data-testid="hero-install-app"
-              className={`${actionClass} border-orange-500/30 bg-orange-500/10 text-orange-700 hover:bg-orange-500/15 dark:border-orange-300/45 dark:bg-orange-400/10 dark:text-orange-100 dark:hover:bg-orange-400/15`}
+              className={`${actionClass} border-orange-500/30 bg-orange-500/10 text-orange-800 hover:bg-orange-500/15 dark:border-orange-300/45 dark:bg-orange-400/10 dark:text-orange-100 dark:hover:bg-orange-400/15`}
             >
               Install app <Download className="h-4 w-4" aria-hidden />
             </button>

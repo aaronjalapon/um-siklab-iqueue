@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { AlertTriangle, ArrowRight, ShieldAlert, X } from "lucide-react";
+import { AlertTriangle, ArrowRight, X } from "lucide-react";
 
 interface CancelTransactionModalProps {
   isOpen: boolean;
@@ -69,16 +69,17 @@ export function CancelTransactionModal({
   return (
     <div
       ref={overlayRef}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="cancel-modal-title"
-      aria-describedby="cancel-modal-description"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/65  overscroll-contain transition-all animate-in fade-in duration-200 select-none touch-none"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/45 overscroll-contain transition-all animate-in fade-in duration-200 select-none touch-none"
       onClick={onCancel}
     >
       <div
         ref={dialogRef}
-        className="clay-surface-raised relative w-full max-w-md touch-auto select-text overflow-hidden overscroll-contain rounded-3xl border border-ui-border bg-ui-surface p-5 transition-[opacity,transform] sm:p-6"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="cancel-modal-title"
+        aria-describedby="cancel-modal-description"
+        style={{ boxShadow: "0 20px 45px -10px rgba(0, 0, 0, 0.35)" }}
+        className="relative z-[101] w-full max-w-md touch-auto select-text overflow-hidden overscroll-contain rounded-2xl sm:rounded-3xl border border-ui-border bg-ui-surface p-5 sm:p-6 animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Close Button */}
@@ -93,18 +94,18 @@ export function CancelTransactionModal({
 
         <div className="flex items-start gap-3.5 sm:gap-4">
           {/* Warning Icon Pill */}
-          <div className="flex h-12 w-12 sm:h-13 sm:w-13 shrink-0 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400 ring-8 ring-amber-500/5">
-            <AlertTriangle className="h-6 w-6" aria-hidden />
+          <div className="flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400 border border-amber-500/20">
+            <AlertTriangle className="h-6 w-6 sm:h-7 sm:w-7" aria-hidden />
           </div>
 
           <div className="min-w-0 flex-1 pt-0.5">
-            <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-2 py-0.5 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
-              <ShieldAlert className="h-3 w-3" aria-hidden />
-              Booking in progress
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 dark:bg-amber-950/60 border border-amber-200/80 dark:border-amber-900/40 px-2.5 py-0.5 text-[11px] font-bold text-amber-800 dark:text-amber-300">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+              <span>Booking in progress</span>
             </span>
             <h3
               id="cancel-modal-title"
-              className="mt-1.5 text-base sm:text-lg font-bold text-ui-foreground leading-snug"
+              className="mt-2 text-lg sm:text-xl font-extrabold text-ui-foreground leading-snug"
             >
               Stop this booking transaction?
             </h3>
@@ -127,11 +128,11 @@ export function CancelTransactionModal({
         </div>
 
         {/* Action Buttons */}
-        <div className="mt-5 flex flex-col-reverse sm:flex-row items-center gap-2.5 sm:gap-3">
+        <div className="mt-6 flex flex-col-reverse sm:flex-row items-center gap-2.5 sm:gap-3">
           <button
             type="button"
             onClick={onConfirm}
-            className="clay-control clay-interactive w-full sm:w-auto sm:flex-1 py-2.5 sm:py-3 px-4 rounded-xl border border-red-200 bg-red-50/80 hover:bg-red-100 text-red-600 font-semibold text-xs sm:text-sm dark:border-red-900/50 dark:bg-red-950/30 dark:hover:bg-red-950/60 dark:text-red-300 text-center"
+            className="w-full sm:w-auto sm:flex-1 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50/80 hover:bg-red-100 text-red-600 font-semibold text-xs sm:text-sm dark:border-red-900/50 dark:bg-red-950/30 dark:hover:bg-red-950/60 dark:text-red-300 transition-colors shadow-2xs active:scale-[0.98] cursor-pointer"
           >
             Leave & Discard
           </button>
@@ -139,10 +140,10 @@ export function CancelTransactionModal({
             ref={stayButtonRef}
             type="button"
             onClick={onCancel}
-            className="clay-action w-full sm:w-auto sm:flex-1 py-2.5 sm:py-3 px-4 rounded-xl bg-brand-blue hover:bg-blue-600 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 text-center"
+            className="w-full sm:w-auto sm:flex-1 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-ui-primary px-5 py-2.5 text-xs sm:text-sm font-bold text-white hover:bg-blue-600 transition-all shadow-md shadow-ui-primary/20 active:scale-[0.98] cursor-pointer"
           >
             <span>Continue Booking</span>
-            <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+            <ArrowRight className="h-4 w-4" aria-hidden />
           </button>
         </div>
       </div>

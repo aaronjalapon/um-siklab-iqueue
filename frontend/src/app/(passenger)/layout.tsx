@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { BusFront, Home, LogOut, MessageCircle, Tag, Ticket, User, WifiOff } from "lucide-react";
+import { ArrowRight, BusFront, History, Home, LogOut, Menu, Ticket, User, WifiOff, X } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
 import ChatbotPanel from "@/components/ChatbotPanel";
 import { CancelTransactionModal } from "@/components/ui/CancelTransactionModal";
@@ -21,8 +21,8 @@ export default function PassengerLayout({
 
   // Detect mid-process booking flow: preferences or seat allocation
   const isBookingInProgress = /^\/book\/[^/]+\/(preferences|seat-selection)/.test(pathname);
-  const isBookingFunnel = pathname === "/buy" || pathname.startsWith("/book/");
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [pendingTarget, setPendingTarget] = useState<{
     label: string;
     action: () => void;
@@ -106,12 +106,42 @@ export default function PassengerLayout({
     };
   }, []);
 
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = "hidden";
+      document.documentElement.style.overflow = "hidden";
+      document.body.style.touchAction = "none";
+    } else {
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+      document.body.style.touchAction = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+      document.body.style.touchAction = "";
+    };
+  }, [mobileMenuOpen]);
+
+  // Close mobile menu on Escape
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setMobileMenuOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [mobileMenuOpen]);
+
   const navItems = [
-    { href: "/home", label: "Home", icon: Home, match: ["/home"] },
+    { href: "/home", label: "Home", icon: Home, match: ["/home", "/notifications"] },
     { href: "/tickets", label: "My Ticket", icon: Ticket, match: ["/tickets", "/confirmation"] },
-    { href: "/buy", label: "Buy", icon: BusFront, centerMobile: true, match: ["/buy", "/book"] },
-    { href: "/promo", label: "Promo", icon: Tag, match: ["/promo"] },
-    { href: "/account", label: "Account", icon: User, match: ["/account"] },
+    { href: "/buy", label: "Book", icon: BusFront, centerMobile: true, match: ["/buy", "/book"] },
+    { href: "/history", label: "History", icon: History, match: ["/history"] },
+    { href: "/account", label: "Account", icon: User, match: ["/account", "/promo"] },
   ];
 
   const isItemActive = (item: (typeof navItems)[number]) =>
@@ -123,8 +153,106 @@ export default function PassengerLayout({
         <Link href="/home" onClick={handleLogoClick} aria-label={`${BRAND.name} passenger home`}>
           <BrandLogo markClassName="h-9 w-9" textClassName="font-heading text-lg font-semibold text-ui-foreground dark:text-white" />
         </Link>
-        <ThemeToggle className="text-ui-foreground dark:text-white" />
+        <div className="flex items-center gap-2">
+          <ThemeToggle className="text-ui-foreground dark:text-white" />
+          <button
+            type="button"
+            className="flex h-11 w-11 items-center justify-center rounded-lg border border-ui-border dark:border-white/20 text-ui-foreground dark:text-white hover:bg-ui-muted dark:hover:bg-white/10"
+            aria-label={mobileMenuOpen ? "Close navigation" : "Open navigation"}
+            aria-expanded={mobileMenuOpen}
+            aria-controls="passenger-mobile-menu"
+            onClick={() => setMobileMenuOpen((value) => !value)}
+          >
+            {mobileMenuOpen ? <X aria-hidden className="h-5 w-5" /> : <Menu aria-hidden className="h-5 w-5" />}
+          </button>
+        </div>
       </header>
+
+      {/* Full-Screen Mobile Drawer */}
+      {mobileMenuOpen && (
+        <div
+          id="passenger-mobile-menu"
+          className="fixed inset-0 z-[60] flex h-dvh max-h-dvh w-full flex-col overflow-hidden bg-ui-surface dark:bg-[#07111f] text-ui-foreground dark:text-white touch-none select-none overscroll-none md:hidden"
+          aria-label="Mobile navigation"
+        >
+          {/* Top Bar matching mobile header */}
+          <div className="flex h-16 shrink-0 items-center justify-between border-b border-ui-border/70 dark:border-white/10 px-4">
+            <Link
+              href="/home"
+              onClick={(e) => {
+                setMobileMenuOpen(false);
+                handleLogoClick(e);
+              }}
+              aria-label={`${BRAND.name} passenger home`}
+            >
+              <BrandLogo markClassName="h-9 w-9" textClassName="font-heading text-lg font-semibold text-ui-foreground dark:text-white" />
+            </Link>
+
+            <div className="flex items-center gap-2">
+              <ThemeToggle className="text-ui-foreground dark:text-white" />
+              <button
+                type="button"
+                className="flex h-11 w-11 items-center justify-center rounded-lg border border-ui-border dark:border-white/20 text-ui-foreground dark:text-white hover:bg-ui-muted dark:hover:bg-white/10"
+                aria-label="Close navigation"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <X aria-hidden className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Drawer Body */}
+          <div className="flex flex-1 flex-col justify-between px-4 py-5 overflow-y-auto">
+            <nav className="flex flex-col gap-2" aria-label="Mobile navigation links">
+              {navItems.map((item, idx) => {
+                const isActive = isItemActive(item);
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={(e) => {
+                      setMobileMenuOpen(false);
+                      handleNavClick(e, item);
+                    }}
+                    className={`group flex items-center justify-between rounded-xl border px-4 py-3 font-heading text-base font-bold tracking-tight transition-all active:scale-[0.98] ${
+                      isActive
+                        ? "border-ui-primary/60 bg-ui-primary/10 text-ui-primary dark:border-blue-400/40 dark:bg-blue-500/20 dark:text-blue-300"
+                        : "border-ui-border/60 dark:border-white/10 bg-ui-surface/60 dark:bg-white/[0.03] text-ui-foreground dark:text-white hover:border-ui-primary/50 hover:bg-ui-primary/5 dark:hover:bg-white/10"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-md bg-ui-primary/10 dark:bg-blue-500/20 font-mono text-[0.7rem] font-bold text-ui-primary dark:text-blue-400">
+                        0{idx + 1}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <Icon className="h-4 w-4" />
+                        <span>{item.label}</span>
+                      </div>
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-ui-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-ui-primary dark:text-slate-400" aria-hidden />
+                  </Link>
+                );
+              })}
+            </nav>
+
+            {/* Bottom Actions: Log Out */}
+            <div className="mt-4 border-t border-ui-border/70 dark:border-white/10 pt-4">
+              <button
+                type="button"
+                onClick={(e) => {
+                  setMobileMenuOpen(false);
+                  handleLogoutClick(e);
+                }}
+                className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-2.5 text-sm font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 transition-colors"
+              >
+                <LogOut className="h-4 w-4" aria-hidden />
+                <span>Log Out</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Desktop Sidebar (hidden on mobile) */}
       <aside className="fixed z-30 hidden h-full w-64 flex-col border-r border-ui-border bg-ui-surface text-ui-foreground dark:border-white/10 dark:bg-ui-navy dark:text-white md:flex">
         <div className="p-6">
@@ -187,13 +315,6 @@ export default function PassengerLayout({
             </span>
           </div>
         )}
-        {isBookingFunnel && (
-          <div className="mx-auto flex max-w-7xl justify-end px-4 pt-3 sm:px-6 lg:px-8">
-            <button type="button" className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-ui-border bg-ui-surface px-3 py-2 text-sm font-semibold text-ui-foreground transition-colors hover:border-ui-primary hover:text-ui-primary" onClick={() => window.dispatchEvent(new Event("tripsync:open-assistant"))}>
-              <MessageCircle className="h-4 w-4" aria-hidden /> Need help?
-            </button>
-          </div>
-        )}
         {children}
       </main>
 
@@ -226,7 +347,7 @@ export default function PassengerLayout({
                   className={`max-w-full truncate text-[10px] leading-none transition-colors ${
                     isActive
                       ? "font-bold text-ui-primary dark:text-blue-400"
-                      : "font-medium text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300"
+                      : "font-medium text-slate-600 group-hover:text-slate-800 dark:text-slate-300 dark:group-hover:text-white"
                   }`}
                 >
                   {item.label}
@@ -271,7 +392,7 @@ export default function PassengerLayout({
       />
 
       {/* Floating chatbot — available on all passenger pages */}
-      <ChatbotPanel hideLauncher={isBookingFunnel} />
+      <ChatbotPanel />
     </div>
   );
 }

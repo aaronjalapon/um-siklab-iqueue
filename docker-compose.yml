@@ -59,6 +59,7 @@ services:
       - ./iqueue_artifacts:/app/iqueue_artifacts
       # ML training scripts needed by the retraining subprocess
       - ./ml:/app/ml
+      - ./evidence:/app/evidence:ro
     networks:
       - iqueue-net
     command: >

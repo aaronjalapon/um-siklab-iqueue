@@ -34,6 +34,7 @@ class BusResponse(BaseModel):
     surge_probability: float | None = None
     surge_3day: list[dict[str, str | float]] = Field(default_factory=list)
     fare: int | None = None
+    departure_time: str | None = None
 
     model_config = {"from_attributes": True}
 

@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime
+import re
+from datetime import datetime, timedelta, timezone
 from uuid import UUID, uuid4
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -43,6 +44,28 @@ from app.services.seat_assignment.scorer import PassengerContext
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+
+def adjust_departure_with_time(dt: datetime, time_str: str | None) -> datetime:
+    """Safeguard: adjust departure datetime so the hour and minute match departure_time in Asia/Manila (UTC+8)."""
+    if not time_str:
+        return dt
+    cleaned = time_str.strip().upper()
+    m = re.match(r"^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)?$", cleaned)
+    if not m:
+        return dt
+    h = int(m.group(1))
+    m_val = int(m.group(2) or 0)
+    ampm = m.group(3)
+    if ampm == "PM" and h < 12:
+        h += 12
+    elif ampm == "AM" and h == 12:
+        h = 0
+
+    pht = timezone(timedelta(hours=8))
+    local_dt = dt.astimezone(pht)
+    adjusted_local = local_dt.replace(hour=h, minute=m_val, second=0, microsecond=0)
+    return adjusted_local.astimezone(dt.tzinfo or timezone.utc)
 
 
 def _validate_departure_date(departure_date: datetime) -> None:
@@ -121,7 +144,10 @@ async def _group_preview(
     lock: bool = False,
 ):
     """Load current service-day availability and produce one stable cluster."""
-    _validate_departure_date(payload.departure_date)
+    effective_departure_date = adjust_departure_with_time(
+        payload.departure_date, payload.departure_time
+    )
+    _validate_departure_date(effective_departure_date)
     _validate_group_people(payload)
     bus_result = await db.execute(
         select(Bus)
@@ -147,7 +173,7 @@ async def _group_preview(
         )
         seats = list(locked.scalars().all())
     bookings = await _bookings_for_service_day(
-        db, payload.bus_id, payload.departure_date
+        db, payload.bus_id, effective_departure_date
     )
     occupied = {booking.seat_number for booking in bookings}
     available = [
@@ -160,9 +186,9 @@ async def _group_preview(
     except SeatUnavailableError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     window_start, window_end = synchronized_boarding_window(
-        payload.departure_date, allocations
+        effective_departure_date, allocations
     )
-    return bus, allocations, window_start, window_end
+    return bus, allocations, window_start, window_end, effective_departure_date
 
 
 def _preview_response(
@@ -204,7 +230,7 @@ async def preview_group_booking(
     db: AsyncSession = Depends(get_db),
 ) -> GroupBookingPreviewResponse:
     """Recommend seats without storing passengers, names, or phone numbers."""
-    _, allocations, window_start, window_end = await _group_preview(payload, db)
+    _, allocations, window_start, window_end, _ = await _group_preview(payload, db)
     return _preview_response(payload, allocations, window_start, window_end)
 
 
@@ -222,7 +248,7 @@ async def create_group_booking(
     from app.core.config import get_settings
     from app.core.security import create_group_qr_token
 
-    bus, allocations, window_start, window_end = await _group_preview(
+    bus, allocations, window_start, window_end, effective_departure_date = await _group_preview(
         payload, db, lock=True
     )
     expected = {
@@ -298,7 +324,7 @@ async def create_group_booking(
             boarding_window_start=window_start,
             boarding_window_end=window_end,
             status=BookingStatus.CONFIRMED,
-            departure_date=payload.departure_date,
+            departure_date=effective_departure_date,
         )
         db.add(booking)
         bookings.append(booking)
@@ -330,7 +356,8 @@ async def create_group_booking(
         route_id=bus.route_id,
         route_origin=bus.route.origin,
         route_destination=bus.route.destination,
-        departure_date=payload.departure_date,
+        departure_date=effective_departure_date,
+        departure_time=payload.departure_time,
         boarding_window_start=window_start,
         boarding_window_end=window_end,
         qr_token=token,
@@ -419,9 +446,10 @@ async def create_booking(
     - Generates a QR boarding pass token
     - Persists the booking and returns it with the QR token
     """
-    from datetime import timezone, timedelta
-
-    _validate_departure_date(payload.departure_date)
+    effective_departure_date = adjust_departure_with_time(
+        payload.departure_date, payload.departure_time
+    )
+    _validate_departure_date(effective_departure_date)
 
     # Validate passenger exists
     passenger = await db.get(Passenger, payload.passenger_id)
@@ -450,13 +478,15 @@ async def create_booking(
         )
 
     # Count existing bookings for this bus on this date
+    from app.services.seat_assignment.date_aware import _day_bounds
+    start_dt, end_dt = _day_bounds(effective_departure_date)
     existing_bookings = (
         await db.execute(
             select(Booking).where(
                 Booking.bus_id == payload.bus_id,
-                Booking.departure_date >= payload.departure_date.replace(hour=0, minute=0),
-                Booking.departure_date
-                < payload.departure_date.replace(hour=0, minute=0) + timedelta(days=1),
+                Booking.departure_date >= start_dt,
+                Booking.departure_date < end_dt,
+                Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.PENDING]),
             )
         )
     ).scalars().all()
@@ -469,8 +499,8 @@ async def create_booking(
 
     # Try the new SeatAllocator first; fall back to simple assignment
     assigned_seat_label: str | None = None
-    boarding_window_start = payload.departure_date
-    boarding_window_end = payload.departure_date + timedelta(minutes=15)
+    boarding_window_start = effective_departure_date
+    boarding_window_end = effective_departure_date + timedelta(minutes=15)
 
     try:
         pax_name = payload.passenger_name or passenger.name
@@ -491,9 +521,9 @@ async def create_booking(
             db,
             payload.bus_id,
             pax_ctx,
-            payload.departure_date,
+            effective_departure_date,
             seat_label=payload.selected_seat,
-            departure_datetime=payload.departure_date,
+            departure_datetime=effective_departure_date,
         )
         assigned_seat_label = result["seat_label"]
 
@@ -501,8 +531,8 @@ async def create_booking(
         bw = result.get("boarding_window", "")
         if "–" in bw:
             parts = bw.split("–")
-            today = payload.departure_date.date()
-            service_timezone = payload.departure_date.tzinfo or timezone.utc
+            today = effective_departure_date.date()
+            service_timezone = effective_departure_date.tzinfo or timezone.utc
             t1_parts = parts[0].split(":")
             t2_parts = parts[1].split(":")
             boarding_window_start = datetime(
@@ -541,7 +571,7 @@ async def create_booking(
             )
 
         row = (int(assigned_seat_label) - 1) // 4 + 1
-        boarding_window_start = payload.departure_date + timedelta(minutes=row * 3)
+        boarding_window_start = effective_departure_date + timedelta(minutes=row * 3)
         boarding_window_end = boarding_window_start + timedelta(minutes=15)
     except Exception as exc:
         logger.warning("Date-aware seat assignment failed; using fallback: %s", exc)
@@ -564,7 +594,7 @@ async def create_booking(
             )
 
         row = (int(assigned_seat_label) - 1) // 4 + 1
-        boarding_window_start = payload.departure_date + timedelta(minutes=row * 3)
+        boarding_window_start = effective_departure_date + timedelta(minutes=row * 3)
         boarding_window_end = boarding_window_start + timedelta(minutes=15)
 
     # Create the booking
@@ -575,7 +605,7 @@ async def create_booking(
         boarding_window_start=boarding_window_start,
         boarding_window_end=boarding_window_end,
         status=BookingStatus.CONFIRMED,
-        departure_date=payload.departure_date,
+        departure_date=effective_departure_date,
     )
 
     db.add(booking)
@@ -619,7 +649,24 @@ async def create_booking(
 
     await db.refresh(booking)
 
-    return booking
+    return {
+        "id": booking.id,
+        "passenger_id": booking.passenger_id,
+        "bus_id": booking.bus_id,
+        "group_id": booking.group_id,
+        "seat_number": booking.seat_number,
+        "boarding_window_start": booking.boarding_window_start,
+        "boarding_window_end": booking.boarding_window_end,
+        "status": booking.status.value,
+        "qr_token": booking.qr_token,
+        "departure_date": booking.departure_date,
+        "departure_time": payload.departure_time,
+        "created_at": booking.created_at,
+        "updated_at": booking.updated_at,
+        "passenger_name": payload.passenger_name or (passenger.name if passenger else None),
+        "route_origin": bus.route.origin if bus and bus.route else None,
+        "route_destination": bus.route.destination if bus and bus.route else None,
+    }
 
 
 @router.get(

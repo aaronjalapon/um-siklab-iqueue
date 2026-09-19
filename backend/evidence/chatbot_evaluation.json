@@ -1,0 +1,215 @@
+{
+  "model_path": "/workspace/deployments/xlm-roberta-iqueue",
+  "evaluation_data": "curated and MASSIVE holdout",
+  "examples": 244,
+  "overall_accuracy": 0.8443,
+  "per_language_accuracy": {
+    "en": 0.918,
+    "fil": 0.8,
+    "id": 0.8033,
+    "vi": 0.8548
+  },
+  "per_intent_recall": {
+    "check_booking": 0.9412,
+    "fallback": 0.902,
+    "get_departure_info": 0.8846,
+    "request_requeue": 0.92,
+    "surge_info": 0.5
+  },
+  "fallback_prediction_rate": 0.1926,
+  "minimum_examples_per_language_intent": 10,
+  "coverage": {
+    "en": {
+      "check_booking": 12,
+      "request_requeue": 13,
+      "get_departure_info": 13,
+      "surge_info": 10,
+      "fallback": 13
+    },
+    "fil": {
+      "check_booking": 13,
+      "request_requeue": 12,
+      "get_departure_info": 13,
+      "surge_info": 10,
+      "fallback": 12
+    },
+    "id": {
+      "check_booking": 13,
+      "request_requeue": 12,
+      "get_departure_info": 13,
+      "surge_info": 10,
+      "fallback": 13
+    },
+    "vi": {
+      "check_booking": 13,
+      "request_requeue": 13,
+      "get_departure_info": 13,
+      "surge_info": 10,
+      "fallback": 13
+    }
+  },
+  "coverage_passed": true,
+  "intent_order": [
+    "check_booking",
+    "request_requeue",
+    "get_departure_info",
+    "surge_info",
+    "fallback"
+  ],
+  "confusion_matrices": {
+    "en": [
+      [
+        12,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        1,
+        11,
+        1,
+        0,
+        0
+      ],
+      [
+        0,
+        1,
+        12,
+        0,
+        0
+      ],
+      [
+        1,
+        0,
+        0,
+        9,
+        0
+      ],
+      [
+        1,
+        0,
+        0,
+        0,
+        12
+      ]
+    ],
+    "fil": [
+      [
+        13,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        11,
+        1,
+        0,
+        0
+      ],
+      [
+        0,
+        1,
+        12,
+        0,
+        0
+      ],
+      [
+        4,
+        1,
+        4,
+        1,
+        0
+      ],
+      [
+        0,
+        1,
+        0,
+        0,
+        11
+      ]
+    ],
+    "id": [
+      [
+        11,
+        0,
+        2,
+        0,
+        0
+      ],
+      [
+        0,
+        11,
+        1,
+        0,
+        0
+      ],
+      [
+        1,
+        1,
+        11,
+        0,
+        0
+      ],
+      [
+        2,
+        0,
+        3,
+        5,
+        0
+      ],
+      [
+        1,
+        0,
+        1,
+        0,
+        11
+      ]
+    ],
+    "vi": [
+      [
+        12,
+        0,
+        0,
+        0,
+        1
+      ],
+      [
+        0,
+        13,
+        0,
+        0,
+        0
+      ],
+      [
+        1,
+        1,
+        11,
+        0,
+        0
+      ],
+      [
+        2,
+        0,
+        3,
+        5,
+        0
+      ],
+      [
+        1,
+        0,
+        0,
+        0,
+        12
+      ]
+    ]
+  },
+  "thresholds": {
+    "overall_accuracy": 0.8,
+    "per_language_accuracy": 0.8,
+    "per_intent_recall": 0.7
+  },
+  "passed": false
+}

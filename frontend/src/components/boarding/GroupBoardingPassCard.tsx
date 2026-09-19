@@ -14,7 +14,7 @@ import { BRAND } from "@/lib/brand";
 import { uiStyles } from "@/lib/design-system";
 import { downloadQrAsPng } from "@/lib/qr-download";
 import type { GroupBookingResponse } from "@/lib/types";
-import { formatBoardingWindow, formatDate } from "@/lib/utils";
+import { formatBoardingWindow, formatDate, formatTime } from "@/lib/utils";
 
 export default function GroupBoardingPassCard({
   booking,
@@ -30,10 +30,25 @@ export default function GroupBoardingPassCard({
     if (!qrContainerRef.current) return;
     setDownloading(true);
     const seatsList = booking.members.map((m) => m.seat_label).join(", ");
+    const leadName = booking.members[0]?.name ? `${booking.members[0].name} (Lead)` : undefined;
+    const depTime = booking.departure_date
+      ? formatTime(booking.departure_date)
+      : booking.boarding_window_start
+      ? formatBoardingWindow(booking.boarding_window_start, booking.boarding_window_end).split("→")[0]?.trim()
+      : "10:00 PM";
+
     await downloadQrAsPng(qrContainerRef.current, {
       filename: `TripSync-Group-Pass-${booking.group_id.slice(0, 8)}`,
-      subtitle: `${booking.route_origin} → ${booking.route_destination} · ${booking.members.length} Passengers`,
-      seatInfo: `Assigned Seats: ${seatsList}`,
+      title: `${BRAND.name} Combined Group Pass`,
+      origin: booking.route_origin,
+      destination: booking.route_destination,
+      date: formatDate(booking.departure_date),
+      departureTime: depTime,
+      seatInfo: seatsList,
+      passengerCount: booking.members.length,
+      passengerName: leadName,
+      bookingRef: `#TS-${booking.group_id.slice(0, 8).toUpperCase()}`,
+      gateStatus: "Gate Ready",
     });
     setDownloading(false);
   }
@@ -71,7 +86,9 @@ export default function GroupBoardingPassCard({
             </div>
             <div className="clay-inset rounded-xl bg-ui-surface p-2.5 sm:p-4 dark:bg-slate-900/40">
               <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Departure</p>
-              <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm font-bold text-ui-foreground truncate">{formatDate(booking.departure_date)}</p>
+              <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm font-bold text-ui-foreground truncate">
+                {formatDate(booking.departure_date)} · {formatTime(booking.departure_date)}
+              </p>
             </div>
           </div>
           <div className="flex items-center justify-between gap-2 rounded-xl border border-brand-orange/30 bg-orange-50/70 px-3 py-2 sm:px-3.5 sm:py-2.5 text-orange-950 dark:bg-orange-950/30 dark:text-orange-100">
@@ -105,9 +122,9 @@ export default function GroupBoardingPassCard({
             type="button"
             onClick={handleDownload}
             disabled={downloading}
-            className="clay-control clay-interactive mt-3 sm:mt-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-3.5 py-2 sm:py-2.5 text-xs font-bold text-white hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 disabled:opacity-50"
+            className="clay-control clay-interactive mt-3 sm:mt-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-sm dark:bg-blue-600 dark:hover:bg-blue-500 disabled:opacity-50 transition-all font-bold text-xs"
           >
-            <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-brand-orange" />
+            <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
             <span>{downloading ? "Saving Pass..." : "Download QR Pass"}</span>
           </button>
         </div>

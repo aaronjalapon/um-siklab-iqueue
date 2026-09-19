@@ -5,18 +5,18 @@ interface SeatLegendProps {
 }
 
 const PASSENGER_ITEMS = [
-  { label: "Available", className: "bg-white border border-slate-300 shadow-sm" },
-  { label: "Your Assigned Seats", className: "bg-brand-blue border border-blue-700 ring-2 ring-blue-300" },
-  { label: "Occupied", className: "bg-slate-500 border border-slate-600" },
-  { label: "Accessibility Priority", className: "bg-amber-200 border border-amber-400" },
+  { label: "Available", className: "bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 shadow-xs" },
+  { label: "Your Assigned Seats", className: "bg-ui-primary border border-ui-primary ring-2 ring-ui-primary/30 text-white" },
+  { label: "Occupied", className: "bg-slate-200 border border-slate-300 dark:bg-slate-700 dark:border-slate-600" },
+  { label: "Accessibility Priority", className: "bg-amber-100 dark:bg-amber-950/60 border-2 border-amber-500" },
 ];
 
 const OPERATOR_ITEMS = [
-  { label: "Available", className: "bg-white border border-slate-300 shadow-sm" },
-  { label: "Occupied", className: "bg-slate-500 border border-slate-600" },
-  { label: "Reserved", className: "bg-brand-blue border border-blue-700 text-white" },
-  { label: "Accessibility Priority", className: "bg-amber-200 border border-amber-400" },
-  { label: "Blocked", className: "bg-red-100 border border-red-300" },
+  { label: "Available", className: "bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 shadow-xs" },
+  { label: "Occupied", className: "bg-slate-200 border border-slate-300 dark:bg-slate-700 dark:border-slate-600" },
+  { label: "Reserved", className: "bg-ui-primary border border-ui-primary text-white" },
+  { label: "Accessibility Priority", className: "bg-amber-100 dark:bg-amber-950/60 border-2 border-amber-500" },
+  { label: "Blocked", className: "bg-red-100 dark:bg-red-950/60 border border-red-300 dark:border-red-800" },
 ];
 
 export function SeatLegend({ variant }: SeatLegendProps) {

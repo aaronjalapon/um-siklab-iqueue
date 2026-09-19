@@ -21,6 +21,9 @@ class BookingCreate(BaseModel):
     passenger_id: UUID = Field(..., description="UUID of the passenger")
     bus_id: UUID = Field(..., description="UUID of the bus to book")
     departure_date: datetime = Field(..., description="Desired departure date/time")
+    departure_time: str | None = Field(
+        None, description="Optional flexible departure time (e.g. '10:00 PM')"
+    )
     seat_preference: str | None = Field(
         None,
         pattern="^(window|aisle)$",
@@ -91,8 +94,12 @@ class BookingResponse(BaseModel):
     status: str
     qr_token: str | None = None
     departure_date: datetime
+    departure_time: str | None = None
     created_at: datetime
     updated_at: datetime | None = None
+    passenger_name: str | None = None
+    route_origin: str | None = None
+    route_destination: str | None = None
 
     model_config = {"from_attributes": True}
 
@@ -137,6 +144,9 @@ class GroupBookingRequest(BaseModel):
     tenant_id: UUID
     bus_id: UUID
     departure_date: datetime
+    departure_time: str | None = Field(
+        None, description="Optional flexible departure time (e.g. '10:00 PM')"
+    )
     members: list[GroupMemberRequest] = Field(..., min_length=2, max_length=6)
     preferences: GroupSharedPreferences = Field(default_factory=GroupSharedPreferences)
 
@@ -193,6 +203,7 @@ class GroupBookingResponse(BaseModel):
     route_origin: str
     route_destination: str
     departure_date: datetime
+    departure_time: str | None = None
     boarding_window_start: datetime
     boarding_window_end: datetime
     qr_token: str

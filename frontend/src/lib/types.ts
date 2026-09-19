@@ -14,6 +14,7 @@ export interface Bus {
   surge_probability: number | null;
   surge_3day: { date: string; surge: number }[];
   fare?: number;
+  departure_time?: string;
 }
 
 export interface BusListResponse {
@@ -56,6 +57,7 @@ export interface BookingCreate {
   needs_accessibility?: boolean;
   preferred_side?: string;
   affinity_opt_in?: boolean;
+  departure_time?: string;
 }
 
 export interface BookingResponse {
@@ -69,7 +71,11 @@ export interface BookingResponse {
   status: string;
   qr_token: string | null;
   departure_date: string;
+  departure_time?: string | null;
   created_at: string;
+  passenger_name?: string | null;
+  route_origin?: string | null;
+  route_destination?: string | null;
 }
 
 export interface BookingDetail extends BookingResponse {
@@ -200,6 +206,7 @@ export interface GroupBookingRequest {
   tenant_id: string;
   bus_id: string;
   departure_date: string;
+  departure_time?: string;
   members: GroupMemberRequest[];
   preferences: GroupSharedPreferences;
 }
@@ -230,6 +237,7 @@ export interface GroupBookingResponse {
   route_origin: string;
   route_destination: string;
   departure_date: string;
+  departure_time?: string;
   boarding_window_start: string;
   boarding_window_end: string;
   qr_token: string;

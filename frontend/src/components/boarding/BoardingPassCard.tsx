@@ -5,7 +5,7 @@ import { BRAND } from "@/lib/brand";
 import { uiStyles } from "@/lib/design-system";
 import { downloadQrAsPng } from "@/lib/qr-download";
 import type { BookingDetail } from "@/lib/types";
-import { formatBoardingWindow, formatDate, statusColorClass } from "@/lib/utils";
+import { formatBoardingWindow, formatDate, formatTime, statusColorClass } from "@/lib/utils";
 
 interface BoardingPassCardProps {
   booking: BookingDetail;
@@ -30,10 +30,23 @@ export default function BoardingPassCard({
   async function handleDownload() {
     if (!qrContainerRef.current) return;
     setDownloading(true);
+    const depTime = booking.departure_date
+      ? formatTime(booking.departure_date)
+      : booking.boarding_window_start
+      ? formatBoardingWindow(booking.boarding_window_start, booking.boarding_window_end).split("→")[0]?.trim()
+      : "10:00 PM";
+
     await downloadQrAsPng(qrContainerRef.current, {
       filename: `TripSync-Boarding-Pass-${booking.id.slice(0, 8)}`,
-      subtitle: `${routeOrigin} → ${routeDestination} · Seat ${booking.seat_number}`,
-      seatInfo: `Seat: ${booking.seat_number} · Passenger: ${booking.passenger_name || "Confirmed"}`,
+      title: `${BRAND.name} Boarding Pass`,
+      origin: routeOrigin,
+      destination: routeDestination,
+      date: formatDate(booking.departure_date),
+      departureTime: depTime,
+      seatInfo: booking.seat_number,
+      passengerName: booking.passenger_name || "Confirmed Passenger",
+      bookingRef: `#TS-${booking.id.slice(0, 8).toUpperCase()}`,
+      gateStatus: "Gate Ready",
     });
     setDownloading(false);
   }
@@ -96,7 +109,7 @@ export default function BoardingPassCard({
                 Departure
               </p>
               <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm font-bold text-ui-foreground truncate">
-                {formatDate(booking.departure_date)}
+                {formatDate(booking.departure_date)} · {formatTime(booking.departure_date)}
               </p>
             </div>
           </div>
@@ -135,9 +148,9 @@ export default function BoardingPassCard({
             type="button"
             onClick={handleDownload}
             disabled={downloading}
-            className="clay-control clay-interactive mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-3.5 py-2 text-xs font-bold text-white hover:bg-slate-800 disabled:opacity-50 sm:mt-4 sm:py-2.5 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-white"
+            className="clay-control clay-interactive mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-sm disabled:opacity-50 sm:mt-4 sm:py-2.5 dark:bg-blue-600 dark:hover:bg-blue-500 transition-all font-bold text-xs"
           >
-            <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-brand-orange" />
+            <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
             <span>{downloading ? "Saving Pass..." : "Download QR Pass"}</span>
           </button>
         </div>

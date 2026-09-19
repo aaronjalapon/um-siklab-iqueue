@@ -8,6 +8,7 @@ export interface GroupBookingDraft {
   date: string;
   origin: string;
   destination: string;
+  departureTime?: string;
   members: GroupMemberRequest[];
   preferences: GroupSharedPreferences;
   savedAt: string;

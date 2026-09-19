@@ -72,6 +72,17 @@ ROUTES = [
     {"slug": "cagayan-iligan", "origin": "Cagayan de Oro", "destination": "Iligan City", "distance_km": 90.0},
     {"slug": "davao-butuan", "origin": "Davao City", "destination": "Butuan City", "distance_km": 280.0},
     {"slug": "cotabato-zambo", "origin": "Cotabato City", "destination": "Zamboanga City", "distance_km": 300.0},
+    # Manila routes
+    {"slug": "manila-baguio", "origin": "Manila", "destination": "Baguio City", "distance_km": 250.0},
+    {"slug": "manila-batangas", "origin": "Manila", "destination": "Batangas City", "distance_km": 110.0},
+    # Cebu routes
+    {"slug": "cebu-tacloban", "origin": "Cebu", "destination": "Tacloban City", "distance_km": 220.0},
+    {"slug": "cebu-bacolod", "origin": "Cebu", "destination": "Bacolod City", "distance_km": 140.0},
+    # Luzon & Visayas revised corridors
+    {"slug": "pasay-baguio", "origin": "Pasay", "destination": "Baguio", "distance_km": 250.0},
+    {"slug": "cubao-sanfernando", "origin": "Cubao", "destination": "San Fernando City", "distance_km": 265.0},
+    {"slug": "panglao-tagbilaran", "origin": "Panglao", "destination": "Tagbilaran", "distance_km": 22.0},
+    {"slug": "tagbilaran-jagna", "origin": "Tagbilaran", "destination": "Jagna", "distance_km": 63.0},
 ]
 
 BUSES = [
@@ -93,6 +104,30 @@ BUSES = [
     # cotabato-zambo
     {"plate": "ZAM-001", "route_slug": "cotabato-zambo", "capacity": 49},
     {"plate": "ZAM-002", "route_slug": "cotabato-zambo", "capacity": 28},
+    # manila-baguio
+    {"plate": "MNL-001", "route_slug": "manila-baguio", "capacity": 49},
+    {"plate": "MNL-002", "route_slug": "manila-baguio", "capacity": 28},
+    # manila-batangas
+    {"plate": "MNL-003", "route_slug": "manila-batangas", "capacity": 49},
+    {"plate": "MNL-004", "route_slug": "manila-batangas", "capacity": 28},
+    # cebu-tacloban
+    {"plate": "CEB-001", "route_slug": "cebu-tacloban", "capacity": 49},
+    {"plate": "CEB-002", "route_slug": "cebu-tacloban", "capacity": 28},
+    # cebu-bacolod
+    {"plate": "CEB-003", "route_slug": "cebu-bacolod", "capacity": 49},
+    {"plate": "CEB-004", "route_slug": "cebu-bacolod", "capacity": 28},
+    # pasay-baguio
+    {"plate": "PSY-001", "route_slug": "pasay-baguio", "capacity": 49},
+    {"plate": "PSY-002", "route_slug": "pasay-baguio", "capacity": 28},
+    # cubao-sanfernando
+    {"plate": "CUB-001", "route_slug": "cubao-sanfernando", "capacity": 49},
+    {"plate": "CUB-002", "route_slug": "cubao-sanfernando", "capacity": 28},
+    # panglao-tagbilaran
+    {"plate": "BOH-001", "route_slug": "panglao-tagbilaran", "capacity": 49},
+    {"plate": "BOH-002", "route_slug": "panglao-tagbilaran", "capacity": 28},
+    # tagbilaran-jagna
+    {"plate": "BOH-003", "route_slug": "tagbilaran-jagna", "capacity": 49},
+    {"plate": "BOH-004", "route_slug": "tagbilaran-jagna", "capacity": 28},
 ]
 
 PASSENGER_ID = uuid.uuid5(_ROUTE_NAMESPACE, "iqueue.passenger.demo-maria")

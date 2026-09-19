@@ -180,24 +180,30 @@ export function AseanContactInput({
 
   return (
     <div ref={containerRef} className="relative block text-xs sm:text-sm font-medium text-ui-foreground">
-      <div className="mb-1 flex items-center gap-1 text-slate-600 dark:text-slate-400">
-        <label htmlFor={id} className="flex items-center gap-1 cursor-pointer">
-          <Phone className="h-3.5 w-3.5 text-slate-500" aria-hidden />
-          <span>{label}</span>
+      <div className="mb-1 flex items-center gap-1 text-slate-600 dark:text-slate-400 min-w-0">
+        <label htmlFor={id} className="flex items-center gap-1 cursor-pointer min-w-0 max-w-full">
+          <Phone className="h-3.5 w-3.5 text-slate-500 shrink-0" aria-hidden />
+          <span className="truncate">{label}</span>
           {required && (
-            <span className="text-red-500 font-bold ml-0.5" aria-hidden="true">
+            <span className="text-red-500 font-bold ml-0.5 shrink-0" aria-hidden="true">
               *
             </span>
           )}
         </label>
       </div>
 
-      <div className="relative flex items-stretch rounded-xl border border-ui-border bg-ui-surface dark:bg-slate-900/50  focus-within:ring-2 focus-within:ring-brand-blue/50 transition-all">
+      <div
+        onClick={(e) => {
+          if ((e.target as HTMLElement).closest("button")) return;
+          document.getElementById(id)?.focus();
+        }}
+        className="relative flex items-stretch rounded-xl border border-ui-border bg-ui-surface dark:bg-slate-900/50 focus-within:border-brand-blue focus-within:ring-2 focus-within:ring-brand-blue/50 transition-all min-w-0 overflow-hidden cursor-text"
+      >
         {/* Country code selector button: space-optimized for mobile devices */}
         <button
           type="button"
           onClick={() => setIsOpen((prev) => !prev)}
-          className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 sm:py-2 bg-slate-100/70 dark:bg-slate-800/70 border-r border-ui-border rounded-l-xl text-xs sm:text-sm font-semibold text-ui-foreground hover:bg-slate-200/70 dark:hover:bg-slate-700/70 transition-colors select-none shrink-0"
+          className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 sm:py-2 bg-slate-100/70 dark:bg-slate-800/70 border-r border-ui-border rounded-l-xl text-xs sm:text-sm font-semibold text-ui-foreground hover:bg-slate-200/70 dark:hover:bg-slate-700/70 transition-colors select-none shrink-0 cursor-pointer focus:outline-none focus-visible:outline-none"
           aria-haspopup="listbox"
           aria-expanded={isOpen}
           title={`Selected: ${selectedCountry.name} (${selectedCountry.dialCode})`}
@@ -227,17 +233,18 @@ export function AseanContactInput({
           onChange={handleDigitsChange}
           required={required}
           placeholder={placeholder !== undefined ? placeholder : (required ? "" : "Optional")}
-          className="w-full bg-transparent px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-ui-foreground focus:outline-none placeholder:text-slate-400 placeholder:italic font-medium"
+          style={{ outline: "none", boxShadow: "none" }}
+          className="w-full min-w-0 flex-1 bg-transparent px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-ui-foreground border-0 border-none outline-none ring-0 shadow-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 focus:border-0 focus:border-transparent placeholder:text-slate-400 placeholder:italic font-medium"
         />
 
         {/* Counter indicator */}
         {digits.length > 0 && (
-          <div className="flex items-center pr-2 sm:pr-3 pointer-events-none select-none">
+          <div className="flex items-center pr-2.5 sm:pr-3 pointer-events-none select-none shrink-0">
             <span
-              className={`text-[10px] font-mono ${
+              className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-mono font-medium tracking-tight border transition-colors ${
                 digits.length === 10
-                  ? "text-emerald-600 dark:text-emerald-400 font-bold"
-                  : "text-slate-400 dark:text-slate-500"
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800/60 font-bold"
+                  : "bg-slate-100/90 text-slate-500 border-slate-200/60 dark:bg-slate-800/80 dark:text-slate-400 dark:border-slate-700/60"
               }`}
             >
               {digits.length}/10
@@ -334,12 +341,12 @@ export function NameInput({
   }
 
   return (
-    <label htmlFor={id} className="block text-xs sm:text-sm font-medium text-ui-foreground">
-      <span className="mb-1 flex items-center gap-1 text-slate-600 dark:text-slate-400">
-        <UserRound className="h-3.5 w-3.5 text-slate-500" aria-hidden />
-        <span>{label}</span>
+    <label htmlFor={id} className="block text-xs sm:text-sm font-medium text-ui-foreground min-w-0">
+      <span className="mb-1 flex items-center gap-1 text-slate-600 dark:text-slate-400 min-w-0 max-w-full">
+        <UserRound className="h-3.5 w-3.5 text-slate-500 shrink-0" aria-hidden />
+        <span className="truncate">{label}</span>
         {required && (
-          <span className="text-red-500 font-bold ml-0.5" aria-hidden="true">
+          <span className="text-red-500 font-bold ml-0.5 shrink-0" aria-hidden="true">
             *
           </span>
         )}
@@ -352,7 +359,7 @@ export function NameInput({
         required={required}
         placeholder={placeholder || ""}
         maxLength={60}
-        className="w-full block bg-ui-surface dark:bg-slate-900/50  border border-ui-border rounded-xl px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/50 transition-all text-ui-foreground placeholder:text-slate-400 font-medium"
+        className="w-full min-w-0 block bg-ui-surface dark:bg-slate-900/50 border border-ui-border rounded-xl px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none focus:outline-none focus-visible:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/50 transition-all text-ui-foreground placeholder:text-slate-400 font-medium"
       />
     </label>
   );

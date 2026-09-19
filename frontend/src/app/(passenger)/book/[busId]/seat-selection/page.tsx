@@ -23,14 +23,20 @@ export default function SeatSelectionPage() {
   const { busId } = useParams<{ busId: string }>();
   const params = useSearchParams();
   const draftId = params.get("draft");
+  const date = params.get("date") || params.get("travel_date") || "";
+  const origin = params.get("origin") || "";
+  const destination = params.get("dest") || params.get("destination") || "";
+  const departureTime = params.get("departure_time") || undefined;
+
   if (draftId) {
     return (
       <GroupSeatSelectionFlow
         busId={busId}
         draftId={draftId}
-        date={params.get("date") || ""}
-        origin={params.get("origin") || ""}
-        destination={params.get("dest") || ""}
+        date={date}
+        origin={origin}
+        destination={destination}
+        departureTime={departureTime}
       />
     );
   }
@@ -43,9 +49,9 @@ function SingleSeatSelectionFlow() {
   const router = useRouter();
 
   // Read params
-  const date = params.get("date") || "";
+  const date = params.get("date") || params.get("travel_date") || "";
   const origin = params.get("origin") || "";
-  const dest = params.get("dest") || "";
+  const dest = params.get("dest") || params.get("destination") || "";
   const name = params.get("name") || "Passenger";
   const phone = params.get("phone") || "";
   const languagePref = params.get("language_pref") || "en";
@@ -55,6 +61,7 @@ function SingleSeatSelectionFlow() {
   const accessibilityNeeds = params.get("accessibility_needs") === "true";
   const preferredSeatType = params.get("preferred_seat_type") || "";
   const preferredSide = params.get("preferred_side") || "";
+  const departureTime = params.get("departure_time") || undefined;
 
   const { seats, loading, error, assignSeat } = useSeatMap(busId, date);
 
@@ -174,7 +181,8 @@ function SingleSeatSelectionFlow() {
       const booking = await createBooking({
         passenger_id: passenger.id,
         bus_id: busId,
-        departure_date: toServiceDepartureIso(date),
+        departure_date: toServiceDepartureIso(date, departureTime),
+        departure_time: departureTime,
         seat_preference: preferredSeatType || undefined,
         selected_seat: selectedSeatLabel,
         passenger_name: name,
@@ -188,8 +196,8 @@ function SingleSeatSelectionFlow() {
       saveBoardingPass({
         ...booking,
         passenger_name: name || null,
-        route_origin: null,
-        route_destination: null,
+        route_origin: origin || booking.route_origin || null,
+        route_destination: dest || booking.route_destination || null,
       });
       router.push(`/confirmation/${booking.id}`);
     } catch (err: unknown) {
@@ -296,6 +304,24 @@ function SingleSeatSelectionFlow() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 relative items-start">
         {/* Seat Grid */}
         <div className={`lg:col-span-2 ${uiStyles.elevatedSurface} p-2.5 sm:p-5 md:p-6`}>
+          {/* Dynamic live seat availability metrics */}
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-ui-border bg-ui-surface p-2.5 sm:p-3 text-xs sm:text-sm shadow-sm">
+            <div className="flex items-center gap-2">
+              <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" aria-hidden />
+              <span className="font-semibold text-ui-foreground">Seat Availability:</span>
+              <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                {activeSeatLabel
+                  ? `Seat ${activeSeatLabel} assigned`
+                  : `${Math.max(0, seats.length - seats.filter((s) => s.status === "occupied" || s.status === "blocked").length)} seat${seats.length - seats.filter((s) => s.status === "occupied" || s.status === "blocked").length === 1 ? "" : "s"} available`}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 text-[11px] sm:text-xs text-ui-muted-foreground">
+              <span>{Math.max(0, seats.length - seats.filter((s) => s.status === "occupied" || s.status === "blocked").length)} of {seats.length} open</span>
+              <span>•</span>
+              <span>{seats.filter((s) => s.status === "occupied" || s.status === "blocked").length} occupied</span>
+            </div>
+          </div>
+
           <div className="mb-3 sm:mb-4 flex items-start gap-2.5 sm:gap-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
             <Accessibility className="mt-0.5 h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0 text-amber-700 dark:text-amber-300" aria-hidden />
             <p className="leading-snug sm:leading-normal">

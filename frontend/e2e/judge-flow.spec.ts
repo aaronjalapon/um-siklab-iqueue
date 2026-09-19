@@ -75,7 +75,7 @@ test("passenger booking produces a signed, verifiable boarding pass", async ({
 }, testInfo) => {
   await page.goto("/buy");
   await page.locator('input[type="date"]').fill(tomorrow());
-  await page.getByRole("button", { name: "Davao -> CDO" }).click();
+  await page.getByRole("button", { name: "Davao -> Cagayan" }).click();
   await page.getByRole("button", { name: "Search Tickets" }).click();
   await expect(page.getByText("2 buses found")).toBeVisible();
   await page.getByRole("link", { name: "Continue to Preferences" }).first().click();
@@ -91,6 +91,15 @@ test("passenger booking produces a signed, verifiable boarding pass", async ({
   await page.getByRole("button", { name: "Confirm Booking" }).click();
   await expect(page.getByRole("heading", { name: "Booking Confirmed" })).toBeVisible();
   await expect(page.getByText("TripSync Boarding Pass")).toBeVisible();
+
+  const downloadButton = page.getByRole("button", { name: "Download QR Pass" });
+  await expect(downloadButton).toBeVisible();
+  await expect(downloadButton).toHaveClass(/bg-blue-600/);
+
+  const downloadPromise = page.waitForEvent("download");
+  await downloadButton.click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toMatch(/^TripSync-Boarding-Pass-.*\.png$/);
 
   const token = await page.evaluate(() => {
     const raw = localStorage.getItem("iqueue:boarding-passes:v1");
@@ -112,7 +121,7 @@ test("accessible family receives adjacent seats, one pass, and online group veri
 }, testInfo) => {
   await page.goto("/buy");
   await page.locator('input[type="date"]').fill(tomorrow());
-  await page.getByRole("button", { name: "Davao -> CDO" }).click();
+  await page.getByRole("button", { name: "Davao -> Cagayan" }).click();
   await page.getByRole("button", { name: "Search Tickets" }).click();
   const busResultLinks = page.getByRole("link", { name: "Continue to Preferences" });
   if (testInfo.project.name.startsWith("mobile")) {
@@ -132,6 +141,16 @@ test("accessible family receives adjacent seats, one pass, and online group veri
   await expect(page.getByRole("heading", { name: "Group Booking Confirmed" })).toBeVisible();
   await expect(page.getByText("TripSync Combined Group Pass")).toBeVisible();
   await expect(page.getByText("One QR for the whole group")).toBeVisible();
+
+  const groupDownloadButton = page.getByRole("button", { name: "Download QR Pass" });
+  await expect(groupDownloadButton).toBeVisible();
+  await expect(groupDownloadButton).toHaveClass(/bg-blue-600/);
+
+  const groupDownloadPromise = page.waitForEvent("download");
+  await groupDownloadButton.click();
+  const groupDownload = await groupDownloadPromise;
+  expect(groupDownload.suggestedFilename()).toMatch(/^TripSync-Group-Pass-.*\.png$/);
+
   const token = await page.evaluate(() => {
     const raw = localStorage.getItem("iqueue:group-boarding-passes:v1");
     const passes = raw ? JSON.parse(raw) : [];

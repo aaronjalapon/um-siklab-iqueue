@@ -33,17 +33,27 @@ export default function TicketModal({
   const code = data?.code || "BUS01150224";
   const qrToken = data?.qrToken || "BUS01150224";
   const seatInfo = data?.seatInfo || "Terminal Gate Pass";
-  const subtitle =
-    data?.subtitle ||
-    (data?.route ? `${data.route} · Gate Pass` : `Booking Code: ${code}`);
 
   async function handleDownload() {
     if (!qrRef.current) return;
     setDownloading(true);
+    let origin = "";
+    let dest = "";
+    if (data?.route) {
+      const parts = data.route.split(/→|->/);
+      if (parts.length >= 2) {
+        origin = parts[0].trim();
+        dest = parts[1].trim();
+      }
+    }
     await downloadQrAsPng(qrRef.current, {
       filename: `TripSync-Pass-${code}`,
-      subtitle,
+      title: "TripSync Boarding Pass",
+      origin: origin || undefined,
+      destination: dest || undefined,
       seatInfo,
+      bookingRef: `#TS-${code.toUpperCase()}`,
+      gateStatus: "Gate Ready",
     });
     setDownloading(false);
   }
@@ -52,7 +62,7 @@ export default function TicketModal({
     <>
       <button
         type="button"
-        className="fixed inset-0 z-40 bg-slate-950/50 "
+        className="fixed inset-0 z-[100] bg-black/45 animate-in fade-in duration-200"
         onClick={onClose}
         aria-label="Close ticket"
       />
@@ -60,7 +70,8 @@ export default function TicketModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="ticket-modal-title"
-        className="clay-surface-raised fixed bottom-0 left-1/2 z-50 max-h-[92dvh] w-full max-w-md -translate-x-1/2 overflow-y-auto overscroll-contain rounded-t-3xl border border-ui-border bg-ui-surface p-4 pt-3 sm:p-6 sm:pt-4 md:bottom-6 md:rounded-3xl"
+        style={{ boxShadow: "0 20px 45px -10px rgba(0, 0, 0, 0.35)" }}
+        className="fixed bottom-0 left-1/2 z-[101] max-h-[92dvh] w-full max-w-md -translate-x-1/2 overflow-y-auto overscroll-contain rounded-t-3xl border border-ui-border bg-ui-surface p-4 pt-3 sm:p-6 sm:pt-4 md:bottom-6 md:rounded-3xl animate-in slide-in-from-bottom-4 duration-200"
       >
         <div className="mb-3 flex justify-center md:hidden">
           <div className="h-1.5 w-12 rounded-full bg-slate-200 dark:bg-slate-700" />
@@ -109,9 +120,9 @@ export default function TicketModal({
             type="button"
             onClick={handleDownload}
             disabled={downloading}
-            className="clay-control clay-interactive mb-3 sm:mb-4 flex min-h-11 w-full max-w-xs items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-bold text-white hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 disabled:opacity-50"
+            className="clay-control clay-interactive mb-3 sm:mb-4 flex min-h-11 w-full max-w-xs items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-sm dark:bg-blue-600 dark:hover:bg-blue-500 disabled:opacity-50 transition-all font-bold text-xs"
           >
-            <Download className="h-4 w-4 text-brand-orange" />
+            <Download className="h-4 w-4 text-white" />
             <span>{downloading ? "Saving..." : "Download QR Pass"}</span>
           </button>
 

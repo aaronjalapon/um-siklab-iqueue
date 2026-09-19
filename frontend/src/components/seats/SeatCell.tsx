@@ -25,15 +25,15 @@ interface SeatCellProps {
 
 const STATE_STYLES: Record<SeatCellState, string> = {
   available:
-    "bg-ui-surface border-ui-border text-ui-foreground hover:bg-ui-muted hover:border-ui-primary cursor-pointer",
+    "bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-800 dark:text-slate-100 shadow-xs hover:border-ui-primary cursor-pointer",
   occupied:
-    "bg-ui-muted border-ui-border text-ui-muted-foreground font-medium cursor-not-allowed",
-  selected: "bg-ui-primary border-ui-primary text-white dark:text-ui-navy font-bold ring-2 ring-ui-primary/30",
+    "bg-slate-200 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 font-medium cursor-not-allowed",
+  selected: "bg-ui-primary border border-ui-primary text-white font-bold ring-2 ring-ui-primary/30 shadow-sm",
   auto_assigned:
-    "seat-recommended bg-ui-primary border-ui-primary text-white dark:text-ui-navy font-bold ring-2 ring-ui-primary/30 ring-offset-1",
-  group_reserved: "bg-ui-primary border-ui-primary text-white dark:text-ui-navy font-bold ring-2 ring-ui-primary/30",
-  accessibility: "bg-ui-warning-surface border-ui-warning text-ui-warning cursor-pointer hover:brightness-95",
-  blocked: "bg-ui-danger-surface border-ui-danger/40 text-ui-danger/55 cursor-not-allowed",
+    "seat-recommended bg-ui-primary border border-ui-primary text-white font-bold ring-2 ring-ui-primary/30 ring-offset-1 shadow-sm",
+  group_reserved: "bg-ui-primary border border-ui-primary text-white font-bold ring-2 ring-ui-primary/30 shadow-sm",
+  accessibility: "bg-amber-100 dark:bg-amber-950/60 border-2 border-amber-500 dark:border-amber-500 text-amber-900 dark:text-amber-200 font-bold shadow-xs hover:brightness-95 cursor-pointer",
+  blocked: "bg-red-100 dark:bg-red-950/60 border border-red-300 dark:border-red-800 text-red-500 dark:text-red-400 cursor-not-allowed",
 };
 
 const STATE_ICONS: Partial<Record<SeatCellState, LucideIcon>> = {
@@ -67,9 +67,7 @@ export function SeatCell({
   const baseClasses =
     "clay-seat rounded-lg font-medium transition-all duration-200 flex items-center justify-center relative border";
   const stateClasses = groupAssignment
-    ? groupAssignment.is_accessibility
-      ? "bg-ui-warning-surface border-ui-warning text-ui-warning font-bold ring-2 ring-ui-warning/30"
-      : "bg-ui-primary border-ui-primary text-white dark:text-ui-navy font-bold ring-2 ring-ui-primary/30"
+    ? "bg-ui-primary border border-ui-primary text-white font-bold ring-2 ring-ui-primary/30 shadow-sm"
     : STATE_STYLES[state] || STATE_STYLES.available;
   const sizeClasses = SIZE_CLASSES[size];
   const Icon = STATE_ICONS[state];
@@ -94,12 +92,14 @@ export function SeatCell({
     ? 20
     : 1;
 
+  const isDisabledAvailable = disabled && state === "available";
+
   return (
     <Component
       type={isInteractive ? "button" : undefined}
       data-state={state}
       className={`${baseClasses} ${stateClasses} ${sizeClasses} ${
-        disabled ? "cursor-not-allowed opacity-35" : ""
+        isDisabledAvailable ? "cursor-not-allowed opacity-50" : ""
       }`}
       style={{ zIndex }}
       onClick={isInteractive ? handleClick : undefined}

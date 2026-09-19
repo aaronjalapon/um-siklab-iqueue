@@ -261,7 +261,7 @@ html.lenis body {
 
 .clay-seat[data-state="occupied"],
 .clay-seat[data-state="blocked"] {
-  box-shadow: var(--clay-shadow-inset);
+  box-shadow: none;
 }
 
 .clay-seat[data-state="selected"],
@@ -285,10 +285,16 @@ html.lenis body {
 
 /* Local page markup predates the shared primitives. These scoped rules give
    those semantic surface utilities the same material without affecting logos. */
-.passenger-clay :where(.rounded-xl, .rounded-2xl, .rounded-3xl).bg-ui-surface,
+.passenger-clay :where(.rounded-xl, .rounded-2xl, .rounded-3xl).bg-ui-surface:not([role="dialog"]):not([role="dialog"] *),
 .landing-clay :where(.feature-card, .process-card),
 .landing-clay .network-map {
   box-shadow: var(--clay-shadow-low);
+}
+
+.passenger-clay :where([role="dialog"]),
+[role="dialog"].clay-surface-raised,
+[role="dialog"].clay-surface {
+  box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.35);
 }
 
 .passenger-clay :where(.rounded-lg, .rounded-xl, .rounded-2xl).bg-ui-surface-soft {
@@ -381,10 +387,13 @@ time,
   fill: none;
   stroke: var(--map-route);
   stroke-width: 1.5;
-  stroke-dasharray: 7 7;
-  opacity: 0.5;
+  stroke-dasharray: 6 6;
+  stroke-dashoffset: 0;
+  opacity: 0.65;
   vector-effect: non-scaling-stroke;
-  animation: map-route-flow 4s linear infinite;
+  animation: map-route-flow 3s linear infinite;
+  will-change: stroke-dashoffset;
+  transition: stroke 0.3s ease, stroke-width 0.3s ease, opacity 0.3s ease;
 }
 
 .map-route-active {
@@ -458,7 +467,12 @@ time,
 }
 
 @keyframes map-route-flow {
-  to { stroke-dashoffset: -28; }
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -24;
+  }
 }
 
 @keyframes map-marker-pulse {
@@ -495,12 +509,21 @@ time,
   to { opacity: 1; transform: translateY(0); }
 }
 
-button, a, input, select, textarea { touch-action: manipulation; }
+button, a, input, select, textarea {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
 button, a, select { cursor: pointer; }
 
 :focus-visible {
   outline: 2px solid var(--ui-primary);
   outline-offset: 3px;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
 }
 
 ::selection { background: color-mix(in srgb, var(--ui-primary) 25%, transparent); }
@@ -509,6 +532,7 @@ button, a, select { cursor: pointer; }
   input, select, textarea { font-size: 16px !important; }
 }
 
+.pt-safe { padding-top: env(safe-area-inset-top, 0px); }
 .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
 .trim-cap-alpha { text-box: trim-both cap alphabetic; }
 .content-deferred { content-visibility: auto; contain-intrinsic-size: 1px 500px; }

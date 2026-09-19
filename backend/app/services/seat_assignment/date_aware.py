@@ -41,17 +41,19 @@ def _day_bounds(travel_date: date | datetime) -> tuple[datetime, datetime]:
     """Return UTC bounds for the supplied service day.
 
     A date-only value is interpreted in the configured booking timezone. An
-    aware datetime keeps its explicit timezone, so API payloads and tests can
-    describe the intended local service day without a UTC date rollover.
+    aware datetime is first converted to the configured booking timezone so that
+    UTC timestamps (e.g. 22:00 UTC previous calendar day = 06:00 local departure)
+    map to the exact intended local service day without an off-by-one date rollover.
     """
+    service_timezone = ZoneInfo(get_settings().BOOKING_TIMEZONE)
     if isinstance(travel_date, datetime):
-        day = travel_date.date()
-        service_timezone = travel_date.tzinfo or ZoneInfo(
-            get_settings().BOOKING_TIMEZONE
-        )
+        if travel_date.tzinfo is not None:
+            local_dt = travel_date.astimezone(service_timezone)
+        else:
+            local_dt = travel_date.replace(tzinfo=service_timezone)
+        day = local_dt.date()
     else:
         day = travel_date
-        service_timezone = ZoneInfo(get_settings().BOOKING_TIMEZONE)
 
     local_start = datetime.combine(day, time.min, tzinfo=service_timezone)
     start = local_start.astimezone(timezone.utc)
@@ -127,8 +129,12 @@ async def get_travel_date_seat_map(
     bus_id: str | UUID,
     travel_date: date | datetime,
 ) -> list[dict]:
-    """Return a seat map whose occupancy is scoped to one service day."""
-    _, seats = await _load_bus_and_seats(session, bus_id)
+    bus, seats = await _load_bus_and_seats(session, bus_id)
+    if bus.plate_number in ("BOH-003", "BOH-004"):
+        from app.api.v1.buses import _ensure_single_seat_availability
+        service_day = travel_date.date() if isinstance(travel_date, datetime) else travel_date
+        await _ensure_single_seat_availability(session, bus, service_day)
+
     bookings = await _bookings_for_service_day(session, bus_id, travel_date)
     bookings_by_label = {booking.seat_number: booking for booking in bookings}
 

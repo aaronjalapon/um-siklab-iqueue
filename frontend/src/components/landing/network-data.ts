@@ -233,7 +233,7 @@ export const ASEAN_HUBS: NetworkHub[] = [
     terminal: "Terminal Bersepadu Selatan (TBS)",
     coordinates: [101.7107, 3.0728],
     region: "asean",
-    description: "A premier mainland interchange connecting Malaysia with Singapore, Thailand, and Indonesia.",
+    description: "A premier mainland interchange connecting Malaysia with Singapore, Thailand, Vietnam, and Indonesia.",
   },
   {
     id: "singapore",
@@ -251,7 +251,7 @@ export const ASEAN_HUBS: NetworkHub[] = [
     terminal: "Mien Dong New Bus Station",
     coordinates: [106.7118, 10.8143],
     region: "asean",
-    description: "A concept mainland terminal linking Vietnam to Cambodia, Thailand, and the Philippines.",
+    description: "A concept mainland terminal linking Vietnam to Cambodia, Thailand, Malaysia, and the Philippines.",
   },
   {
     id: "jakarta",
@@ -271,6 +271,7 @@ export const ASEAN_ROUTES: NetworkRoute[] = [
   { id: "bkk-kl", from: "bangkok", to: "kuala-lumpur", category: "cross-border" },
   { id: "kl-sin", from: "kuala-lumpur", to: "singapore", category: "cross-border" },
   { id: "kl-jkt", from: "kuala-lumpur", to: "jakarta", category: "cross-border" },
+  { id: "kl-hcm", from: "kuala-lumpur", to: "ho-chi-minh-city", category: "cross-border" },
   { id: "hcm-bkk", from: "ho-chi-minh-city", to: "bangkok", category: "cross-border" },
   { id: "sin-jkt", from: "singapore", to: "jakarta", category: "cross-border" },
   { id: "mnl-hcm", from: "manila", to: "ho-chi-minh-city", category: "cross-border" },

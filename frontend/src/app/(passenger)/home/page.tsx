@@ -17,23 +17,40 @@ import TicketModal, { type TicketModalData } from "@/components/TicketModal";
 import { CapacityMeter } from "@/components/ui/CapacityMeter";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { uiStyles } from "@/lib/design-system";
-import { getLatestSessionPass, type SessionPass } from "@/lib/session-bookings";
+import {
+  getLatestSessionPass,
+  getSessionBookedSeatsForRoute,
+  type SessionPass,
+} from "@/lib/session-bookings";
 import { formatBoardingWindow } from "@/lib/utils";
 
 const QUICK_ROUTES = [
-  { destination: "Cagayan de Oro", label: "Davao → CDO", seats: 18 },
-  { destination: "General Santos", label: "Davao → GenSan", seats: 23 },
-  { destination: "Cotabato City", label: "Davao → Cotabato", seats: 12 },
+  { origin: "Pasay", destination: "Baguio", label: "Pasay → Baguio", seats: 32 },
+  { origin: "Cubao", destination: "San Fernando City", label: "Cubao → San Fernando", seats: 32 },
+  { origin: "Panglao", destination: "Tagbilaran", label: "Panglao → Tagbilaran", seats: 32 },
+  { origin: "Tagbilaran", destination: "Jagna", label: "Tagbilaran → Jagna", seats: 1 },
+  { origin: "Davao", destination: "Cagayan", label: "Davao → Cagayan", seats: 32 },
+  { origin: "Davao", destination: "General Santos", label: "Davao → GenSan", seats: 29 },
 ];
 
 export default function HomePage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activePass, setActivePass] = useState<SessionPass | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [, setSessionTick] = useState(0);
+  const [routeSeats, setRouteSeats] = useState<Record<string, number>>({
+    "Pasay → Baguio": 32,
+    "Cubao → San Fernando": 32,
+    "Panglao → Tagbilaran": 32,
+    "Tagbilaran → Jagna": 1,
+    "Davao → Cagayan": 32,
+    "Davao → GenSan": 29,
+  });
 
   useEffect(() => {
     function refreshPass() {
       setActivePass(getLatestSessionPass());
+      setSessionTick((t) => t + 1);
     }
 
     const frame = requestAnimationFrame(() => {
@@ -41,15 +58,51 @@ export default function HomePage() {
       refreshPass();
     });
     window.addEventListener("focus", refreshPass);
+    window.addEventListener("storage", refreshPass);
+
+    // Fetch dynamic live seat counts from API
+    const today = new Date().toISOString().split("T")[0];
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+
+    Promise.all(
+      QUICK_ROUTES.map(async (route) => {
+        try {
+          const res = await fetch(
+            `${apiUrl}/buses?origin=${encodeURIComponent(route.origin)}&destination=${encodeURIComponent(route.destination)}&travel_date=${today}`
+          );
+          if (res.ok) {
+            const data = await res.json();
+            if (data.buses && data.buses.length > 0) {
+              const totalSeats = data.buses.reduce(
+                (sum: number, b: { available_seats: number }) => sum + b.available_seats,
+                0
+              );
+              return { label: route.label, seats: totalSeats };
+            }
+          }
+        } catch {
+          // fallback to initial
+        }
+        return { label: route.label, seats: route.label.includes("Jagna") ? 1 : route.seats };
+      })
+    ).then((results) => {
+      const nextSeats: Record<string, number> = {};
+      results.forEach((r) => {
+        if (r) nextSeats[r.label] = r.seats;
+      });
+      setRouteSeats((prev) => ({ ...prev, ...nextSeats }));
+    });
+
     return () => {
       cancelAnimationFrame(frame);
       window.removeEventListener("focus", refreshPass);
+      window.removeEventListener("storage", refreshPass);
     };
   }, []);
 
-  function buildBuyHref(destination = "") {
+  function buildBuyHref(origin = "Pasay", destination = "Baguio") {
     const params = new URLSearchParams({
-      origin: "Davao City",
+      origin,
       ...(destination ? { destination } : {}),
     });
     const query = params.toString();
@@ -97,18 +150,18 @@ export default function HomePage() {
     <div className={`${uiStyles.pageContainer} max-w-7xl`}>
       <PageHeader
         eyebrow="Passenger dashboard"
-        title="Good morning, Demo Passenger"
+        title="Good morning, Maria"
         description="Book faster, keep your QR pass handy, and arrive inside your boarding window."
         actionPosition="top-right"
         actions={
-          <button
-            type="button"
-            className="clay-control clay-interactive relative flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full border border-ui-border bg-ui-surface text-slate-600 hover:text-ui-primary dark:text-slate-300"
-            aria-label="Notifications"
+          <Link
+            href="/notifications"
+            className="clay-control clay-interactive relative flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full border border-ui-border bg-ui-surface text-slate-600 hover:text-ui-primary dark:text-slate-300 transition-colors"
+            aria-label="View notifications"
           >
             <Bell className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden />
-            <span className="absolute right-2 sm:right-2.5 top-2 sm:top-2.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-slate-900" />
-          </button>
+            <span className="absolute right-2 sm:right-2.5 top-2 sm:top-2.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-slate-900 animate-pulse" />
+          </Link>
         }
       />
 
@@ -242,12 +295,12 @@ export default function HomePage() {
             </div>
           </section>
         ) : (
-          /* Clean Empty State: When no booking has occurred in this session */
+          /* Clean Empty State: When no booking is active */
           <section className={`${uiStyles.surface} p-5 sm:p-7 flex flex-col items-center justify-center text-center`}>
             <div className="mb-4 flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50/80 shadow-inner dark:border-blue-900/40 dark:bg-blue-950/30">
               <Ticket className="h-7 w-7 sm:h-8 sm:w-8 text-ui-primary" aria-hidden />
             </div>
-            <h2 className="text-base sm:text-lg font-bold text-ui-foreground">No active trip in this session</h2>
+            <h2 className="text-base sm:text-lg font-bold text-ui-foreground">No active trip right now</h2>
             <p className="mt-1 max-w-md text-xs sm:text-sm leading-5 sm:leading-6 text-ui-muted-foreground">
               Search routes above or pick a route below to experience AI crowd and priority awareness. Your live QR pass will display here as soon as you confirm.
             </p>
@@ -279,27 +332,57 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-2.5 sm:gap-3">
-            {QUICK_ROUTES.map((route) => (
-              <Link
-                key={route.label}
-                href={buildBuyHref(route.destination)}
-                prefetch={false}
-                className={`${uiStyles.surface} group flex items-center justify-between gap-3 p-3 sm:p-4 text-left transition-all hover:border-brand-blue/50 hover:bg-white/70 dark:hover:bg-slate-900/60 active:scale-[0.99]`}
-              >
-                <div className="min-w-0 flex-1">
-                  <span className="block text-xs sm:text-sm font-bold text-ui-foreground group-hover:text-ui-primary transition-colors truncate">
-                    {route.label}
-                  </span>
-                  <span className="mt-0.5 flex items-center gap-1.5 text-[11px] sm:text-xs text-ui-muted-foreground">
-                    <MapPin className="h-3 w-3 text-ui-primary shrink-0" aria-hidden />
-                    <span className="font-semibold text-ui-foreground">{route.seats}</span> seats available
-                  </span>
-                </div>
-                <div className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 group-hover:bg-brand-blue group-hover:text-white transition-all">
-                  <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden />
-                </div>
-              </Link>
-            ))}
+            {QUICK_ROUTES.map((route) => {
+              const baseSeats =
+                routeSeats[route.label] ?? (route.label.includes("Jagna") ? 1 : route.seats);
+              const sessionBooked = getSessionBookedSeatsForRoute(route.origin, route.destination);
+              const availableSeats = Math.max(0, baseSeats - sessionBooked);
+              const isSingleSeat = availableSeats === 1;
+              const isFull = availableSeats <= 0;
+
+              return (
+                <Link
+                  key={route.label}
+                  href={buildBuyHref(route.origin, route.destination)}
+                  prefetch={false}
+                  className={`${uiStyles.surface} group flex items-center justify-between gap-3 p-3 sm:p-4 text-left transition-all hover:border-brand-blue/50 hover:bg-white/70 dark:hover:bg-slate-900/60 active:scale-[0.99]`}
+                >
+                  <div className="min-w-0 flex-1">
+                    <span className="block text-xs sm:text-sm font-bold text-ui-foreground group-hover:text-ui-primary transition-colors truncate">
+                      {route.label}
+                    </span>
+                    <span className="mt-0.5 flex items-center gap-1.5 text-[11px] sm:text-xs text-ui-muted-foreground">
+                      <MapPin
+                        className={`h-3 w-3 ${
+                          isFull
+                            ? "text-slate-400"
+                            : isSingleSeat
+                            ? "text-amber-500"
+                            : "text-ui-primary"
+                        } shrink-0`}
+                        aria-hidden
+                      />
+                      {isFull ? (
+                        <span className="font-semibold text-slate-500 dark:text-slate-400">
+                          0 seats available
+                        </span>
+                      ) : isSingleSeat ? (
+                        <span className="font-bold text-amber-600 dark:text-amber-400">
+                          1 seat left
+                        </span>
+                      ) : (
+                        <>
+                          <span className="font-semibold text-ui-foreground">{availableSeats}</span> seats available
+                        </>
+                      )}
+                    </span>
+                  </div>
+                  <div className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 group-hover:bg-brand-blue group-hover:text-white transition-all">
+                    <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden />
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </section>
       </div>

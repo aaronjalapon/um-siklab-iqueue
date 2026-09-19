@@ -1,0 +1,55 @@
+{
+  "disclosure": "All results are synthetic benchmarks or simulations.",
+  "seed": 2026,
+  "forecasting": {
+    "evaluation_data": "synthetic",
+    "comparison_models": 7,
+    "combined_mae": 61.33,
+    "combined_surge_f1": 0.817,
+    "protocol": "artifact report; rerun final pipeline for untouched-test metrics"
+  },
+  "seat_allocation": {
+    "scenarios": 200,
+    "optimized_preference_satisfaction": 0.99,
+    "first_available_satisfaction": 0.427,
+    "seeded_random_satisfaction": 0.473,
+    "group_proximity_success": 0.7,
+    "accessibility_violations": 0,
+    "max_language_satisfaction_gap": 0.0,
+    "affinity_policy": "explicit_opt_in"
+  },
+  "qr_boarding": {
+    "iterations": 1000,
+    "valid_acceptance_rate": 1.0,
+    "tamper_rejection_rate": 1.0,
+    "verification_p50_ms": 0.0093,
+    "verification_p95_ms": 0.0145,
+    "offline_capable": true,
+    "signature": "HMAC-SHA256 on provisioned terminal devices"
+  },
+  "operational_simulation": {
+    "simulation_only": true,
+    "engine": "SimPy 4.1.1",
+    "reactive": {
+      "passengers": 236,
+      "lanes": 1,
+      "average_wait_minutes": 18.21,
+      "p95_wait_minutes": 39.17,
+      "peak_queue": 61,
+      "missed_boardings": 102
+    },
+    "forecast_guided": {
+      "passengers": 236,
+      "lanes": 2,
+      "average_wait_minutes": 0.37,
+      "p95_wait_minutes": 1.5,
+      "peak_queue": 7,
+      "missed_boardings": 0
+    },
+    "p95_wait_reduction": 0.962,
+    "disclosure": "Scenario estimate, not measured field impact"
+  },
+  "chatbot": {
+    "status": "run ml/chatbot/evaluate.py for model evidence"
+  }
+}

@@ -40,9 +40,10 @@ test("landing ticket stays legible in dark mode without zoom-width overflow", as
   await page.setViewportSize({ width: 690, height: 832 });
   await page.goto("/");
 
-  const preview = page.getByLabel("TripSync booking preview");
+  const preview = page.getByLabel("TripSync verified boarding pass");
   await expect(preview).toBeVisible();
-  await expect(preview.getByText("Davao City → Cagayan de Oro")).toBeVisible();
+  await expect(preview.getByText("Davao City")).toBeVisible();
+  await expect(preview.getByText("Manila")).toBeVisible();
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(1);
@@ -66,11 +67,10 @@ test.describe("Asia/Manila service date", () => {
   });
 });
 
-test("mobile booking content clears fixed navigation and keeps help inline", async ({ page }) => {
+test("mobile booking content clears fixed navigation and retains assistant launcher", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/buy");
-  await expect(page.getByRole("button", { name: "Need help?" })).toBeVisible();
-  await expect(page.getByLabel("Chat with TripSync Assistant")).toHaveCount(0);
+  await expect(page.getByLabel("Chat with TripSync Assistant")).toBeVisible();
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(1);

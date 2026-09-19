@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Gift, Search, TicketPercent } from "lucide-react";
+import { ArrowLeft, Gift, Search, TicketPercent } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { uiStyles } from "@/lib/design-system";
 
@@ -14,17 +14,27 @@ const UPCOMING_REWARDS = [
 export default function PromoPage() {
   return (
     <div className={`${uiStyles.pageContainer} max-w-4xl !space-y-3 sm:!space-y-5 !px-3 sm:!px-6 !py-3 sm:!py-6`}>
+      <div>
+        <Link
+          href="/account"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-ui-primary hover:underline"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
+          Back to Account
+        </Link>
+      </div>
+
       <PageHeader
         eyebrow="Promos"
         title="Rewards & Discounts"
-        description="Promo inventory is demo-ready and will show live operator offers when connected."
+        description="Exclusive travel vouchers, operator discounts, and boarding rewards for your trips."
         actions={
           <Link
             href="/buy"
             className={`${uiStyles.primaryButton} inline-flex min-h-10 sm:min-h-11 items-center justify-center gap-2 text-xs sm:text-sm font-bold shadow-sm`}
           >
             <Search className="h-4 w-4" aria-hidden />
-            <span>Find a Bus</span>
+            <span>Search Buses</span>
           </Link>
         }
       />

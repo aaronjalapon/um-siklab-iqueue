@@ -13,6 +13,7 @@ interface BusSeatGridProps {
   groupId?: string;
   readOnly?: boolean;
   needsAccessibility?: boolean;
+  activeMemberIndex?: number;
   groupAssignments?: Array<{
     member_index: number;
     member_name: string;
@@ -29,6 +30,7 @@ export function BusSeatGrid({
   groupId,
   readOnly = false,
   needsAccessibility = false,
+  activeMemberIndex,
   groupAssignments = [],
 }: BusSeatGridProps) {
   const assignmentsBySeat = useMemo(
@@ -68,6 +70,26 @@ export function BusSeatGrid({
     return "available";
   }
 
+  const renderSeatCell = (seat: SeatMapEntry) => {
+    const assignment = assignmentsBySeat.get(seat.seat_label);
+    const isActive = Boolean(
+      assignment &&
+      activeMemberIndex !== undefined &&
+      assignment.member_index === activeMemberIndex
+    );
+    return (
+      <SeatCell
+        key={seat.seat_id}
+        seat={seat}
+        state={getCellState(seat)}
+        onClick={readOnly ? undefined : onSeatSelect}
+        disabled={needsAccessibility && !seat.is_accessibility}
+        groupAssignment={assignment}
+        isActiveGroupMember={isActive}
+      />
+    );
+  };
+
   if (seats.length === 0) {
     return (
       <div className="text-center py-8 text-slate-400">
@@ -81,8 +103,8 @@ export function BusSeatGrid({
   const accessibilityCount = seats.filter((seat) => seat.is_accessibility).length;
 
   return (
-    <div className="w-full overflow-x-auto">
-      <div className="relative mx-auto w-max max-w-full px-2 sm:px-3 pb-4 sm:pb-8 pt-1 sm:pt-2">
+    <div className="w-full overflow-x-auto isolate">
+      <div className="relative isolate mx-auto w-max max-w-full px-2 sm:px-3 pb-4 sm:pb-8 pt-1 sm:pt-2">
         <div
           className="absolute left-4 right-4 sm:left-6 sm:right-6 top-3 sm:top-5 h-7 sm:h-10 rounded-t-xl sm:rounded-t-[2rem] border border-slate-300 bg-slate-800 shadow-inner dark:border-slate-700 dark:bg-slate-950"
           aria-hidden
@@ -96,7 +118,7 @@ export function BusSeatGrid({
           aria-hidden
         />
 
-        <div className="relative rounded-2xl border border-ui-border bg-ui-surface-soft px-2.5 py-3 sm:border-2 sm:px-4 sm:pb-6 sm:pt-5">
+        <div className="relative isolate rounded-2xl border border-ui-border bg-ui-surface-soft px-2.5 py-3 sm:border-2 sm:px-4 sm:pb-6 sm:pt-5">
           <div className="mb-3 flex items-center justify-between gap-2 rounded-t-xl border border-ui-border bg-ui-surface px-2.5 py-1.5 text-[11px] font-semibold text-ui-muted-foreground sm:mb-5 sm:gap-3 sm:px-3 sm:py-2 sm:text-xs">
             <span className="inline-flex items-center gap-1.5">
               <BusFront className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-ui-primary" aria-hidden />
@@ -138,28 +160,12 @@ export function BusSeatGrid({
                   style={{ animationDelay: `${ri * 50}ms` }}
                 >
                   <div className="flex gap-1">
-                    {leftSeats.map((seat) => (
-                      <SeatCell
-                        key={seat.seat_id}
-                        seat={seat}
-                        state={getCellState(seat)}
-                        onClick={readOnly ? undefined : onSeatSelect}
-                        disabled={needsAccessibility && !seat.is_accessibility}
-                        groupAssignment={assignmentsBySeat.get(seat.seat_label)}
-                      />
-                    ))}
+                    {leftSeats.map(renderSeatCell)}
                   </div>
 
                   <div className="flex items-center justify-center w-8 sm:w-10">
                     {centerSeat ? (
-                      <SeatCell
-                        key={centerSeat.seat_id}
-                        seat={centerSeat}
-                        state={getCellState(centerSeat)}
-                        onClick={readOnly ? undefined : onSeatSelect}
-                        disabled={needsAccessibility && !centerSeat.is_accessibility}
-                        groupAssignment={assignmentsBySeat.get(centerSeat.seat_label)}
-                      />
+                      renderSeatCell(centerSeat)
                     ) : (
                       <div
                         className="h-8 sm:h-9 w-5 sm:w-6 rounded-full border border-dashed border-slate-300 bg-ui-surface dark:border-slate-700 dark:bg-slate-950/40"
@@ -169,16 +175,7 @@ export function BusSeatGrid({
                   </div>
 
                   <div className="flex gap-1">
-                    {rightSeats.map((seat) => (
-                      <SeatCell
-                        key={seat.seat_id}
-                        seat={seat}
-                        state={getCellState(seat)}
-                        onClick={readOnly ? undefined : onSeatSelect}
-                        disabled={needsAccessibility && !seat.is_accessibility}
-                        groupAssignment={assignmentsBySeat.get(seat.seat_label)}
-                      />
-                    ))}
+                    {rightSeats.map(renderSeatCell)}
                   </div>
                 </div>
               );

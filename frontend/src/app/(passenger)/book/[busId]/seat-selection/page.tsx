@@ -303,7 +303,7 @@ function SingleSeatSelectionFlow() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 relative items-start">
         {/* Seat Grid */}
-        <div className={`lg:col-span-2 ${uiStyles.elevatedSurface} p-2.5 sm:p-5 md:p-6`}>
+        <div className={`lg:col-span-2 ${uiStyles.elevatedSurface} relative isolate p-2.5 sm:p-5 md:p-6`}>
           {/* Dynamic live seat availability metrics */}
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-ui-border bg-ui-surface p-2.5 sm:p-3 text-xs sm:text-sm shadow-sm">
             <div className="flex items-center gap-2">

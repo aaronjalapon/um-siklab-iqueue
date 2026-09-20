@@ -272,13 +272,70 @@ async def create_group_booking(
     }
     if (
         len(submitted) != len(payload.members)
-        or submitted != expected
         or len(payload.seat_assignments) != len(payload.members)
+        or len(set(submitted.values())) != len(payload.members)
     ):
         raise HTTPException(
-            status_code=409,
-            detail="The family seat recommendation changed; regenerate before confirming",
+            status_code=400,
+            detail="Each group member must be assigned a unique seat.",
         )
+
+    if submitted != expected:
+        _, seats = await _load_bus_and_seats(db, payload.bus_id)
+        locked = await db.execute(
+            select(Seat)
+            .where(Seat.bus_id == payload.bus_id)
+            .order_by(Seat.row_number, Seat.col_number)
+            .with_for_update()
+        )
+        seats = list(locked.scalars().all())
+        bookings_existing = await _bookings_for_service_day(
+            db, payload.bus_id, effective_departure_date
+        )
+        occupied = {b.seat_number for b in bookings_existing}
+        seat_by_label = {s.seat_label: s for s in seats}
+
+        custom_allocations: list[GroupAllocation] = []
+        for assignment in sorted(payload.seat_assignments, key=lambda a: a.member_index):
+            if assignment.member_index < 0 or assignment.member_index >= len(payload.members):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invalid member index: {assignment.member_index}",
+                )
+
+            seat = seat_by_label.get(assignment.seat_label)
+            if seat is None or seat.status == SeatStatus.BLOCKED or seat.seat_label in occupied:
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"Seat {assignment.seat_label} is no longer available on this trip. Please choose another seat.",
+                )
+
+            member = payload.members[assignment.member_index]
+            if member.accessibility_needs and not seat.is_accessibility:
+                raise HTTPException(
+                    status_code=422,
+                    detail=f"Seat {seat.seat_label} is not designated as an accessible seat for {member.name}.",
+                )
+
+            reasons = ["Passenger manual selection"]
+            if member.accessibility_needs:
+                reasons.append("Accessible priority seat")
+            custom_allocations.append(
+                GroupAllocation(
+                    member_index=assignment.member_index,
+                    seat=seat,
+                    reasons=reasons,
+                )
+            )
+
+        allocations = custom_allocations
+        if bus.route and is_demo_immediate_route(bus.route.origin, bus.route.destination):
+            window_start = effective_departure_date
+            window_end = effective_departure_date + timedelta(minutes=15)
+        else:
+            window_start, window_end = synchronized_boarding_window(
+                effective_departure_date, custom_allocations
+            )
 
     group_id = uuid4()
     passengers: list[Passenger] = []

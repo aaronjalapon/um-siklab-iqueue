@@ -247,7 +247,7 @@ html.lenis body {
 .clay-action:active:not(:disabled):not([aria-disabled="true"]),
 .clay-action-success:active:not(:disabled):not([aria-disabled="true"]) {
   transform: translateY(0);
-  box-shadow: var(--clay-shadow-pressed);
+  box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.28);
 }
 
 .clay-badge {

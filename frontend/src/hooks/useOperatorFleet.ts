@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { searchBuses } from "@/lib/api";
 import { getLocalDateInputValue } from "@/lib/local-date";
-import { DEMO_ROUTES, mockFleetFromCapacity } from "@/lib/operator-mock";
+import { mockFleetFromCapacity } from "@/lib/operator-mock";
 import type { Bus } from "@/lib/types";
 
 export type FleetLoadState = "loading" | "success" | "empty" | "error" | "demo";
@@ -82,5 +82,3 @@ export function useOperatorFleet({
 export function todayIsoDate(): string {
   return getLocalDateInputValue();
 }
-
-export { DEMO_ROUTES };

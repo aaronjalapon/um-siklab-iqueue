@@ -22,30 +22,22 @@ import {
   getSessionBookedSeatsForRoute,
   type SessionPass,
 } from "@/lib/session-bookings";
+import { PASSENGER_QUICK_ROUTES } from "@/lib/routes";
 import { formatBoardingWindow } from "@/lib/utils";
-
-const QUICK_ROUTES = [
-  { origin: "Pasay", destination: "Baguio", label: "Pasay → Baguio", seats: 32 },
-  { origin: "Cubao", destination: "San Fernando City", label: "Cubao → San Fernando", seats: 32 },
-  { origin: "Panglao", destination: "Tagbilaran", label: "Panglao → Tagbilaran", seats: 32 },
-  { origin: "Tagbilaran", destination: "Jagna", label: "Tagbilaran → Jagna", seats: 1 },
-  { origin: "Davao", destination: "Cagayan", label: "Davao → Cagayan", seats: 32 },
-  { origin: "Davao", destination: "General Santos", label: "Davao → GenSan", seats: 29 },
-];
 
 export default function HomePage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activePass, setActivePass] = useState<SessionPass | null>(null);
   const [mounted, setMounted] = useState(false);
   const [, setSessionTick] = useState(0);
-  const [routeSeats, setRouteSeats] = useState<Record<string, number>>({
-    "Pasay → Baguio": 32,
-    "Cubao → San Fernando": 32,
-    "Panglao → Tagbilaran": 32,
-    "Tagbilaran → Jagna": 1,
-    "Davao → Cagayan": 32,
-    "Davao → GenSan": 29,
-  });
+  const [routeSeats, setRouteSeats] = useState<Record<string, number>>(() =>
+    Object.fromEntries(
+      PASSENGER_QUICK_ROUTES.map((route) => [
+        route.homeLabel,
+        route.defaultAvailableSeats,
+      ])
+    )
+  );
 
   useEffect(() => {
     function refreshPass() {
@@ -65,7 +57,7 @@ export default function HomePage() {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
     Promise.all(
-      QUICK_ROUTES.map(async (route) => {
+      PASSENGER_QUICK_ROUTES.map(async (route) => {
         try {
           const res = await fetch(
             `${apiUrl}/buses?origin=${encodeURIComponent(route.origin)}&destination=${encodeURIComponent(route.destination)}&travel_date=${today}`
@@ -77,13 +69,16 @@ export default function HomePage() {
                 (sum: number, b: { available_seats: number }) => sum + b.available_seats,
                 0
               );
-              return { label: route.label, seats: totalSeats };
+              return { label: route.homeLabel, seats: totalSeats };
             }
           }
         } catch {
           // fallback to initial
         }
-        return { label: route.label, seats: route.label.includes("Jagna") ? 1 : route.seats };
+        return {
+          label: route.homeLabel,
+          seats: route.defaultAvailableSeats,
+        };
       })
     ).then((results) => {
       const nextSeats: Record<string, number> = {};
@@ -332,9 +327,9 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-2.5 sm:gap-3">
-            {QUICK_ROUTES.map((route) => {
+            {PASSENGER_QUICK_ROUTES.map((route) => {
               const baseSeats =
-                routeSeats[route.label] ?? (route.label.includes("Jagna") ? 1 : route.seats);
+                routeSeats[route.homeLabel] ?? route.defaultAvailableSeats;
               const sessionBooked = getSessionBookedSeatsForRoute(route.origin, route.destination);
               const availableSeats = Math.max(0, baseSeats - sessionBooked);
               const isSingleSeat = availableSeats === 1;
@@ -342,14 +337,14 @@ export default function HomePage() {
 
               return (
                 <Link
-                  key={route.label}
+                  key={route.routeId}
                   href={buildBuyHref(route.origin, route.destination)}
                   prefetch={false}
                   className={`${uiStyles.surface} group flex items-center justify-between gap-3 p-3 sm:p-4 text-left transition-all hover:border-brand-blue/50 hover:bg-white/70 dark:hover:bg-slate-900/60 active:scale-[0.99]`}
                 >
                   <div className="min-w-0 flex-1">
                     <span className="block text-xs sm:text-sm font-bold text-ui-foreground group-hover:text-ui-primary transition-colors truncate">
-                      {route.label}
+                      {route.homeLabel}
                     </span>
                     <span className="mt-0.5 flex items-center gap-1.5 text-[11px] sm:text-xs text-ui-muted-foreground">
                       <MapPin

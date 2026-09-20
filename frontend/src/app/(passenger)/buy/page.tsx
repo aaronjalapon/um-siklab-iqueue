@@ -21,21 +21,13 @@ import { BRAND } from "@/lib/brand";
 import { calculateFlexibleDepartureTime } from "@/lib/departure-time";
 import { uiStyles } from "@/lib/design-system";
 import { getLocalDateInputValue, isPastLocalDate } from "@/lib/local-date";
+import { PASSENGER_QUICK_ROUTES } from "@/lib/routes";
 import type { Bus } from "@/lib/types";
 import { formatDate, surgeColorClass, surgeLabel } from "@/lib/utils";
 import {
   getSessionBookedSeatsForBus,
   getSessionBookedSeatsForRoute,
 } from "@/lib/session-bookings";
-
-const QUICK_ROUTES = [
-  { origin: "Pasay", destination: "Baguio", label: "Pasay -> Baguio" },
-  { origin: "Cubao", destination: "San Fernando City", label: "Cubao -> San Fernando City" },
-  { origin: "Panglao", destination: "Tagbilaran", label: "Panglao -> Tagbilaran" },
-  { origin: "Tagbilaran", destination: "Jagna", label: "Tagbilaran -> Jagna" },
-  { origin: "Davao", destination: "Cagayan", label: "Davao -> Cagayan" },
-  { origin: "Davao", destination: "General Santos", label: "Davao -> General Santos" },
-];
 
 type SortMode = "recommended" | "seats" | "surge" | "price";
 
@@ -466,13 +458,13 @@ function BuyPageInner() {
             <span className="mr-0.5 hidden shrink-0 text-xs font-bold uppercase tracking-wider text-ui-muted-foreground sm:inline">
               Quick routes
             </span>
-            {QUICK_ROUTES.map((route) => {
+            {PASSENGER_QUICK_ROUTES.map((route) => {
               const isSelected =
                 origin.toLowerCase().trim() === route.origin.toLowerCase().trim() &&
                 destination.toLowerCase().trim() === route.destination.toLowerCase().trim();
               return (
                 <button
-                  key={route.label}
+                  key={route.routeId}
                   type="button"
                   aria-pressed={isSelected}
                   onClick={() => handleQuickRoute(route.origin, route.destination)}
@@ -482,7 +474,7 @@ function BuyPageInner() {
                       : "border-ui-border bg-ui-surface text-ui-muted-foreground hover:border-ui-primary/50 hover:bg-ui-surface hover:text-ui-foreground dark:border-white/15 dark:bg-white/[0.04] dark:hover:bg-white/10"
                   }`}
                 >
-                  {route.label}
+                  {route.bookingLabel}
                 </button>
               );
             })}

@@ -2,52 +2,7 @@
 
 import type { SurgePrediction } from "./types";
 import { getLocalDateInputValue } from "@/lib/local-date";
-
-export interface DemoRoute {
-  id: string;
-  origin: string;
-  destination: string;
-  label: string;
-}
-
-export const DEMO_ROUTES: DemoRoute[] = [
-  {
-    id: "26fd7e27-4920-510b-ae57-9424533347da",  // davao-cagayan (UUID v5)
-    origin: "Davao City",
-    destination: "Cagayan de Oro",
-    label: "Davao → Cagayan de Oro",
-  },
-  {
-    id: "eea70a1a-7420-5c5a-85f5-8f619fb68fa2",  // davao-cotabato
-    origin: "Davao City",
-    destination: "Cotabato City",
-    label: "Davao → Cotabato",
-  },
-  {
-    id: "f55422ef-6b76-56bb-99a1-47bf020e2112",  // davao-general-santos
-    origin: "Davao City",
-    destination: "General Santos",
-    label: "Davao → General Santos",
-  },
-  {
-    id: "16dc0d63-62dc-56ca-933b-d5bf6a344c12",  // cagayan-iligan
-    origin: "Cagayan de Oro",
-    destination: "Iligan City",
-    label: "Cagayan de Oro → Iligan",
-  },
-  {
-    id: "bcb30dde-1726-5ebe-b10f-6e00d93627ac",  // davao-butuan
-    origin: "Davao City",
-    destination: "Butuan City",
-    label: "Davao → Butuan",
-  },
-  {
-    id: "51f3fda4-ea0f-5d02-8151-8b277dc29165",  // cotabato-zambo
-    origin: "Cotabato City",
-    destination: "Zamboanga City",
-    label: "Cotabato → Zamboanga",
-  },
-];
+import { OPERATOR_ROUTES } from "@/lib/routes";
 
 export const OPERATOR_STATS = {
   activeBuses: 43,
@@ -67,8 +22,21 @@ export const MOCK_BUS_CAPACITY: BusCapacityEntry[] = [
   { plate: "DAV-003", capacity: 50, booked: 28, route: "Davao City → Cotabato City" },
   { plate: "DAV-004", capacity: 40, booked: 40, route: "Davao City → Cotabato City" },
   { plate: "GEN-001", capacity: 50, booked: 45, route: "Davao City → General Santos" },
+  { plate: "GEN-002", capacity: 28, booked: 20, route: "Davao City → General Santos" },
+  { plate: "CDO-001", capacity: 49, booked: 29, route: "Cagayan de Oro → Iligan City" },
+  { plate: "CDO-002", capacity: 28, booked: 16, route: "Cagayan de Oro → Iligan City" },
   { plate: "BUT-001", capacity: 50, booked: 22, route: "Davao City → Butuan City" },
+  { plate: "BUT-002", capacity: 28, booked: 17, route: "Davao City → Butuan City" },
   { plate: "ZAM-001", capacity: 40, booked: 15, route: "Cotabato City → Zamboanga City" },
+  { plate: "ZAM-002", capacity: 28, booked: 11, route: "Cotabato City → Zamboanga City" },
+  { plate: "PSY-001", capacity: 49, booked: 30, route: "Pasay → Baguio" },
+  { plate: "PSY-002", capacity: 28, booked: 15, route: "Pasay → Baguio" },
+  { plate: "CUB-001", capacity: 49, booked: 34, route: "Cubao → San Fernando City" },
+  { plate: "CUB-002", capacity: 28, booked: 11, route: "Cubao → San Fernando City" },
+  { plate: "BOH-001", capacity: 49, booked: 25, route: "Panglao → Tagbilaran" },
+  { plate: "BOH-002", capacity: 28, booked: 20, route: "Panglao → Tagbilaran" },
+  { plate: "BOH-003", capacity: 49, booked: 49, route: "Tagbilaran → Jagna" },
+  { plate: "BOH-004", capacity: 28, booked: 27, route: "Tagbilaran → Jagna" },
 ];
 
 export interface MockFleetBus {
@@ -87,28 +55,38 @@ export interface MockFleetBus {
 }
 
 export function mockFleetFromCapacity(): MockFleetBus[] {
-  return MOCK_BUS_CAPACITY.map((bus, i) => ({
-    id: `mock-bus-${i + 1}`,
-    tenant_id: "00000000-0000-0000-0000-000000000099",
-    route_id: "00000000-0000-0000-0000-000000000001",
-    capacity: bus.capacity,
-    plate_number: bus.plate,
-    origin: bus.route?.split(" → ")[0] ?? "Davao",
-    destination: bus.route?.split(" → ")[1] ?? "Manila",
-    available_seats: bus.capacity - bus.booked,
-    accessibility_seat_count: Math.min(bus.capacity, 8),
-    accessibility_available_count: Math.max(
-      0,
-      Math.min(bus.capacity, 8) - Math.max(0, bus.booked - (bus.capacity - 8))
-    ),
-    surge_probability:
-      bus.booked / bus.capacity > 0.9
-        ? 0.82
-        : bus.booked / bus.capacity > 0.7
-          ? 0.55
-          : 0.28,
-    surge_3day: [],
-  }));
+  return MOCK_BUS_CAPACITY.map((bus, i) => {
+    const [origin = "Davao", destination = "Manila"] =
+      bus.route?.split(" → ") ?? [];
+    const route = OPERATOR_ROUTES.find(
+      (candidate) =>
+        candidate.origin === origin && candidate.destination === destination
+    );
+
+    return {
+      id: `mock-bus-${i + 1}`,
+      tenant_id: "00000000-0000-0000-0000-000000000099",
+      route_id: route?.id ?? "00000000-0000-0000-0000-000000000001",
+      capacity: bus.capacity,
+      plate_number: bus.plate,
+      origin,
+      destination,
+      available_seats: bus.capacity - bus.booked,
+      accessibility_seat_count: Math.min(bus.capacity, 8),
+      accessibility_available_count: Math.max(
+        0,
+        Math.min(bus.capacity, 8) -
+          Math.max(0, bus.booked - (bus.capacity - 8))
+      ),
+      surge_probability:
+        bus.booked / bus.capacity > 0.9
+          ? 0.82
+          : bus.booked / bus.capacity > 0.7
+            ? 0.55
+            : 0.28,
+      surge_3day: [],
+    };
+  });
 }
 
 export type BoardingQueueStatus =
@@ -211,7 +189,7 @@ export function generateMockBoardingQueue(): BoardingQueueEntry[] {
 }
 
 export function generateMockForecast(routeId: string): SurgePrediction[] {
-  const routeIndex = DEMO_ROUTES.findIndex((r) => r.id === routeId);
+  const routeIndex = OPERATOR_ROUTES.findIndex((r) => r.id === routeId);
   const seed = routeIndex >= 0 ? routeIndex + 1 : 1;
   const sample: SurgePrediction[] = [];
 

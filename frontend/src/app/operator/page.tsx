@@ -13,15 +13,14 @@ import { getLearningLogSummary, recordForecastAction, recordOperationalOutcome, 
 import { uiStyles } from "@/lib/design-system";
 import { DEMO_TENANT_ID } from "@/lib/demo-config";
 import {
-  DEMO_ROUTES,
-  MOCK_BUS_CAPACITY,
   OPERATOR_STATS,
 } from "@/lib/operator-mock";
+import { OPERATOR_ROUTES } from "@/lib/routes";
 import type { BusCapacityEntry } from "@/lib/operator-mock";
 import type { LearningLogSummary, RetrainingReplay, SurgePrediction } from "@/lib/types";
 
 export default function OperatorDashboard() {
-  const [routeId, setRouteId] = useState(DEMO_ROUTES[0].id);
+  const [routeId, setRouteId] = useState(OPERATOR_ROUTES[0].id);
   const [learningSummary, setLearningSummary] =
     useState<LearningLogSummary | null>(null);
   const [actionState, setActionState] = useState<
@@ -50,7 +49,7 @@ export default function OperatorDashboard() {
   const [replay, setReplay] = useState<RetrainingReplay | null>(null);
   const [replayState, setReplayState] = useState<"idle" | "loading" | "error">("idle");
   const selectedRoute =
-    DEMO_ROUTES.find((r) => r.id === routeId) ?? DEMO_ROUTES[0];
+    OPERATOR_ROUTES.find((r) => r.id === routeId) ?? OPERATOR_ROUTES[0];
 
   const {
     predictions,
@@ -80,7 +79,7 @@ export default function OperatorDashboard() {
 
   // Compute stats from real fleet data (fall back to mock in demo mode)
   const stats = useMemo(() => {
-    if (fleetLoadState === "success" && fleetBuses.length > 0) {
+    if (fleetBuses.length > 0) {
       const totalBooked = fleetBuses.reduce(
         (sum, b) => sum + (b.capacity - b.available_seats), 0
       );
@@ -94,11 +93,11 @@ export default function OperatorDashboard() {
       activeBuses: OPERATOR_STATS.activeBuses,
       todaysBookings: OPERATOR_STATS.todaysBookings,
     };
-  }, [fleetBuses, fleetLoadState]);
+  }, [fleetBuses]);
 
   // Build bus capacity entries from real fleet data
   const capacityEntries: BusCapacityEntry[] = useMemo(() => {
-    if (fleetLoadState === "success" && fleetBuses.length > 0) {
+    if (fleetBuses.length > 0) {
       return fleetBuses.map((b) => ({
         plate: b.plate_number,
         capacity: b.capacity,
@@ -106,9 +105,8 @@ export default function OperatorDashboard() {
         route: `${b.origin} → ${b.destination}`,
       }));
     }
-    // Fall back to mock in demo/error states
-    return MOCK_BUS_CAPACITY;
-  }, [fleetBuses, fleetLoadState]);
+    return [];
+  }, [fleetBuses]);
 
   const avgSurge = useMemo(() => {
     if (predictions.length === 0) return "0%";
@@ -280,7 +278,7 @@ export default function OperatorDashboard() {
               onChange={(e) => setRouteId(e.target.value)}
               className={`${uiStyles.input} text-sm`}
             >
-              {DEMO_ROUTES.map((route) => (
+              {OPERATOR_ROUTES.map((route) => (
                 <option key={route.id} value={route.id}>
                   {route.label}
                 </option>

@@ -7,12 +7,9 @@ import { EmptyState } from "@/components/operator/EmptyState";
 import { FleetBusCard } from "@/components/operator/FleetBusCard";
 import { LoadingSkeleton } from "@/components/operator/LoadingSkeleton";
 import { PageHeader } from "@/components/ui/PageHeader";
-import {
-  DEMO_ROUTES,
-  todayIsoDate,
-  useOperatorFleet,
-} from "@/hooks/useOperatorFleet";
+import { todayIsoDate, useOperatorFleet } from "@/hooks/useOperatorFleet";
 import { uiStyles } from "@/lib/design-system";
+import { OPERATOR_ROUTES } from "@/lib/routes";
 
 export default function OperatorBusesPage() {
   const [routeIndex, setRouteIndex] = useState(0);
@@ -21,7 +18,7 @@ export default function OperatorBusesPage() {
     "occupancy"
   );
 
-  const route = DEMO_ROUTES[routeIndex];
+  const route = OPERATOR_ROUTES[routeIndex];
 
   const { buses, loadState, refetch, loadDemo } = useOperatorFleet({
     origin: route.origin,
@@ -68,7 +65,7 @@ export default function OperatorBusesPage() {
             onChange={(e) => setRouteIndex(Number(e.target.value))}
             className={`${uiStyles.input} w-full text-sm`}
           >
-            {DEMO_ROUTES.map((r, i) => (
+            {OPERATOR_ROUTES.map((r, i) => (
               <option key={r.id} value={i}>
                 {r.label}
               </option>

@@ -60,8 +60,8 @@ test.describe("Quick Routes, Departure Times & Past-Date Protection", () => {
     await expect(page.getByText("2 buses found")).toBeVisible();
     await expect(page.getByText("PHP 650")).toBeVisible();
 
-    // Verify departure time badge matches the 5-hour rounded rule: H:00 AM/PM
-    const departureBadges = page.locator("text=/Departs \\d{1,2}:00 (AM|PM)/");
+    // Verify departure time badge matches the dynamic rounded departure time: H:MM AM/PM
+    const departureBadges = page.locator("text=/Departs \\d{1,2}:(00|30) (AM|PM)/");
     await expect(departureBadges.first()).toBeVisible();
   });
 
@@ -135,7 +135,7 @@ test.describe("Quick Routes, Departure Times & Past-Date Protection", () => {
     // Locate the first bus card and read its displayed departure time
     const firstBusCard = page.locator("article, .clay-card").first();
     await expect(firstBusCard).toBeVisible();
-    const departureBadge = firstBusCard.locator("text=/Departs (\\d{1,2}:00 (AM|PM))/");
+    const departureBadge = firstBusCard.locator("text=/Departs (\\d{1,2}:(00|30) (AM|PM))/");
     await expect(departureBadge).toBeVisible();
     const badgeText = await departureBadge.innerText();
     const departureTime = badgeText.replace("Departs ", "").trim();

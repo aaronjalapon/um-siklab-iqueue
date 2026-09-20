@@ -3,7 +3,7 @@
 import Link from "next/link";
 
 import { usePathname } from "next/navigation";
-import { BarChart3, BrainCircuit, Bus, FileCheck2, Home, QrCode, Users } from "lucide-react";
+import { BarChart3, BrainCircuit, Bus, FileCheck2, LogOut, QrCode, Users } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { BRAND } from "@/lib/brand";
@@ -16,7 +16,6 @@ const NAV_ITEMS = [
   { href: "/operator/scanner", label: "Boarding Scanner", shortLabel: "Scan", icon: QrCode, exact: false },
   { href: "/operator/evidence", label: "Evidence", shortLabel: "Evidence", icon: FileCheck2, exact: false },
   { href: "/operator/model", label: "Model Retraining", shortLabel: "Model", icon: BrainCircuit, exact: false },
-  { href: "/", label: "Passenger View", shortLabel: "Passenger", icon: Home, exact: true },
 ];
 
 function isNavActive(pathname: string, href: string, exact: boolean): boolean {
@@ -34,7 +33,17 @@ export function OperatorShell({ children }: { children: React.ReactNode }) {
         <Link href="/operator" aria-label={`${BRAND.operatorName} — Operator Dashboard`}>
           <BrandLogo label={BRAND.operatorName} markClassName="h-9 w-9" textClassName="font-heading text-lg font-semibold text-ui-foreground dark:text-white" />
         </Link>
-        <ThemeToggle className="text-ui-foreground dark:text-white" />
+        <div className="flex items-center gap-2">
+          <ThemeToggle className="text-ui-foreground dark:text-white" />
+          <Link
+            href="/"
+            aria-label="Logout"
+            title="Log out and return to landing page"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-current/20 bg-transparent text-current transition-colors duration-150 hover:bg-current/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-primary"
+          >
+            <LogOut className="h-5 w-5" aria-hidden />
+          </Link>
+        </div>
       </header>
       <aside className="fixed z-30 hidden h-full w-64 flex-col border-r border-ui-border bg-ui-surface text-ui-foreground dark:border-white/10 dark:bg-ui-navy dark:text-white md:flex">
         <div className="p-6">
@@ -73,7 +82,16 @@ export function OperatorShell({ children }: { children: React.ReactNode }) {
           })}
         </nav>
         <div className="border-t border-ui-border dark:border-white/10 p-4">
-          <ThemeToggle variant="menu" />
+          <ThemeToggle variant="menu" className="mb-1" />
+          <Link
+            href="/"
+            className="group flex min-h-11 w-full items-center gap-3 rounded-xl px-4 py-2.5 font-semibold text-slate-600 transition-colors duration-150 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-primary"
+            title="Log out and return to landing page"
+            aria-label="Logout"
+          >
+            <LogOut className="w-5 h-5 transition-transform group-hover:-translate-x-0.5" aria-hidden />
+            <span>Logout</span>
+          </Link>
         </div>
       </aside>
 

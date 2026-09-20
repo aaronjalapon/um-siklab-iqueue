@@ -18,7 +18,11 @@ import {
 import { BookingProgress } from "@/components/ui/BookingProgress";
 import { searchBuses } from "@/lib/api";
 import { BRAND } from "@/lib/brand";
-import { calculateFlexibleDepartureTime } from "@/lib/departure-time";
+import {
+  calculateDemoDepartureTime,
+  calculateFlexibleDepartureTime,
+  isDemoImmediateRoute,
+} from "@/lib/departure-time";
 import { uiStyles } from "@/lib/design-system";
 import { getLocalDateInputValue, isPastLocalDate } from "@/lib/local-date";
 import { PASSENGER_QUICK_ROUTES } from "@/lib/routes";
@@ -320,15 +324,25 @@ function BuyPageInner() {
   function handleQuickRoute(routeOrigin: string, routeDestination: string) {
     setOrigin(routeOrigin);
     setDestination(routeDestination);
-    void performSearch(routeOrigin, routeDestination, travelDate);
+    const effectiveDate = isDemoImmediateRoute(routeOrigin, routeDestination)
+      ? getLocalDateInputValue()
+      : travelDate;
+    if (effectiveDate !== travelDate) {
+      setTravelDate(effectiveDate);
+    }
+    void performSearch(routeOrigin, routeDestination, effectiveDate);
   }
 
   function buildPreferencesHref(bus: Bus, index: number): string {
-    const depTime = bus.departure_time || calculateFlexibleDepartureTime(index);
+    const isDemo = isDemoImmediateRoute(origin || bus.origin, destination || bus.destination);
+    const depTime =
+      bus.departure_time ||
+      (isDemo ? calculateDemoDepartureTime(index) : calculateFlexibleDepartureTime(index));
+    const effectiveDate = isDemo ? getLocalDateInputValue() : travelDate;
     const params = new URLSearchParams({
       origin: origin.trim(),
       destination: destination.trim(),
-      travel_date: travelDate,
+      travel_date: effectiveDate,
       plate: bus.plate_number,
       capacity: String(bus.capacity),
       fare: String(estimateFare(bus)),
@@ -545,8 +559,10 @@ function BuyPageInner() {
                 const effectiveAvailableSeats = getEffectiveSeats(bus);
                 const booked = bus.capacity - effectiveAvailableSeats;
                 const isFull = effectiveAvailableSeats <= 0;
+                const isDemo = isDemoImmediateRoute(bus.origin, bus.destination);
                 const departureTime =
-                  bus.departure_time || calculateFlexibleDepartureTime(index);
+                  bus.departure_time ||
+                  (isDemo ? calculateDemoDepartureTime(index) : calculateFlexibleDepartureTime(index));
 
                 return (
                   <article

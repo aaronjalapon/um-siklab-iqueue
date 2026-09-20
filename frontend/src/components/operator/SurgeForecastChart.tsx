@@ -45,6 +45,7 @@ export function SurgeForecastChart({
         description="Try another route or check your API connection."
         actionLabel="Retry"
         onAction={onRetry}
+        className="min-h-96 min-w-0 xl:col-span-3"
       />
     );
   }
@@ -67,7 +68,7 @@ export function SurgeForecastChart({
   const barWidth = Math.min(54, slotWidth * 0.58);
 
   return (
-    <div className={`${uiStyles.surface} p-6 xl:col-span-3`}>
+    <div className={`${uiStyles.surface} min-w-0 p-5 sm:p-6 xl:col-span-3`}>
       <div className="mb-4">
         <h2 className={uiStyles.sectionTitle}>7-Day Surge Forecast</h2>
       </div>

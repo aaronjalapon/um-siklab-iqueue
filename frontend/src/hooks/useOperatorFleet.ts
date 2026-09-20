@@ -34,10 +34,18 @@ export function useOperatorFleet({
     setFetchKey((k) => k + 1);
   }, []);
 
+  const demoBuses = useCallback(
+    () =>
+      (mockFleetFromCapacity() as Bus[]).filter(
+        (bus) => bus.origin === origin && bus.destination === destination
+      ),
+    [destination, origin]
+  );
+
   const loadDemo = useCallback(() => {
-    setBuses(mockFleetFromCapacity() as Bus[]);
+    setBuses(demoBuses());
     setLoadState("demo");
-  }, []);
+  }, [demoBuses]);
 
   useEffect(() => {
     let cancelled = false;
@@ -51,13 +59,13 @@ export function useOperatorFleet({
           setBuses(data.buses);
           setLoadState("success");
         } else {
-          setBuses([]);
-          setLoadState("empty");
+          setBuses(demoBuses());
+          setLoadState("demo");
         }
       } catch {
         if (cancelled) return;
-        setBuses([]);
-        setLoadState("error");
+        setBuses(demoBuses());
+        setLoadState("demo");
       }
     }
 
@@ -66,7 +74,7 @@ export function useOperatorFleet({
     return () => {
       cancelled = true;
     };
-  }, [origin, destination, travelDate, fetchKey]);
+  }, [origin, destination, travelDate, fetchKey, demoBuses]);
 
   return { buses, loadState, refetch, loadDemo };
 }

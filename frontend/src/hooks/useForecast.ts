@@ -46,6 +46,16 @@ export function useForecast(routeId: string): UseForecastResult {
   useEffect(() => {
     let cancelled = false;
 
+    function showDemoForecast() {
+      setPredictions(generateMockForecast(routeId));
+      setRouteOrigin(null);
+      setRouteDestination(null);
+      setModelSource("heuristic");
+      setModelVersion("demo");
+      setMetricsSummary(null);
+      setLoadState("demo");
+    }
+
     async function load() {
       setLoadState("loading");
       try {
@@ -60,13 +70,11 @@ export function useForecast(routeId: string): UseForecastResult {
           setMetricsSummary(data.metrics_summary);
           setLoadState("success");
         } else {
-          setPredictions([]);
-          setLoadState("empty");
+          showDemoForecast();
         }
       } catch {
         if (cancelled) return;
-        setPredictions([]);
-        setLoadState("error");
+        showDemoForecast();
       }
     }
 

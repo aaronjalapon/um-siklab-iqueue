@@ -12,22 +12,29 @@ export function BusCapacityList({ buses }: BusCapacityListProps) {
   );
 
   return (
-    <div className={`${uiStyles.surface} p-6 flex flex-col xl:col-span-1`}>
-      <h2 className={uiStyles.sectionTitle}>Bus Capacity</h2>
-      <div className="space-y-5 flex-1 mt-6">
+    <section className={`${uiStyles.surface} min-w-0 p-5 sm:p-6 xl:col-span-1`}>
+      <div>
+        <h2 className={uiStyles.sectionTitle}>Bus Capacity</h2>
+        <p className="mt-1 text-sm text-ui-muted-foreground">
+          Highest occupancy on this route
+        </p>
+      </div>
+      <div className="mt-4 space-y-3">
         {sorted.map((bus) => {
           const pct = (bus.booked / bus.capacity) * 100;
           const isFull = pct >= 100;
           return (
-            <div key={bus.plate} className="clay-data-well rounded-xl border border-ui-border bg-ui-muted p-3">
+            <div key={bus.plate} className="clay-data-well min-w-0 rounded-xl border border-ui-border bg-ui-muted p-3.5">
               <div className="mb-2 flex items-center justify-between gap-2">
-                <div>
+                <div className="min-w-0">
                   <span className="font-mono text-sm font-semibold text-slate-700 dark:text-slate-200">
                     {bus.plate}
                   </span>
-                  <p className="text-xs text-ui-muted-foreground">{bus.route}</p>
+                  <p className="mt-0.5 text-xs leading-5 text-ui-muted-foreground [overflow-wrap:anywhere]">
+                    {bus.route}
+                  </p>
                 </div>
-                <span className="flex items-center gap-1.5 text-xs font-medium text-ui-muted-foreground">
+                <span className="flex shrink-0 items-center gap-1.5 text-xs font-medium text-ui-muted-foreground">
                   {isFull && (
                     <span
                       className={`${uiStyles.badge} bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200`}
@@ -47,6 +54,6 @@ export function BusCapacityList({ buses }: BusCapacityListProps) {
           );
         })}
       </div>
-    </div>
+    </section>
   );
 }

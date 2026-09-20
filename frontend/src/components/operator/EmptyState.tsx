@@ -6,6 +6,7 @@ interface EmptyStateProps {
   description?: string;
   actionLabel?: string;
   onAction?: () => void;
+  className?: string;
 }
 
 export function EmptyState({
@@ -13,10 +14,11 @@ export function EmptyState({
   description,
   actionLabel,
   onAction,
+  className = "",
 }: EmptyStateProps) {
   return (
     <div
-      className={`${uiStyles.surface} flex flex-col items-center justify-center py-12 px-6 text-center`}
+      className={`${uiStyles.surface} flex flex-col items-center justify-center px-6 py-12 text-center ${className}`}
     >
       <Inbox className="w-10 h-10 text-slate-400 mb-3" aria-hidden />
       <h3 className="text-base font-semibold text-ui-foreground">{title}</h3>

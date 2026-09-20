@@ -11,7 +11,7 @@ export function LoadingSkeleton({
 }: LoadingSkeletonProps) {
   if (variant === "chart") {
     return (
-      <div className={`${uiStyles.surface} p-6`} role="status" aria-busy="true" aria-label="Loading chart">
+      <div className={`${uiStyles.surface} min-w-0 p-6 xl:col-span-3`} role="status" aria-busy="true" aria-label="Loading chart">
         <div className={`${uiStyles.skeleton} h-6 w-48 mb-4`} />
         <div className={`${uiStyles.skeleton} h-80 w-full`} />
       </div>

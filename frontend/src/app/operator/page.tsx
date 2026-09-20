@@ -341,7 +341,7 @@ export default function OperatorDashboard() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-4 xl:gap-6">
+      <div className="grid min-w-0 grid-cols-1 items-start gap-5 xl:grid-cols-4 xl:gap-6">
         <SurgeForecastChart
           predictions={predictions}
           loading={isForecastLoading}
@@ -350,7 +350,7 @@ export default function OperatorDashboard() {
         <BusCapacityList buses={capacityEntries} />
       </div>
 
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-3 xl:gap-6">
+      <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-3 xl:gap-6">
         <section className={`${uiStyles.surface} p-5 xl:col-span-2`}>
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div>

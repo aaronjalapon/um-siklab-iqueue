@@ -8,6 +8,9 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
+from app.api.v1.buses import is_demo_immediate_route
 
 from app.core.security import (
     create_group_qr_token,
@@ -169,7 +172,9 @@ async def verify_boarding_pass(
 
     timing_valid, timing_reason = validate_qr_timing(token_data)
     booking = await db.scalar(
-        select(Booking).where(Booking.qr_token == payload.token)
+        select(Booking)
+        .options(selectinload(Booking.bus).selectinload(Bus.route))
+        .where(Booking.qr_token == payload.token)
     )
     common = {
         "signature_valid": True,
@@ -195,6 +200,13 @@ async def verify_boarding_pass(
             **common,
         )
 
+    is_demo = False
+    if booking.bus and booking.bus.route:
+        is_demo = is_demo_immediate_route(booking.bus.route.origin, booking.bus.route.destination)
+
+    if is_demo:
+        timing_valid, timing_reason = validate_qr_timing(token_data, early_minutes=180)
+
     now = datetime.now(timezone.utc)
     start = booking.boarding_window_start
     end = booking.boarding_window_end
@@ -202,7 +214,9 @@ async def verify_boarding_pass(
         start = start.replace(tzinfo=timezone.utc)
     if end.tzinfo is None:
         end = end.replace(tzinfo=timezone.utc)
-    if now < start - timedelta(minutes=120):
+
+    gate_early_minutes = 180 if is_demo else 120
+    if now < start - timedelta(minutes=gate_early_minutes):
         timing_valid, timing_reason = False, "not_yet_valid"
     elif now > end + timedelta(hours=24):
         timing_valid, timing_reason = False, "expired"
@@ -238,9 +252,18 @@ async def _verify_group_pass(
         )
 
     result = await db.execute(
-        select(Booking).where(Booking.group_id == group_id)
+        select(Booking)
+        .options(selectinload(Booking.bus).selectinload(Bus.route))
+        .where(Booking.group_id == group_id)
     )
     bookings = list(result.scalars().all())
+
+    is_demo = any(
+        b.bus and b.bus.route and is_demo_immediate_route(b.bus.route.origin, b.bus.route.destination)
+        for b in bookings
+    )
+    if is_demo:
+        timing_valid, timing_reason = validate_qr_timing(token_data, early_minutes=180)
     by_id = {str(booking.id): booking for booking in bookings}
     member_statuses: list[BoardingMemberStatus] = []
     requires_review = len(bookings) != len(signed_members)

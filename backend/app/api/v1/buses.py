@@ -111,6 +111,40 @@ def get_route_base_fare(origin: str, destination: str) -> int:
     return 500
 
 
+def is_demo_immediate_route(origin: str | None, destination: str | None) -> bool:
+    """Return True if this is one of the designated live-demo immediate boarding routes."""
+    if not origin or not destination:
+        return False
+    orig = origin.strip().lower()
+    dest = destination.strip().lower()
+    is_cubao_sf = "cubao" in orig and "san fernando" in dest
+    is_pasay_baguio = "pasay" in orig and "baguio" in dest
+    return is_cubao_sf or is_pasay_baguio
+
+
+def calculate_demo_departure_time(bus_index: int = 0, now: datetime | None = None) -> str:
+    """Calculate immediate demo departure time: ~1h30m (90m) from now, rounded to next 30-min block.
+
+    Example:
+      At 1:55 PM + 90m -> 3:25 PM -> rounds to 3:30 PM.
+      Always guaranteed to be within [60m, 115m) from now, strictly inside the 120m gate boarding window.
+    """
+    if now is None:
+        now = datetime.now(timezone(timedelta(hours=8)))
+
+    base = now + timedelta(minutes=90)
+    rem = base.minute % 30
+    if rem != 0:
+        base += timedelta(minutes=(30 - rem))
+    if (base - now).total_seconds() > 115 * 60:
+        base -= timedelta(minutes=30)
+    target = base
+
+    hour_12 = target.hour % 12 or 12
+    period = "AM" if target.hour < 12 else "PM"
+    return f"{hour_12}:{target.minute:02d} {period}"
+
+
 def calculate_flexible_departure_time(bus_index: int = 0, now: datetime | None = None) -> str:
     """Calculate flexible departure time: 5 hours after booking time, rounded to nearest hour.
 
@@ -513,7 +547,10 @@ async def list_buses(
         accessibility_available = max(0, accessibility_total - accessibility_booked)
 
         fare = calculate_bus_fare(base_fare, bus.capacity)
-        departure_time = calculate_flexible_departure_time(bus_index=idx)
+        if is_demo_immediate_route(route.origin, route.destination):
+            departure_time = calculate_demo_departure_time(bus_index=idx)
+        else:
+            departure_time = calculate_flexible_departure_time(bus_index=idx)
 
         bus_responses.append({
             "id": bus.id,

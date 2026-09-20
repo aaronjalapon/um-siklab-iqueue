@@ -40,6 +40,7 @@ from app.services.seat_assignment.group import (
     allocate_group_seats,
     synchronized_boarding_window,
 )
+from app.api.v1.buses import is_demo_immediate_route, calculate_demo_departure_time
 from app.services.seat_assignment.scorer import PassengerContext
 
 router = APIRouter()
@@ -163,6 +164,12 @@ async def _group_preview(
             detail="Family and bus belong to different tenants",
         )
 
+    if bus.route and is_demo_immediate_route(bus.route.origin, bus.route.destination):
+        pht = timezone(timedelta(hours=8))
+        now_pht = datetime.now(pht)
+        demo_time_str = payload.departure_time or calculate_demo_departure_time(0, now_pht)
+        effective_departure_date = adjust_departure_with_time(now_pht, demo_time_str)
+
     _, seats = await _load_bus_and_seats(db, payload.bus_id)
     if lock:
         locked = await db.execute(
@@ -185,9 +192,13 @@ async def _group_preview(
         allocations = allocate_group_seats(payload.members, available)
     except SeatUnavailableError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
-    window_start, window_end = synchronized_boarding_window(
-        effective_departure_date, allocations
-    )
+    if bus.route and is_demo_immediate_route(bus.route.origin, bus.route.destination):
+        window_start = effective_departure_date
+        window_end = effective_departure_date + timedelta(minutes=15)
+    else:
+        window_start, window_end = synchronized_boarding_window(
+            effective_departure_date, allocations
+        )
     return bus, allocations, window_start, window_end, effective_departure_date
 
 
@@ -349,6 +360,7 @@ async def create_group_booking(
     for booking in bookings:
         booking.qr_token = token
     await db.flush()
+    await db.commit()
 
     return GroupBookingResponse(
         group_id=group_id,
@@ -477,6 +489,12 @@ async def create_booking(
             detail="Passenger and bus belong to different tenants",
         )
 
+    if bus.route and is_demo_immediate_route(bus.route.origin, bus.route.destination):
+        pht = timezone(timedelta(hours=8))
+        now_pht = datetime.now(pht)
+        demo_time_str = payload.departure_time or calculate_demo_departure_time(0, now_pht)
+        effective_departure_date = adjust_departure_with_time(now_pht, demo_time_str)
+
     # Count existing bookings for this bus on this date
     from app.services.seat_assignment.date_aware import _day_bounds
     start_dt, end_dt = _day_bounds(effective_departure_date)
@@ -596,6 +614,10 @@ async def create_booking(
         row = (int(assigned_seat_label) - 1) // 4 + 1
         boarding_window_start = effective_departure_date + timedelta(minutes=row * 3)
         boarding_window_end = boarding_window_start + timedelta(minutes=15)
+
+    if bus.route and is_demo_immediate_route(bus.route.origin, bus.route.destination):
+        boarding_window_start = effective_departure_date
+        boarding_window_end = effective_departure_date + timedelta(minutes=15)
 
     # Create the booking
     booking = Booking(

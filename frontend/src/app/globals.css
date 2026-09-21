@@ -528,8 +528,43 @@ select:focus-visible {
 
 ::selection { background: color-mix(in srgb, var(--ui-primary) 25%, transparent); }
 
+/* Responsive date & time picker indicator styling across mobile and desktop */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  display: inline-block;
+  vertical-align: middle;
+  margin-inline-end: 0.75rem;
+  margin-right: 0.75rem;
+  padding: 0.25rem;
+  border-radius: 0.375rem;
+  opacity: 0.8;
+  transition: opacity var(--motion-fast) ease-out, transform var(--motion-fast) ease-out;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="time"]::-webkit-calendar-picker-indicator:hover,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:active,
+input[type="time"]::-webkit-calendar-picker-indicator:active,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator:active {
+  transform: scale(0.92);
+}
+
 @media (max-width: 639px) {
   input, select, textarea { font-size: 16px !important; }
+
+  /* Ensure date picker dropdown/calendar icon does not collide with or overflow rounded borders on mobile */
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator,
+  input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    margin-inline-end: 0.875rem;
+    margin-right: 0.875rem;
+  }
 }
 
 .pt-safe { padding-top: env(safe-area-inset-top, 0px); }

@@ -25,6 +25,20 @@ import type {
   SeatMapResponse,
   SessionCreateResponse,
 } from "./types";
+import { generateOfflineBuses } from "./offline-buses";
+import {
+  generateOfflineSeatMap,
+  computeOfflineSeatAssignment,
+} from "./offline-seats";
+import {
+  createOfflinePassenger,
+  createOfflineBooking,
+  previewOfflineGroupBooking,
+  createOfflineGroupBooking,
+} from "./offline-booking";
+import { verifyOfflineQrToken } from "./offline-crypto";
+import { getSavedBoardingPassById } from "./boarding-passes";
+import { getSavedGroupBoardingPass } from "./group-boarding-passes";
 
 function getApiBaseUrl(): string {
   const configured =
@@ -71,20 +85,47 @@ export async function searchBuses(
   destination: string,
   travelDate: string
 ): Promise<BusListResponse> {
-  const { data } = await api.get<BusListResponse>("/buses", {
-    params: { origin, destination, travel_date: travelDate },
-  });
-  return data;
+  try {
+    const { data } = await api.get<BusListResponse>("/buses", {
+      params: { origin, destination, travel_date: travelDate },
+    });
+    return data;
+  } catch {
+    return generateOfflineBuses(origin, destination, travelDate);
+  }
 }
 
 export async function getSeatMap(
   busId: string,
   travelDate: string
 ): Promise<SeatMapResponse> {
-  const { data } = await api.get<SeatMapResponse>(`/buses/${busId}/seats`, {
-    params: { travel_date: travelDate },
-  });
-  return data;
+  try {
+    const { data } = await api.get<SeatMapResponse>(`/buses/${busId}/seats`, {
+      params: { travel_date: travelDate },
+    });
+    return data;
+  } catch {
+    const seats = generateOfflineSeatMap(busId, travelDate);
+    const bookedCount = seats.filter((s) => s.status !== "available").length;
+    const availableCount = seats.length - bookedCount;
+    const accessTotal = seats.filter((s) => s.is_accessibility).length;
+    const accessAvail = seats.filter((s) => s.is_accessibility && s.status === "available").length;
+    return {
+      bus_id: busId,
+      capacity: seats.length,
+      seats: seats.map((s) => ({
+        seat_number: s.seat_label,
+        is_available: s.status === "available",
+        is_accessibility: s.is_accessibility,
+        is_near_exit: s.is_near_exit,
+        passenger_name: s.passenger_name || null,
+      })),
+      booked_count: bookedCount,
+      available_count: availableCount,
+      accessibility_seat_count: accessTotal,
+      accessibility_available_count: accessAvail,
+    };
+  }
 }
 
 // --- Bookings ---
@@ -92,15 +133,25 @@ export async function getSeatMap(
 export async function createBooking(
   payload: BookingCreate
 ): Promise<BookingResponse> {
-  const { data } = await api.post<BookingResponse>("/bookings", payload);
-  return data;
+  try {
+    const { data } = await api.post<BookingResponse>("/bookings", payload);
+    return data;
+  } catch {
+    return createOfflineBooking(payload);
+  }
 }
 
 export async function getBooking(
   bookingId: string
 ): Promise<BookingDetail> {
-  const { data } = await api.get<BookingDetail>(`/bookings/${bookingId}`);
-  return data;
+  try {
+    const { data } = await api.get<BookingDetail>(`/bookings/${bookingId}`);
+    return data;
+  } catch {
+    const saved = getSavedBoardingPassById(bookingId);
+    if (saved) return saved;
+    throw new Error("Booking not found");
+  }
 }
 
 export async function getBookingQR(bookingId: string): Promise<Blob> {
@@ -113,11 +164,15 @@ export async function getBookingQR(bookingId: string): Promise<Blob> {
 export async function previewGroupBooking(
   payload: GroupBookingRequest
 ): Promise<GroupBookingPreview> {
-  const { data } = await api.post<GroupBookingPreview>(
-    "/bookings/groups/preview",
-    payload
-  );
-  return data;
+  try {
+    const { data } = await api.post<GroupBookingPreview>(
+      "/bookings/groups/preview",
+      payload
+    );
+    return data;
+  } catch {
+    return previewOfflineGroupBooking(payload);
+  }
 }
 
 export async function createGroupBooking(
@@ -125,22 +180,43 @@ export async function createGroupBooking(
     seat_assignments: Array<{ member_index: number; seat_label: string }>;
   }
 ): Promise<GroupBookingResponse> {
-  const { data } = await api.post<GroupBookingResponse>("/bookings/groups", payload);
-  return data;
+  try {
+    const { data } = await api.post<GroupBookingResponse>("/bookings/groups", payload);
+    return data;
+  } catch {
+    return createOfflineGroupBooking(payload);
+  }
 }
 
 export async function getGroupBooking(groupId: string): Promise<GroupBookingResponse> {
-  const { data } = await api.get<GroupBookingResponse>(`/bookings/groups/${groupId}`);
-  return data;
+  try {
+    const { data } = await api.get<GroupBookingResponse>(`/bookings/groups/${groupId}`);
+    return data;
+  } catch {
+    const saved = getSavedGroupBoardingPass(groupId);
+    if (saved) return saved;
+    throw new Error("Combined group pass not found");
+  }
 }
 
 export async function verifyBoardingPass(
   token: string
 ): Promise<BoardingVerifyResponse> {
-  const { data } = await api.post<BoardingVerifyResponse>("/boarding/verify", {
-    token,
-  });
-  return data;
+  try {
+    const { data } = await api.post<BoardingVerifyResponse>("/boarding/verify", {
+      token,
+    });
+    if (data.valid || (data.reason !== "booking_not_found" && data.reason !== "group_requires_review")) {
+      return data;
+    }
+    const offline = verifyOfflineQrToken(token);
+    if (offline.valid) {
+      return offline;
+    }
+    return data;
+  } catch {
+    return verifyOfflineQrToken(token);
+  }
 }
 
 export async function getDemoBoardingToken(): Promise<string> {
@@ -269,8 +345,12 @@ import type {
 export async function createPassenger(
   payload: PassengerCreate
 ): Promise<PassengerResponse> {
-  const { data } = await api.post<PassengerResponse>("/passengers", payload);
-  return data;
+  try {
+    const { data } = await api.post<PassengerResponse>("/passengers", payload);
+    return data;
+  } catch {
+    return createOfflinePassenger(payload);
+  }
 }
 
 // --- Seats ---
@@ -288,34 +368,64 @@ export async function getBusSeatMap(
   busId: string,
   travelDate?: string
 ): Promise<SeatMapEntry[]> {
-  const { data } = await api.get<SeatMapEntry[]>(`/seats/bus/${busId}`, {
-    params: travelDate ? { travel_date: travelDate } : {},
-  });
-  return data;
+  try {
+    const { data } = await api.get<SeatMapEntry[]>(`/seats/bus/${busId}`, {
+      params: travelDate ? { travel_date: travelDate } : {},
+    });
+    return data;
+  } catch {
+    return generateOfflineSeatMap(busId, travelDate);
+  }
 }
 
 export async function getBusSeatMapSummary(
   busId: string
 ): Promise<SeatMapSummaryResponse> {
-  const { data } = await api.get<SeatMapSummaryResponse>(`/seats/bus/${busId}/summary`);
-  return data;
+  try {
+    const { data } = await api.get<SeatMapSummaryResponse>(`/seats/bus/${busId}/summary`);
+    return data;
+  } catch {
+    const seats = generateOfflineSeatMap(busId);
+    const occupied = seats.filter((s) => s.status !== "available").length;
+    const accessTotal = seats.filter((s) => s.is_accessibility).length;
+    const accessAvail = seats.filter((s) => s.is_accessibility && s.status === "available").length;
+    return {
+      bus_id: busId,
+      seats,
+      total_seats: seats.length,
+      occupied_count: occupied,
+      available_count: seats.length - occupied,
+      accessibility_seat_count: accessTotal,
+      accessibility_available_count: accessAvail,
+    };
+  }
 }
 
 export async function assignSeat(
   payload: SeatAssignRequest
 ): Promise<SeatAssignmentResult> {
-  const { data } = await api.post<SeatAssignmentResult>("/seats/assign", payload);
-  return data;
+  try {
+    const { data } = await api.post<SeatAssignmentResult>("/seats/assign", payload);
+    return data;
+  } catch {
+    const seats = generateOfflineSeatMap(payload.bus_id, payload.travel_date);
+    return computeOfflineSeatAssignment(seats, payload.passenger);
+  }
 }
 
 export async function recommendSeat(
   payload: SeatAssignRequest
 ): Promise<SeatAssignmentResult> {
-  const { data } = await api.post<SeatAssignmentResult>(
-    "/seats/recommend",
-    payload
-  );
-  return data;
+  try {
+    const { data } = await api.post<SeatAssignmentResult>(
+      "/seats/recommend",
+      payload
+    );
+    return data;
+  } catch {
+    const seats = generateOfflineSeatMap(payload.bus_id, payload.travel_date);
+    return computeOfflineSeatAssignment(seats, payload.passenger);
+  }
 }
 
 export async function releaseSeat(bookingId: string): Promise<void> {

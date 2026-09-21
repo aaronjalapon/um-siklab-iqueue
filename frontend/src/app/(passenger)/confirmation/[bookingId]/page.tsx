@@ -3,7 +3,7 @@
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, WifiOff } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import BoardingPassCard from "@/components/boarding/BoardingPassCard";
 import { BookingProgress } from "@/components/ui/BookingProgress";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -20,7 +20,6 @@ export default function ConfirmationPage() {
   const [booking, setBooking] = useState<BookingDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isSavedCopy, setIsSavedCopy] = useState(false);
 
   useEffect(() => {
     if (!bookingId) return;
@@ -31,7 +30,6 @@ export default function ConfirmationPage() {
       .then((data) => {
         if (cancelled) return;
         setBooking(data);
-        setIsSavedCopy(false);
         setError(null);
         saveBoardingPass(data);
       })
@@ -40,7 +38,6 @@ export default function ConfirmationPage() {
         if (cancelled) return;
         if (savedPass) {
           setBooking(savedPass);
-          setIsSavedCopy(true);
           setError(null);
           return;
         }
@@ -100,16 +97,7 @@ export default function ConfirmationPage() {
         description="Show this QR code at the gate during your assigned boarding window."
       />
 
-      {isSavedCopy && (
-        <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 p-3 sm:p-4 text-xs sm:text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
-          <WifiOff className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-          <p className="font-semibold">
-            Showing the saved boarding pass from this device.
-          </p>
-        </div>
-      )}
-
-      <BoardingPassCard booking={booking} savedCopy={isSavedCopy} />
+      <BoardingPassCard booking={booking} />
     </div>
   );
 }

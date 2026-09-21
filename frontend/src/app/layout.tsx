@@ -52,23 +52,22 @@ export const metadata: Metadata = {
   formatDetection: {
     telephone: false,
   },
-  icons: SHOULD_ENABLE_PWA
-    ? {
-        icon: [
-          { url: "/tripsync-mark.png", sizes: "512x512", type: "image/png" },
-          { url: "/icons/tripsync-icon-192.png", sizes: "192x192", type: "image/png" },
-          { url: "/icons/tripsync-icon-512.png", sizes: "512x512", type: "image/png" },
-        ],
-        shortcut: [{ url: "/tripsync-mark.png", sizes: "512x512", type: "image/png" }],
-        apple: [
-          {
-            url: "/icons/tripsync-apple-touch-icon.png",
-            sizes: "180x180",
-            type: "image/png",
-          },
-        ],
-      }
-    : undefined,
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/tripsync-mark.png", sizes: "512x512", type: "image/png" },
+      { url: "/icons/tripsync-icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/tripsync-icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    shortcut: [{ url: "/favicon.ico", type: "image/x-icon" }],
+    apple: [
+      {
+        url: "/icons/tripsync-apple-touch-icon.png",
+        sizes: "180x180",
+        type: "image/png",
+      },
+    ],
+  },
 };
 
 export const viewport: Viewport = {

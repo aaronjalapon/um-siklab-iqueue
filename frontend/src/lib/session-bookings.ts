@@ -138,6 +138,14 @@ export const KNOWN_BUS_ROUTES: Record<string, { origin: string; destination: str
   "d89d5073-d418-4b6d-ab90-f77ee5f6f333": { origin: "Davao", destination: "Cagayan" },
   "1dffd8e9-2de3-4c66-b61e-e1151338a182": { origin: "Davao", destination: "General Santos" },
   "a6323aab-c138-46a7-963a-62bfccad8525": { origin: "Davao", destination: "General Santos" },
+  "f0a1b2c3-d4e5-4f6a-8b9c-0d1e2f3a4b5c": { origin: "Davao", destination: "Cotabato" },
+  "f1a2b3c4-d5e6-4a7b-9c0d-1e2f3a4b5c6d": { origin: "Davao", destination: "Cotabato" },
+  "e2b3c4d5-e6f7-4a8b-9c0d-1e2f3a4b5c6d": { origin: "Cagayan de Oro", destination: "Iligan" },
+  "e3b4c5d6-e7f8-4b9c-0d1e-2f3a4b5c6d7e": { origin: "Cagayan de Oro", destination: "Iligan" },
+  "c4d5e6f7-a8b9-4c0d-1e2f-3a4b5c6d7e8f": { origin: "Davao", destination: "Butuan" },
+  "c5d6e7f8-b9c0-4d1e-2f3a-4b5c6d7e8f9a": { origin: "Davao", destination: "Butuan" },
+  "b6c7d8e9-f0a1-4b2c-3d4e-5f6a7b8c9d0e": { origin: "Cotabato", destination: "Zamboanga" },
+  "b7c8d9e0-a1b2-4c3d-4e5f-6a7b8c9d0e1f": { origin: "Cotabato", destination: "Zamboanga" },
 };
 
 function normalizeCity(city: string): string {

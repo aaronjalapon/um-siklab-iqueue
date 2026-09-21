@@ -7,6 +7,7 @@ import type {
   PassengerContext,
 } from "@/types/seat";
 import { getBusSeatMap, assignSeat as apiAssignSeat } from "@/lib/api";
+import { computeOfflineSeatAssignment } from "@/lib/offline-seats";
 
 export function useSeatMap(busId: string, travelDate?: string) {
   const [seats, setSeats] = useState<SeatMapEntry[]>([]);
@@ -34,17 +35,21 @@ export function useSeatMap(busId: string, travelDate?: string) {
 
   const assignSeat = useCallback(
     async (passenger: PassengerContext, seatLabel?: string): Promise<SeatAssignmentResult> => {
-      const result = await apiAssignSeat({
-        bus_id: busId,
-        passenger,
-        ...(travelDate ? { travel_date: travelDate } : {}),
-        ...(seatLabel ? { seat_label: seatLabel } : {}),
-      });
-      // Refresh seat map after assignment
-      await fetchSeats();
-      return result;
+      try {
+        const result = await apiAssignSeat({
+          bus_id: busId,
+          passenger,
+          ...(travelDate ? { travel_date: travelDate } : {}),
+          ...(seatLabel ? { seat_label: seatLabel } : {}),
+        });
+        // Refresh seat map after assignment
+        await fetchSeats();
+        return result;
+      } catch {
+        return computeOfflineSeatAssignment(seats, passenger);
+      }
     },
-    [busId, fetchSeats, travelDate]
+    [busId, fetchSeats, seats, travelDate]
   );
 
   const refreshSeats = useCallback(() => {

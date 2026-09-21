@@ -1,7 +1,22 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Download, Smartphone, WifiOff, Zap, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  CheckCircle2,
+  ClipboardCheck,
+  Copy,
+  Download,
+  ExternalLink,
+  FilePlus2,
+  Menu,
+  Plus,
+  Share2,
+  Smartphone,
+  WifiOff,
+  Zap,
+  X,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { BRAND } from "@/lib/brand";
 import {
   cleanupDevelopmentPwaState,
@@ -9,9 +24,6 @@ import {
   PWA_INSTALL_REQUEST_EVENT,
   shouldEnablePwaClientRuntime,
 } from "@/lib/pwa-runtime";
-
-const DISMISS_TTL_MS = 1000 * 60 * 60 * 24;
-const PROMPT_DELAY_MS = 1200;
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -21,20 +33,44 @@ type BeforeInstallPromptEvent = Event & {
   }>;
 };
 
+type InstallStepIcon =
+  | "share"
+  | "add"
+  | "menu"
+  | "install"
+  | "file"
+  | "copy"
+  | "browser";
+
+type InstallStep = {
+  icon: InstallStepIcon;
+  text: string;
+};
+
 type InstallGuide = {
   title: string;
   description: string;
-  steps: string[];
+  steps: InstallStep[];
   note?: string;
+  canCopyLink?: boolean;
+};
+
+const INSTALL_STEP_ICONS: Record<InstallStepIcon, LucideIcon> = {
+  share: Share2,
+  add: Plus,
+  menu: Menu,
+  install: Download,
+  file: FilePlus2,
+  copy: Copy,
+  browser: ExternalLink,
 };
 
 const GENERIC_INSTALL_GUIDE: InstallGuide = {
   title: "Install from your browser",
   description: "Use your browser's app installation option:",
   steps: [
-    "Open the browser menu.",
-    "Choose Install app or Add to Home Screen.",
-    "Confirm the installation.",
+    { icon: "menu", text: "Open the browser menu." },
+    { icon: "install", text: "Choose Install app or Add to Home Screen." },
   ],
 };
 
@@ -48,51 +84,46 @@ function getInstallGuide(): InstallGuide {
   const isAndroid = /Android/i.test(userAgent);
   const isFirefox = /Firefox|FxiOS/i.test(userAgent);
   const isEdge = /Edg|EdgiOS|EdgA/i.test(userAgent);
-  const isChromium = /Chrome|CriOS|Chromium/i.test(userAgent) || isEdge;
+  const isSamsungInternet = /SamsungBrowser/i.test(userAgent);
+  const isChromium =
+    /Chrome|CriOS|Chromium|OPR|Opera/i.test(userAgent) ||
+    isEdge ||
+    isSamsungInternet;
   const isSafari =
     /Safari/i.test(userAgent) &&
-    !/Chrome|CriOS|Chromium|Edg|EdgiOS|EdgA|OPR|Firefox|FxiOS/i.test(
+    !/Chrome|CriOS|Chromium|Edg|EdgiOS|EdgA|OPR|Opera|Firefox|FxiOS/i.test(
       userAgent
     );
 
   if (isAppleMobile) {
-    if (!isSafari) {
-      return {
-        title: `Open ${BRAND.name} in Safari first`,
-        description:
-          "iPhone and iPad install web apps through Safari, even when you opened this page in another browser.",
-        steps: [
-          "Copy this page's address and open it in Safari.",
-          "Tap Share, then choose Add to Home Screen.",
-          "Turn on Open as Web App, then tap Add.",
-        ],
-      };
-    }
-
     return {
       title: `Add ${BRAND.name} to your Home Screen`,
-      description: `Safari installs ${BRAND.name} from its Share menu:`,
+      description: `Use the Share menu in your current browser:`,
       steps: [
-        "Tap the Share button in Safari.",
-        "Scroll down and choose Add to Home Screen.",
-        "Turn on Open as Web App, then tap Add.",
+        { icon: "share", text: "Tap the Share button." },
+        { icon: "add", text: "Choose Add to Home Screen, then tap Add." },
       ],
+      note:
+        "If Add to Home Screen is not listed, open this page in Safari and repeat these steps.",
     };
   }
 
   if (isAndroid) {
     return {
       title: `Install ${BRAND.name} on Android`,
-      description: isFirefox
-        ? `Firefox installs ${BRAND.name} from its browser menu:`
-        : `Your browser installs ${BRAND.name} from its app menu:`,
+      description: `Use your browser's app menu:`,
       steps: [
-        "Tap the browser menu (usually ⋮).",
-        isFirefox
-          ? "Choose Install."
-          : "Choose Install app or Add to Home Screen.",
-        "Confirm Install or Add.",
+        { icon: "menu", text: "Tap the browser menu (usually ⋮)." },
+        {
+          icon: "install",
+          text: isFirefox
+            ? "Choose Install, then confirm."
+            : "Choose Install app or Add to Home Screen, then confirm.",
+        },
       ],
+      note: isFirefox
+        ? `Firefox may add a browser shortcut instead of a standalone app.`
+        : undefined,
     };
   }
 
@@ -101,24 +132,31 @@ function getInstallGuide(): InstallGuide {
       title: `Add ${BRAND.name} to your Mac Dock`,
       description: `Safari can save ${BRAND.name} as a web app:`,
       steps: [
-        "Open the File menu in Safari.",
-        "Choose Add to Dock.",
-        "Confirm the app name, then click Add.",
+        { icon: "file", text: "Open the File menu in Safari." },
+        { icon: "add", text: "Choose Add to Dock, then click Add." },
       ],
-      note: "If Add to Dock is unavailable, update Safari or use Chrome or Edge.",
+      note:
+        "If Add to Dock is unavailable, update Safari or install from Chrome or Edge.",
     };
   }
 
   if (isFirefox) {
     return {
-      title: `Open ${BRAND.name} in Chrome or Edge`,
+      title: `Install ${BRAND.name} with a supported desktop browser`,
       description:
-        "Desktop Firefox does not currently provide a PWA installation action.",
+        "Desktop Firefox does not currently provide a built-in PWA installation action.",
       steps: [
-        "Open this page in Chrome or Microsoft Edge.",
-        "Select the install icon in the address bar, or open the browser menu.",
-        `Choose Install ${BRAND.name} and confirm.`,
+        {
+          icon: "copy",
+          text: "Copy this page's link and open it in Chrome or Microsoft Edge.",
+        },
+        {
+          icon: "browser",
+          text: `Choose Install ${BRAND.name} in the address bar or browser menu.`,
+        },
       ],
+      note: `You can continue using ${BRAND.name} in Firefox without installing it.`,
+      canCopyLink: true,
     };
   }
 
@@ -128,9 +166,11 @@ function getInstallGuide(): InstallGuide {
       description:
         "The automatic prompt is not available yet, but you can use the browser menu:",
       steps: [
-        "Open the Chrome or Edge menu (⋮).",
-        `Choose Install ${BRAND.name} or Apps → Install this site as an app.`,
-        "Confirm Install.",
+        { icon: "menu", text: "Open the Chrome or Edge menu (⋮)." },
+        {
+          icon: "install",
+          text: `Choose Install ${BRAND.name}, then confirm.`,
+        },
       ],
     };
   }
@@ -151,32 +191,19 @@ function isStandaloneMode() {
   );
 }
 
-function wasDismissedRecently() {
-  if (typeof window === "undefined") return false;
-
-  let dismissedAt: string | null = null;
-
-  try {
-    dismissedAt = window.localStorage.getItem(PWA_INSTALL_DISMISS_KEY);
-  } catch {
-    return false;
-  }
-
-  if (!dismissedAt) return false;
-
-  const parsed = Number(dismissedAt);
-  if (!Number.isFinite(parsed)) return false;
-
-  return Date.now() - parsed < DISMISS_TTL_MS;
-}
-
 export default function PWARegistrar() {
   const shouldEnablePwa = shouldEnablePwaClientRuntime();
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
   const [isInstallVisible, setIsInstallVisible] = useState(false);
-  const [isInstalling, setIsInstalling] = useState(false);
   const [showManualInstructions, setShowManualInstructions] = useState(false);
+  const [showInstalledConfirmation, setShowInstalledConfirmation] =
+    useState(false);
+  const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "failed">(
+    "idle"
+  );
 
   const shouldShowInstallPrompt = useMemo(
     () => isInstallVisible,
@@ -185,12 +212,16 @@ export default function PWARegistrar() {
 
   const requestNativeInstall = useCallback(async () => {
     if (!deferredPrompt) {
+      setCopyStatus("idle");
+      setShowInstalledConfirmation(false);
       setShowManualInstructions(true);
       setIsInstallVisible(true);
       return;
     }
 
-    setIsInstalling(true);
+    setIsInstallVisible(false);
+    setCopyStatus("idle");
+    setShowInstalledConfirmation(false);
     setShowManualInstructions(false);
 
     try {
@@ -200,7 +231,8 @@ export default function PWARegistrar() {
       setDeferredPrompt(null);
 
       if (outcome === "accepted") {
-        setIsInstallVisible(false);
+        setShowInstalledConfirmation(true);
+        setIsInstallVisible(true);
         try {
           window.localStorage.removeItem(PWA_INSTALL_DISMISS_KEY);
         } catch {
@@ -217,12 +249,13 @@ export default function PWARegistrar() {
       } catch {
         // Ignore storage failures for the install banner state.
       }
-      setIsInstallVisible(false);
-    } catch {
       setShowManualInstructions(true);
       setIsInstallVisible(true);
-    } finally {
-      setIsInstalling(false);
+    } catch {
+      setDeferredPrompt(null);
+      setShowInstalledConfirmation(false);
+      setShowManualInstructions(true);
+      setIsInstallVisible(true);
     }
   }, [deferredPrompt]);
 
@@ -263,24 +296,15 @@ export default function PWARegistrar() {
   }, [shouldEnablePwa]);
 
   useEffect(() => {
-    if (!shouldEnablePwa || typeof window === "undefined") return;
-
-    let visibilityTimer: number | null = null;
+    if (typeof window === "undefined") return;
 
     function handleBeforeInstallPrompt(event: Event) {
       const installEvent = event as BeforeInstallPromptEvent;
       installEvent.preventDefault();
 
-      if (isStandaloneMode() || wasDismissedRecently()) return;
-
-      if (visibilityTimer !== null) {
-        window.clearTimeout(visibilityTimer);
-        visibilityTimer = null;
-      }
+      if (isStandaloneMode()) return;
 
       setDeferredPrompt(installEvent);
-      setShowManualInstructions(false);
-      setIsInstallVisible(true);
     }
 
     function handleInstalled() {
@@ -290,19 +314,12 @@ export default function PWARegistrar() {
         // Ignore storage failures for the install banner state.
       }
       setDeferredPrompt(null);
-      setIsInstallVisible(false);
-      setIsInstalling(false);
+      setShowInstalledConfirmation(true);
+      setIsInstallVisible(true);
       setShowManualInstructions(false);
     }
 
     if (isStandaloneMode()) return;
-
-    if (!wasDismissedRecently()) {
-      visibilityTimer = window.setTimeout(() => {
-        setShowManualInstructions(true);
-        setIsInstallVisible(true);
-      }, PROMPT_DELAY_MS);
-    }
 
     window.addEventListener(
       "beforeinstallprompt",
@@ -311,27 +328,31 @@ export default function PWARegistrar() {
     window.addEventListener("appinstalled", handleInstalled);
 
     return () => {
-      if (visibilityTimer !== null) {
-        window.clearTimeout(visibilityTimer);
-      }
       window.removeEventListener(
         "beforeinstallprompt",
         handleBeforeInstallPrompt as EventListener
       );
       window.removeEventListener("appinstalled", handleInstalled);
     };
-  }, [shouldEnablePwa]);
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     function handleInstallRequest() {
-      if (isStandaloneMode()) return;
-
       try {
         window.localStorage.removeItem(PWA_INSTALL_DISMISS_KEY);
       } catch {
         // Ignore storage failures for an explicit install request.
+      }
+
+      if (isStandaloneMode()) {
+        setDeferredPrompt(null);
+        setCopyStatus("idle");
+        setShowManualInstructions(false);
+        setShowInstalledConfirmation(true);
+        setIsInstallVisible(true);
+        return;
       }
 
       if (deferredPrompt) {
@@ -339,6 +360,8 @@ export default function PWARegistrar() {
         return;
       }
 
+      setCopyStatus("idle");
+      setShowInstalledConfirmation(false);
       setShowManualInstructions(true);
       setIsInstallVisible(true);
     }
@@ -350,7 +373,7 @@ export default function PWARegistrar() {
     };
   }, [deferredPrompt, requestNativeInstall]);
 
-  function handleDismiss() {
+  const handleDismiss = useCallback(() => {
     try {
       window.localStorage.setItem(
         PWA_INSTALL_DISMISS_KEY,
@@ -359,30 +382,107 @@ export default function PWARegistrar() {
     } catch {
       // Ignore storage failures for the install banner state.
     }
+    setShowInstalledConfirmation(false);
     setShowManualInstructions(false);
     setIsInstallVisible(false);
-  }
+    setCopyStatus("idle");
+  }, []);
+
+  const handleCopyInstallLink = useCallback(async () => {
+    try {
+      if (!navigator.clipboard) throw new Error("Clipboard unavailable");
+      await navigator.clipboard.writeText(window.location.href);
+      setCopyStatus("copied");
+    } catch {
+      setCopyStatus("failed");
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!shouldShowInstallPrompt) return;
+
+    previouslyFocusedRef.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+
+    const dialog = dialogRef.current;
+    dialog?.focus();
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    function handleDialogKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        handleDismiss();
+        return;
+      }
+
+      if (event.key !== "Tab" || !dialog) return;
+
+      const focusableElements = Array.from(
+        dialog.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      ).filter((element) => !element.hasAttribute("hidden"));
+
+      if (focusableElements.length === 0) {
+        event.preventDefault();
+        dialog.focus();
+        return;
+      }
+
+      const first = focusableElements[0];
+      const last = focusableElements[focusableElements.length - 1];
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+
+    document.addEventListener("keydown", handleDialogKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleDialogKeyDown);
+      document.body.style.overflow = previousOverflow;
+      previouslyFocusedRef.current?.focus();
+      previouslyFocusedRef.current = null;
+    };
+  }, [handleDismiss, shouldShowInstallPrompt]);
 
   if (!shouldShowInstallPrompt) return null;
 
   const installGuide = getInstallGuide();
+  const dialogTitle = showInstalledConfirmation
+    ? `${BRAND.name} is already installed`
+    : `Install ${BRAND.name} on this device`;
+  const dialogDescription = showInstalledConfirmation
+    ? `${BRAND.name} is ready to launch from your Home Screen, app launcher, or Dock.`
+    : "Keep your trips and boarding passes one tap away, even when the terminal connection is unreliable.";
 
   return (
     <div
       className="fixed inset-0 z-[70] flex items-end justify-center bg-slate-950/55 p-3 backdrop-blur-[2px] sm:items-center sm:p-6"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="pwa-install-title"
-      aria-describedby="pwa-install-description"
     >
       <div
+        ref={dialogRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="pwa-install-title"
+        aria-describedby="pwa-install-description"
         className="clay-surface-raised relative w-full max-w-lg overflow-hidden rounded-3xl border border-ui-border bg-ui-surface"
       >
         <div className="h-1.5 bg-gradient-to-r from-brand-blue via-cyan-400 to-brand-orange" />
         <button
           type="button"
           onClick={handleDismiss}
-          className="absolute right-3 top-4 rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white"
+          className="absolute right-3 top-3 inline-flex min-h-11 min-w-11 items-center justify-center rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-primary focus-visible:ring-offset-2 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white"
           aria-label="Dismiss install message"
         >
           <X className="h-5 w-5" aria-hidden />
@@ -402,7 +502,7 @@ export default function PWARegistrar() {
                 id="pwa-install-title"
                 className="mt-1 text-xl font-extrabold text-slate-950 dark:text-white sm:text-2xl"
               >
-                Install {BRAND.name} on this device
+                {dialogTitle}
               </h2>
             </div>
           </div>
@@ -411,23 +511,34 @@ export default function PWARegistrar() {
             id="pwa-install-description"
             className="text-sm leading-6 text-ui-muted-foreground"
           >
-            Keep your trips and boarding passes one tap away, even when the
-            terminal connection is unreliable.
+            {dialogDescription}
           </p>
 
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            <div className="clay-inset flex items-center gap-2 rounded-xl border border-ui-border bg-ui-surface-soft px-3 py-3 text-sm font-semibold text-ui-foreground">
-              <Zap className="h-4 w-4 shrink-0 text-ui-primary" aria-hidden />
-              Faster access
+          {showInstalledConfirmation ? (
+            <div
+              className="clay-inset mt-4 flex items-center gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm font-semibold text-emerald-800 dark:text-emerald-200"
+              role="status"
+              aria-live="polite"
+              data-testid="pwa-installed-status"
+            >
+              <CheckCircle2 className="h-5 w-5 shrink-0" aria-hidden />
+              Installed and ready to use.
             </div>
-            <div className="clay-inset flex items-center gap-2 rounded-xl border border-ui-border bg-ui-surface-soft px-3 py-3 text-sm font-semibold text-ui-foreground">
-              <WifiOff
-                className="h-4 w-4 shrink-0 text-brand-orange"
-                aria-hidden
-              />
-              Offline passes
+          ) : (
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <div className="clay-inset flex items-center gap-2 rounded-xl border border-ui-border bg-ui-surface-soft px-3 py-3 text-sm font-semibold text-ui-foreground">
+                <Zap className="h-4 w-4 shrink-0 text-ui-primary" aria-hidden />
+                Faster access
+              </div>
+              <div className="clay-inset flex items-center gap-2 rounded-xl border border-ui-border bg-ui-surface-soft px-3 py-3 text-sm font-semibold text-ui-foreground">
+                <WifiOff
+                  className="h-4 w-4 shrink-0 text-brand-orange"
+                  aria-hidden
+                />
+                Offline passes
+              </div>
             </div>
-          </div>
+          )}
 
           {showManualInstructions && (
             <div
@@ -440,50 +551,60 @@ export default function PWARegistrar() {
               </p>
               <p className="mt-1">{installGuide.description}</p>
               <ol className="mt-3 space-y-2">
-                {installGuide.steps.map((step, index) => (
-                  <li key={step} className="flex gap-2.5">
-                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-blue text-[11px] font-bold text-white">
-                      {index + 1}
-                    </span>
-                    <span>{step}</span>
-                  </li>
-                ))}
+                {installGuide.steps.map((step) => {
+                  const StepIcon = INSTALL_STEP_ICONS[step.icon];
+                  return (
+                    <li key={step.text} className="flex items-center gap-3">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-blue text-white">
+                        <StepIcon className="h-4 w-4" aria-hidden />
+                      </span>
+                      <span>{step.text}</span>
+                    </li>
+                  );
+                })}
               </ol>
               {installGuide.note && (
                 <p className="mt-3 text-xs text-ui-muted-foreground">
                   {installGuide.note}
                 </p>
               )}
+              {installGuide.canCopyLink && (
+                <button
+                  type="button"
+                  onClick={() => void handleCopyInstallLink()}
+                  className="clay-control clay-interactive mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-bold text-ui-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-primary focus-visible:ring-offset-2"
+                >
+                  {copyStatus === "copied" ? (
+                    <ClipboardCheck className="h-4 w-4" aria-hidden />
+                  ) : (
+                    <Copy className="h-4 w-4" aria-hidden />
+                  )}
+                  {copyStatus === "copied"
+                    ? "Link copied"
+                    : copyStatus === "failed"
+                      ? "Copy unavailable — select the address bar"
+                      : "Copy install link"}
+                </button>
+              )}
             </div>
           )}
 
           <div className="mt-6 grid gap-2.5 sm:grid-cols-[1fr_auto]">
-            {deferredPrompt ? (
-              <>
-                <button
-                  type="button"
-                  onClick={() => void requestNativeInstall()}
-                  disabled={isInstalling}
-                  className="clay-action inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-brand-blue px-5 py-3 text-sm font-bold text-white hover:bg-blue-600 disabled:cursor-wait disabled:opacity-70"
-                >
-                  <Download className="h-5 w-5" aria-hidden />
-                  {isInstalling ? "Opening install prompt..." : `Install ${BRAND.name}`}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleDismiss}
-                  className="clay-control clay-interactive inline-flex min-h-12 items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
-                >
-                  Maybe later
-                </button>
-              </>
+            {showInstalledConfirmation ? (
+              <button
+                type="button"
+                onClick={handleDismiss}
+                className="clay-action inline-flex min-h-12 items-center justify-center rounded-xl bg-brand-blue px-5 py-3 text-sm font-bold text-white hover:bg-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-primary focus-visible:ring-offset-2 sm:col-span-2"
+              >
+                Close
+              </button>
             ) : (
               <button
                 type="button"
                 onClick={handleDismiss}
-                className="clay-action inline-flex min-h-12 items-center justify-center rounded-xl bg-brand-blue px-5 py-3 text-sm font-bold text-white hover:bg-blue-600 sm:col-span-2"
+                className="clay-action inline-flex min-h-12 items-center justify-center rounded-xl bg-brand-blue px-5 py-3 text-sm font-bold text-white hover:bg-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-primary focus-visible:ring-offset-2 sm:col-span-2"
               >
-                Got it
+                Done
               </button>
             )}
           </div>

@@ -1,0 +1,29 @@
+{
+  "bridgeVersion": "3.6",
+  "kind": "google-docs-trusted-read-receipt",
+  "status": "complete",
+  "target": {
+    "documentId": "1pNdn766lGiQcnOhmHNOym1nBdwSKH-r0UbbGNLYEffw",
+    "title": "TripSync Script",
+    "revisionId": "ANLCKQlsTRnciLFwO_yexnUAg3Arx0MGikTppGS65b-zQLWlt2aguoD210NQEks_s85Rqq8dOkNv-jAI9QffwFQD1o0_RBclZ0tBonXvUts",
+    "documentUrl": "https://docs.google.com/document/d/1pNdn766lGiQcnOhmHNOym1nBdwSKH-r0UbbGNLYEffw",
+    "selectedTabId": null
+  },
+  "dropdownMetadata": {
+    "status": "unavailable",
+    "resolvedTool": null,
+    "authoritative": false,
+    "count": 0
+  },
+  "controlAwareness": {
+    "hasProtectedControls": false,
+    "authoritativeDropdownCount": 0,
+    "opaqueControlCount": 0,
+    "affectedParagraphCount": 0,
+    "nativeElementCounts": {},
+    "preservationRequired": false,
+    "recommendedBehavior": "No protected controls were detected in the scanned scope."
+  },
+  "warnings": [],
+  "error": null
+}

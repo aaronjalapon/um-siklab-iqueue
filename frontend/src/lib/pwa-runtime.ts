@@ -1,23 +1,25 @@
-export const SHOULD_ENABLE_PWA =
-  process.env.NODE_ENV === "production" ||
-  process.env.NEXT_PUBLIC_ENABLE_SW === "true";
+type PwaRuntimeEnvironment = {
+  isProduction: boolean;
+  isExplicitlyEnabled: boolean;
+};
+
+export function shouldEnablePwaForEnvironment({
+  isProduction,
+  isExplicitlyEnabled,
+}: PwaRuntimeEnvironment): boolean {
+  return isProduction || isExplicitlyEnabled;
+}
+
+export const SHOULD_ENABLE_PWA = shouldEnablePwaForEnvironment({
+  isProduction: process.env.NODE_ENV === "production",
+  isExplicitlyEnabled: process.env.NEXT_PUBLIC_ENABLE_SW === "true",
+});
 
 export const PWA_INSTALL_DISMISS_KEY = "iqueue:pwa-install-dismissed:v1";
 export const PWA_INSTALL_REQUEST_EVENT = "iqueue:request-pwa-install";
 
 export function shouldEnablePwaClientRuntime(): boolean {
-  if (typeof window === "undefined") {
-    return SHOULD_ENABLE_PWA;
-  }
-
-  const host = window.location.hostname;
-  const isLocalDevHost =
-    ["localhost", "127.0.0.1", "::1", "0.0.0.0"].includes(host) ||
-    host.startsWith("192.168.") ||
-    host.startsWith("10.") ||
-    /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
-
-  return SHOULD_ENABLE_PWA && !isLocalDevHost;
+  return SHOULD_ENABLE_PWA;
 }
 
 export async function cleanupDevelopmentPwaState(): Promise<void> {

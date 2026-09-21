@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "kind": "google-docs-trusted-read-context",
+  "target": {
+    "documentId": "1pNdn766lGiQcnOhmHNOym1nBdwSKH-r0UbbGNLYEffw",
+    "title": "TripSync Script",
+    "revisionId": "ANLCKQlqS7k30cR0TZfJP4n765Pc1MV_z2kt-xggXFrAhUm_oUHcjFoYAbjJmtOD6rvYwCgvabcj8NBSC4hYvkedtBRdD2_K4R0k-97j-1E",
+    "documentUrl": "https://docs.google.com/document/d/1pNdn766lGiQcnOhmHNOym1nBdwSKH-r0UbbGNLYEffw",
+    "selectedTabId": null
+  },
+  "dropdownMetadata": {
+    "status": "unavailable",
+    "resolvedTool": null,
+    "authoritative": false,
+    "count": 0
+  },
+  "derivedControlInventory": {
+    "hasProtectedControls": false,
+    "authoritativeDropdownCount": 0,
+    "opaqueControlCount": 0,
+    "nativeElementCounts": {},
+    "tabsScanned": [
+      "t.0",
+      "t.trk6avyz7s1g",
+      "t.v5aabo1ewe09",
+      "t.6xfamy1e9xy1",
+      "t.afz0i7us32eh",
+      "t.im79d795hvu3",
+      "t.nb4w8du1xkcn",
+      "t.mpii0t11fbz3",
+      "t.4n1z0sredxno",
+      "t.ku5opjozzktv",
+      "t.xf0scrhh6dcc",
+      "t.y22g9gsekqmu",
+      "t.7klioeh7heh6",
+      "t.rr9rulqpfmc0",
+      "t.qn1nl3xpmva",
+      "t.si7pk69ad1ms",
+      "t.vupao56rs5rh",
+      "t.j6m9jkfel78t",
+      "t.iqiy17nh4vzh",
+      "t.bjp4g7jbhi89",
+      "t.itm2tlcapl5c",
+      "t.qwz1sdg6g1gg",
+      "t.losxusvmpmgm",
+      "t.l1s3q2eu560s"
+    ],
+    "controls": [],
+    "nativeElements": []
+  },
+  "editGuidance": {
+    "advisoryOnly": true,
+    "requiresTargetedPreservation": false,
+    "recommendedBehavior": "No protected controls were detected in the scanned scope.",
+    "warnings": []
+  }
+}

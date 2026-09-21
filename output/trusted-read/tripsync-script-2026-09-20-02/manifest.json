@@ -1,0 +1,57 @@
+{
+  "bridgeVersion": "3.6",
+  "kind": "google-docs-trusted-read",
+  "status": "complete",
+  "outputDir": "/Users/aaronarquillano/Projects/um-siklab-iqueue/output/trusted-read/tripsync-script-2026-09-20-02",
+  "target": {
+    "documentId": "1pNdn766lGiQcnOhmHNOym1nBdwSKH-r0UbbGNLYEffw",
+    "title": "TripSync Script",
+    "revisionId": "ANLCKQlqS7k30cR0TZfJP4n765Pc1MV_z2kt-xggXFrAhUm_oUHcjFoYAbjJmtOD6rvYwCgvabcj8NBSC4hYvkedtBRdD2_K4R0k-97j-1E",
+    "documentUrl": "https://docs.google.com/document/d/1pNdn766lGiQcnOhmHNOym1nBdwSKH-r0UbbGNLYEffw",
+    "selectedTabId": null
+  },
+  "dropdownMetadata": {
+    "status": "unavailable",
+    "resolvedTool": null,
+    "authoritative": false,
+    "count": 0
+  },
+  "controlAwareness": {
+    "hasProtectedControls": false,
+    "authoritativeDropdownCount": 0,
+    "opaqueControlCount": 0,
+    "affectedParagraphCount": 0,
+    "nativeElementCounts": {},
+    "preservationRequired": false,
+    "recommendedBehavior": "No protected controls were detected in the scanned scope."
+  },
+  "warnings": [],
+  "files": {
+    "document_result": {
+      "path": "/Users/aaronarquillano/Projects/um-siklab-iqueue/output/trusted-read/tripsync-script-2026-09-20-02/document-result.json",
+      "bytes": 561479,
+      "sha256": "d1d6811e7a94bec11c03bfc167c360874fcf1d8eeb8eb2a767986acb5a05e33f"
+    },
+    "control_inventory": {
+      "path": "/Users/aaronarquillano/Projects/um-siklab-iqueue/output/trusted-read/tripsync-script-2026-09-20-02/control-inventory.json",
+      "bytes": 1571,
+      "sha256": "cfb21c90ef8264751461a37944aa6fc3101fd9dfaab25a827bd92de20a1ebb47"
+    },
+    "document_outline": {
+      "path": "/Users/aaronarquillano/Projects/um-siklab-iqueue/output/trusted-read/tripsync-script-2026-09-20-02/document-outline.json",
+      "bytes": 117621,
+      "sha256": "fbc4284f7b78582545be1b67de12d6e5030be918b60195f0bbfeb3f04ac558f6"
+    },
+    "document_text": {
+      "path": "/Users/aaronarquillano/Projects/um-siklab-iqueue/output/trusted-read/tripsync-script-2026-09-20-02/document-text.md",
+      "bytes": 29852,
+      "sha256": "9339ca539ea7e67a77a097a55e67513ce7a6a5f505b5e2275cde3298ef617c77"
+    },
+    "receipt": {
+      "path": "/Users/aaronarquillano/Projects/um-siklab-iqueue/output/trusted-read/tripsync-script-2026-09-20-02/receipt.json",
+      "bytes": 951,
+      "sha256": "558751c88acef02c4f8f0dd03f62ca59a5b105f17ecf700609fef65484591c81"
+    }
+  },
+  "error": null
+}

@@ -32,6 +32,7 @@ const tripsyncIcons = [
 export default function manifest(): MetadataRoute.Manifest {
   if (!SHOULD_ENABLE_PWA) {
     return {
+      id: "/",
       name: BRAND.name,
       short_name: BRAND.name,
       description: BRAND.shortDescription,
@@ -46,6 +47,7 @@ export default function manifest(): MetadataRoute.Manifest {
   }
 
   return {
+    id: "/",
     name: BRAND.name,
     short_name: BRAND.name,
     description: BRAND.shortDescription,

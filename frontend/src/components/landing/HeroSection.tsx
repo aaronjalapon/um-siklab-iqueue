@@ -26,6 +26,7 @@ export default function HeroSection() {
   }
 
   const actionClass = "clay-interactive inline-flex min-h-11 sm:min-h-12 flex-1 items-center justify-center gap-2 rounded-xl border px-4 py-2.5 sm:px-5 sm:py-3 text-center text-xs sm:text-sm lg:text-base font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300";
+  const primaryActionClass = "inline-flex min-h-11 sm:min-h-12 flex-1 items-center justify-center gap-2 rounded-xl border border-blue-600 bg-blue-600 px-4 py-2.5 sm:px-5 sm:py-3 text-center text-xs sm:text-sm lg:text-base font-bold text-white shadow-sm transition-all duration-150 hover:bg-blue-500 hover:shadow-md active:bg-blue-700 active:scale-[0.98] active:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 select-none";
 
   return (
     <section
@@ -43,8 +44,8 @@ export default function HeroSection() {
           </p>
 
           <div className="mt-6 sm:mt-8 grid w-full max-w-sm sm:max-w-md lg:max-w-2xl grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3.5">
-            <Link href="/buy" className={`${actionClass} col-span-2 sm:col-span-1 clay-action border-blue-600 bg-blue-600 text-white hover:bg-blue-500 shadow-sm`}>
-              Find a bus <ArrowRight className="h-4 w-4" aria-hidden />
+            <Link href="/buy" className={`${primaryActionClass} col-span-2 sm:col-span-1`}>
+              Book a Bus <ArrowRight className="h-4 w-4" aria-hidden />
             </Link>
             <Link href="/operator" className={`${actionClass} border-ui-border bg-ui-surface text-ui-foreground hover:bg-ui-muted dark:border-white/25 dark:bg-white/10 dark:text-white dark:hover:bg-white/15`}>
               Operator demo <BusFront className="h-4 w-4" aria-hidden />

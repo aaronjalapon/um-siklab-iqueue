@@ -8,7 +8,6 @@ import {
   MapPin,
   ShieldCheck,
   Users,
-  WifiOff,
 } from "lucide-react";
 import { BRAND } from "@/lib/brand";
 import { uiStyles } from "@/lib/design-system";
@@ -18,7 +17,6 @@ import { formatBoardingWindow, formatDate, formatTime } from "@/lib/utils";
 
 export default function GroupBoardingPassCard({
   booking,
-  savedCopy = false,
 }: {
   booking: GroupBookingResponse;
   savedCopy?: boolean;
@@ -65,12 +63,6 @@ export default function GroupBoardingPassCard({
             <p className="text-[10px] sm:text-xs text-slate-500 truncate">Group {booking.group_id.slice(0, 8)} · {booking.members.length} passengers</p>
           </div>
         </div>
-        {savedCopy && (
-          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 sm:px-3 sm:py-1 text-[10px] sm:text-xs font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-            <WifiOff className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-            <span>Saved copy</span>
-          </span>
-        )}
       </header>
 
       <div className="grid gap-3 sm:gap-5 p-3 sm:p-5 lg:grid-cols-[1fr_270px]">

@@ -85,8 +85,8 @@ export default function LandingNavbar() {
               </a>
             ))}
             <ThemeToggle className="ml-1 text-ui-foreground dark:text-white" />
-            <Link href="/buy" className="clay-action ml-2 inline-flex min-h-11 items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-500">
-              Find a bus <ArrowRight className="h-4 w-4" aria-hidden />
+            <Link href="/buy" className="ml-2 inline-flex min-h-11 items-center gap-2 rounded-xl border border-blue-600 bg-blue-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition-all duration-150 hover:bg-blue-500 hover:shadow-md active:scale-[0.98] active:bg-blue-700 active:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 select-none">
+              Book a Bus <ArrowRight className="h-4 w-4" aria-hidden />
             </Link>
           </nav>
 
@@ -171,9 +171,9 @@ export default function LandingNavbar() {
                     document.body.style.touchAction = "";
                     window.__lenis?.start();
                   }}
-                  className="clay-action inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm sm:text-base font-bold text-white shadow-md hover:bg-blue-500 active:scale-[0.98]"
+                  className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-blue-600 bg-blue-600 px-4 py-2.5 text-sm sm:text-base font-bold text-white shadow-sm transition-all duration-150 hover:bg-blue-500 active:scale-[0.98] active:bg-blue-700 active:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 select-none"
                 >
-                  Find a bus <ArrowRight className="h-4 w-4" aria-hidden />
+                  Book a Bus <ArrowRight className="h-4 w-4" aria-hidden />
                 </Link>
               </div>
             </div>

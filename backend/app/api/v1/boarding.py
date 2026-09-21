@@ -185,6 +185,14 @@ async def verify_boarding_pass(
         "boarding_window": token_data.get("boarding_window"),
     }
     if booking is None:
+        if signature_valid and timing_valid:
+            return BoardingVerifyResponse(
+                valid=True,
+                reason=timing_reason,
+                boarding_status=timing_reason,
+                booking_id=f"offline-{str(token_data.get('passenger_id', ''))[:8]}",
+                **common,
+            )
         return BoardingVerifyResponse(
             valid=False,
             reason="booking_not_found",
@@ -257,6 +265,29 @@ async def _verify_group_pass(
         .where(Booking.group_id == group_id)
     )
     bookings = list(result.scalars().all())
+
+    if not bookings and timing_valid:
+        return BoardingVerifyResponse(
+            valid=True,
+            reason=timing_reason,
+            boarding_status=timing_reason,
+            signature_valid=True,
+            pass_type="group",
+            group_id=group_id,
+            route_id=token_data.get("route_id"),
+            bus_id=token_data.get("bus_id"),
+            boarding_window=token_data.get("boarding_window"),
+            members=[
+                BoardingMemberStatus(
+                    booking_id=signed["booking_id"],
+                    passenger_id=signed["passenger_id"],
+                    seat=signed["seat"],
+                    status="confirmed",
+                    requires_review=False,
+                )
+                for signed in signed_members.values()
+            ],
+        )
 
     is_demo = any(
         b.bus and b.bus.route and is_demo_immediate_route(b.bus.route.origin, b.bus.route.destination)

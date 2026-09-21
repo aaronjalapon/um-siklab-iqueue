@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { CheckCircle, Clock, Download, MapPin, ShieldCheck, Ticket, WifiOff } from "lucide-react";
+import { CheckCircle, Clock, Download, MapPin, ShieldCheck, Ticket } from "lucide-react";
 import { BRAND } from "@/lib/brand";
 import { uiStyles } from "@/lib/design-system";
 import { downloadQrAsPng } from "@/lib/qr-download";
@@ -19,7 +19,6 @@ function getQrValue(booking: BookingDetail): string {
 
 export default function BoardingPassCard({
   booking,
-  savedCopy = false,
   className = "",
 }: BoardingPassCardProps) {
   const qrContainerRef = useRef<HTMLDivElement>(null);
@@ -66,12 +65,6 @@ export default function BoardingPassCard({
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
-          {savedCopy && (
-            <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 sm:px-2.5 py-0.5 text-[10px] sm:text-xs font-medium text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
-              <WifiOff className="h-3 w-3" aria-hidden />
-              <span>Saved</span>
-            </span>
-          )}
           <span
             className={`${uiStyles.badge} text-[10px] sm:text-xs px-2 sm:px-2.5 py-0.5 ${statusColorClass(
               booking.status

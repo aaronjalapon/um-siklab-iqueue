@@ -149,7 +149,7 @@ export default function PassengerLayout({
 
   return (
     <div className="passenger-clay min-h-dvh min-w-0 bg-ui-canvas md:flex">
-      <header className="fixed inset-x-0 top-0 z-30 flex h-16 items-center justify-between border-b border-ui-border/70 bg-ui-surface px-4 text-ui-foreground dark:border-white/10 dark:bg-ui-navy dark:text-white md:hidden">
+      <header className="fixed inset-x-0 top-0 z-40 flex h-16 items-center justify-between border-b border-ui-border/70 bg-ui-surface px-4 text-ui-foreground dark:border-white/10 dark:bg-ui-navy dark:text-white md:hidden">
         <Link href="/home" onClick={handleLogoClick} aria-label={`${BRAND.name} passenger home`}>
           <BrandLogo markClassName="h-9 w-9" textClassName="font-heading text-lg font-semibold text-ui-foreground dark:text-white" />
         </Link>

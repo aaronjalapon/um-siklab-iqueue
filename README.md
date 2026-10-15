@@ -20,6 +20,27 @@
 
 ---
 
+## Project preview
+
+![IQueue passenger seat recommendation](audit/ui-ux-2026-09-17/06-seat-recommendation-desktop.png)
+
+The screenshot is a recorded prototype view from the September 2026 UI audit, not evidence of a field deployment.
+
+[Portfolio case study](https://www.aaronarquillano.tech/projects/iqueue) · [UI walkthrough](audit/ui-ux-2026-09-17/README.md)
+
+## Aaron's contributions
+
+IQueue is a team project by UM Siklab. Aaron Jalapon Arquillano contributed:
+
+- Backend seat allocation and recommendation APIs, models, migrations, and booking integration.
+- Interactive passenger seat selection, preference handling, operator seat views, and frontend/API integration.
+- Separation of recommendation previews from reservations, including exact-seat booking confirmation.
+- Regression coverage for preview availability, accessible-seat confirmation, and manual accessibility constraints.
+
+Implementation examples: [seat backend](https://github.com/aaronjalapon/um-siklab-iqueue/commit/0b122f16873bb161b1ca2272f75d315a31592bf1), [seat UI](https://github.com/aaronjalapon/um-siklab-iqueue/commit/b61b4b5c43eec147d7f8102bf3376b06e27ecb56), and [preview/booking fix with regression tests](https://github.com/aaronjalapon/um-siklab-iqueue/commit/c0124572ab3ce9e1c5dbe11c2a77d2106e052d12).
+
+These links document contributions; they do not assert that the current test suite has been run.
+
 ## 🏆 Hackathon
 
 - **Event:** ASEAN AI Hackathon 2026 — Smart City Track
@@ -35,12 +56,13 @@
 - Python 3.14+
 - Node.js 24+
 - Docker & Docker Compose
-- PostgreSQL 15 (or use Docker)
+- PostgreSQL 18 (or use Docker)
 
 ### 1. Clone & Configure
 
 ```bash
-git clone <repo-url> && cd iqueue
+git clone https://github.com/aaronjalapon/um-siklab-iqueue.git
+cd um-siklab-iqueue
 cp .env.example .env
 # Edit .env with your values, or generate keys:
 python scripts/generate_qr_keys.py
@@ -232,8 +254,8 @@ cd frontend && npm run lint && npx tsc --noEmit && npm run build
 
 ```
 ┌─────────────┐     ┌──────────────┐     ┌─────────────┐
-│  Next.js 14 │────▶│   FastAPI    │────▶│ PostgreSQL  │
-│  Frontend   │     │   Backend    │     │     15      │
+│  Next.js 16 │────▶│   FastAPI    │────▶│ PostgreSQL  │
+│  Frontend   │     │   Backend    │     │     18      │
 │  :3000      │◀────│   :8000      │◀────│   :5432     │
 └─────────────┘     └──────┬───────┘     └─────────────┘
                            │
